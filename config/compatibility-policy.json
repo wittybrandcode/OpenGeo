@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "1.0.0",
+  "decisionId": "ADR-007",
+  "host": {
+    "id": "AEFT",
+    "manifestRange": "[18.4,24.99]",
+    "minimumVersion": "18.4",
+    "maximumVersion": "24.99"
+  },
+  "runtime": {
+    "name": "CSXS",
+    "minimumVersion": "11.0",
+    "baseline": {
+      "cep": "11.1",
+      "chromium": "88",
+      "node": "15.9.0",
+      "v8": "8.7"
+    },
+    "requiredManifestFlags": [
+      "--enable-nodejs"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "modern-js-syntax",
+      "required": true,
+      "evidence": "client/lib/lucide.min.js uses optional chaining and object spread"
+    },
+    {
+      "id": "node-builtins",
+      "required": true,
+      "evidence": "runtime client modules use fs, path, os and crypto"
+    },
+    {
+      "id": "resize-observer",
+      "required": false,
+      "fallback": "window resize listener"
+    },
+    {
+      "id": "worker-offscreen-canvas",
+      "required": false,
+      "fallback": "main-thread canvas stitcher"
+    },
+    {
+      "id": "fetch",
+      "required": false,
+      "fallback": "bounded XMLHttpRequest transport"
+    }
+  ],
+  "locallyProbedEnvironments": [
+    {
+      "hostVersion": "23.6",
+      "cepHtmlEngineVersion": "11.5.3",
+      "platform": "Windows",
+      "evidenceDate": "2026-08-14"
+    },
+    {
+      "hostVersion": "24.6.2",
+      "cepHtmlEngineVersion": "11.5.3",
+      "platform": "Windows",
+      "evidenceDate": "2026-08-14"
+    }
+  ],
+  "sources": [
+    {
+      "title": "Adobe CEP 11.1 HTML Extension Cookbook",
+      "url": "https://github.com/Adobe-CEP/CEP-Resources/blob/master/CEP_11.x/Documentation/CEP%2011.1%20HTML%20Extension%20Cookbook.md"
+    },
+    {
+      "title": "Adobe CEP Resources releases",
+      "url": "https://github.com/Adobe-CEP/CEP-Resources/releases"
+    },
+    {
+      "title": "Adobe CEP Samples compatibility guidance",
+      "url": "https://github.com/Adobe-CEP/Samples"
+    }
+  ]
+}

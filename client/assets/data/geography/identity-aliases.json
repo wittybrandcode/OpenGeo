@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0.0",
+  "provider": "nominatim",
+  "osmRelations": {
+    "relation:2559126": "ESH",
+    "relation:3630439": "MAR"
+  },
+  "identityOverrides": {
+    "ESH": {
+      "aliases": [
+        "Western Sahara",
+        "W. Sahara",
+        "Sahara Occidental",
+        "Sáhara Occidental",
+        "الصحراء الغربية"
+      ],
+      "stripHierarchyAliases": [
+        "Morocco",
+        "Maroc",
+        "Marocco",
+        "Marruecos",
+        "Marokko",
+        "المغرب"
+      ]
+    }
+  }
+}

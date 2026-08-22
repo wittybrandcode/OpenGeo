@@ -1,0 +1,1268 @@
+{
+  "version": "1.0.0",
+  "detail": "10m",
+  "mapSize": 262144,
+  "generatedBy": "scripts/build-vector-preview-index.js",
+  "sourceSha256": "1e9d64643009789be11634ae3a7f47d1db5e570112018e53b3422ab419a76876",
+  "targetPointsPerChunk": 18000,
+  "layers": {
+    "land": [
+      {
+        "id": "land-000",
+        "file": "vector-preview/10m/land-000.json",
+        "bbox": [
+          28394.9,
+          13790.9,
+          92757.8,
+          97635.7
+        ],
+        "featureCount": 1,
+        "pointCount": 68193,
+        "bytes": 1202194,
+        "sha256": "c9a5e9e77e73bcb4273469409dd436ea04abda03bdb275146b6b57749e51bf00"
+      },
+      {
+        "id": "land-001",
+        "file": "vector-preview/10m/land-001.json",
+        "bbox": [
+          77873.3,
+          10522.3,
+          122787.7,
+          76427.6
+        ],
+        "featureCount": 1,
+        "pointCount": 20133,
+        "bytes": 364207,
+        "sha256": "7214eba0a4a6f8c88fd7ef5cc50b2c108f1084b487aa85c317200a4849159e7a"
+      },
+      {
+        "id": "land-002",
+        "file": "vector-preview/10m/land-002.json",
+        "bbox": [
+          44878.5,
+          92051.9,
+          90188.6,
+          123544.7
+        ],
+        "featureCount": 4,
+        "pointCount": 7966,
+        "bytes": 149283,
+        "sha256": "69f322e24d4af55484c4aafaa701a17ef60d7c8803a761493c387c0d2e8d88e2"
+      },
+      {
+        "id": "land-003",
+        "file": "vector-preview/10m/land-003.json",
+        "bbox": [
+          73113.2,
+          65442.9,
+          132361.7,
+          115494.2
+        ],
+        "featureCount": 9,
+        "pointCount": 15002,
+        "bytes": 281365,
+        "sha256": "17f419b7bab8911a9efff82bd0449a57816d752c5c323bc89a7f8e10048e4be3"
+      },
+      {
+        "id": "land-004",
+        "file": "vector-preview/10m/land-004.json",
+        "bbox": [
+          65452.4,
+          113644.8,
+          87798.6,
+          134159.7
+        ],
+        "featureCount": 34,
+        "pointCount": 17970,
+        "bytes": 342314,
+        "sha256": "ddec667c97d9f0676cb052cdf4e635041f8d9351dda5ed6c8c74e7951ed52945"
+      },
+      {
+        "id": "land-005",
+        "file": "vector-preview/10m/land-005.json",
+        "bbox": [
+          81252,
+          84714.2,
+          136313.8,
+          130208.5
+        ],
+        "featureCount": 14,
+        "pointCount": 13098,
+        "bytes": 254661,
+        "sha256": "a2c9dfbbdeda54a317ecf894cfcf60132b6603ab4b8c02068f989e95f79a3f43"
+      },
+      {
+        "id": "land-006",
+        "file": "vector-preview/10m/land-006.json",
+        "bbox": [
+          86072.2,
+          87658.5,
+          171744,
+          147007.6
+        ],
+        "featureCount": 1,
+        "pointCount": 4641,
+        "bytes": 86808,
+        "sha256": "9cde61ba12cb7c4050b0ea085c2006e34bffdf464a4acf810a3102f9a417d2eb"
+      },
+      {
+        "id": "land-007",
+        "file": "vector-preview/10m/land-007.json",
+        "bbox": [
+          122141.5,
+          112264.8,
+          134156.3,
+          123649.4
+        ],
+        "featureCount": 1,
+        "pointCount": 1745,
+        "bytes": 34499,
+        "sha256": "139905c8cca08c4d8f1fbbe3f538db276e9c47aa0ebc7f8333c1e102d885e3dc"
+      },
+      {
+        "id": "land-008",
+        "file": "vector-preview/10m/land-008.json",
+        "bbox": [
+          1900.8,
+          109641.6,
+          252424.5,
+          131355.1
+        ],
+        "featureCount": 1,
+        "pointCount": 122,
+        "bytes": 2628,
+        "sha256": "60881663ce3c8919712369b4c4910649aabac3366d35631446c7074fbd61e4d6"
+      },
+      {
+        "id": "land-009",
+        "file": "vector-preview/10m/land-009.json",
+        "bbox": [
+          120090.3,
+          119962.1,
+          132812.5,
+          127905.7
+        ],
+        "featureCount": 6,
+        "pointCount": 6558,
+        "bytes": 129922,
+        "sha256": "a939ed885cd76d2b379e1cf5736da5e30d82327be294e5e935f35e4695e639eb"
+      },
+      {
+        "id": "land-010",
+        "file": "vector-preview/10m/land-010.json",
+        "bbox": [
+          0,
+          20812.8,
+          262144,
+          98098.4
+        ],
+        "featureCount": 1,
+        "pointCount": 36752,
+        "bytes": 681377,
+        "sha256": "45b2bd9ab1fd4348b574c385f022f27441e664c97807efbf574a3f25ffdbbb03"
+      },
+      {
+        "id": "land-011",
+        "file": "vector-preview/10m/land-011.json",
+        "bbox": [
+          136965.9,
+          58507.2,
+          154060.2,
+          83460.4
+        ],
+        "featureCount": 6,
+        "pointCount": 12129,
+        "bytes": 227181,
+        "sha256": "dc8b19b5df3b1489cb16b29ddaf403b31f29f9716f8ebd3b7265ca46b554cab4"
+      },
+      {
+        "id": "land-012",
+        "file": "vector-preview/10m/land-012.json",
+        "bbox": [
+          623.7,
+          55553.5,
+          261984.5,
+          117048.1
+        ],
+        "featureCount": 1,
+        "pointCount": 35981,
+        "bytes": 643850,
+        "sha256": "0bd1fb5c6b427a0add2c15f61b5c49a62ac193ae7ad972ad3485870627590bce"
+      },
+      {
+        "id": "land-013",
+        "file": "vector-preview/10m/land-013.json",
+        "bbox": [
+          132096.2,
+          82832.6,
+          148652.5,
+          103398.5
+        ],
+        "featureCount": 21,
+        "pointCount": 17907,
+        "bytes": 338352,
+        "sha256": "5b1de6d55b63d2ff52e0ac2c65f04b57d9d99c058881ee8684f1c62bd4fb00dd"
+      },
+      {
+        "id": "land-014",
+        "file": "vector-preview/10m/land-014.json",
+        "bbox": [
+          136518.6,
+          81050.2,
+          194659.2,
+          107961.4
+        ],
+        "featureCount": 14,
+        "pointCount": 16475,
+        "bytes": 310598,
+        "sha256": "d081d1d32e1cf0783ef558c0ff550731c96f9049b4ba0d7569d5a12cda0cf7ef"
+      },
+      {
+        "id": "land-015",
+        "file": "vector-preview/10m/land-015.json",
+        "bbox": [
+          124432.9,
+          26069,
+          155568.2,
+          178550.6
+        ],
+        "featureCount": 1,
+        "pointCount": 15817,
+        "bytes": 294769,
+        "sha256": "61c90bdb132c3a3ef959e4154d101c5a4a8249fd20910e9f84f55819ca50b4f6"
+      },
+      {
+        "id": "land-016",
+        "file": "vector-preview/10m/land-016.json",
+        "bbox": [
+          124749.7,
+          97215.5,
+          166431.8,
+          116994.7
+        ],
+        "featureCount": 17,
+        "pointCount": 17324,
+        "bytes": 340410,
+        "sha256": "7badc17d8e86c298a6913d11bee9a11fd441243e5144a78c25a6b8759b453e86"
+      },
+      {
+        "id": "land-017",
+        "file": "vector-preview/10m/land-017.json",
+        "bbox": [
+          130951,
+          97419.6,
+          167936.5,
+          134481.8
+        ],
+        "featureCount": 19,
+        "pointCount": 16247,
+        "bytes": 321637,
+        "sha256": "ed2e8357297f54dc3dce445099b7410e9ddf332202bed880150bc3821fea885d"
+      },
+      {
+        "id": "land-018",
+        "file": "vector-preview/10m/land-018.json",
+        "bbox": [
+          156247.1,
+          96532.2,
+          195274.8,
+          132307.4
+        ],
+        "featureCount": 16,
+        "pointCount": 17219,
+        "bytes": 339772,
+        "sha256": "7f7e9ea74aaf41477e1aa4c7e1787ac0a98ccd309ac6b9b8f6a6ae81e10e0f70"
+      },
+      {
+        "id": "land-019",
+        "file": "vector-preview/10m/land-019.json",
+        "bbox": [
+          180692.5,
+          86436.6,
+          218385.6,
+          131573.4
+        ],
+        "featureCount": 4,
+        "pointCount": 11521,
+        "bytes": 225695,
+        "sha256": "cf954112f288b53b4a095373d7f12af86c51126bd493bf81babbe05fa327e5c3"
+      },
+      {
+        "id": "land-020",
+        "file": "vector-preview/10m/land-020.json",
+        "bbox": [
+          184667.5,
+          84700.3,
+          229210.4,
+          119436.8
+        ],
+        "featureCount": 3,
+        "pointCount": 16721,
+        "bytes": 324850,
+        "sha256": "33a9361a2fd00ea44447ce7aa6b4eeac4c84b51f1a5df6dccfdbb91e2177e7e1"
+      },
+      {
+        "id": "land-021",
+        "file": "vector-preview/10m/land-021.json",
+        "bbox": [
+          198191.8,
+          96314.4,
+          227091.4,
+          124811.4
+        ],
+        "featureCount": 8,
+        "pointCount": 16419,
+        "bytes": 322843,
+        "sha256": "8d6fe3ab182c9560bcbe377bc3b64e6b58c2147a3159dba2e2925e6d2ef0f74e"
+      },
+      {
+        "id": "land-022",
+        "file": "vector-preview/10m/land-022.json",
+        "bbox": [
+          201961.1,
+          115330.4,
+          229177.5,
+          130452
+        ],
+        "featureCount": 9,
+        "pointCount": 14948,
+        "bytes": 295652,
+        "sha256": "494948bddb75ee786de75fad4c7fde6760f2272d6fe354e9b7cb827c76939350"
+      },
+      {
+        "id": "land-023",
+        "file": "vector-preview/10m/land-023.json",
+        "bbox": [
+          220592.8,
+          93761.4,
+          256340.3,
+          130403.4
+        ],
+        "featureCount": 5,
+        "pointCount": 7649,
+        "bytes": 150293,
+        "sha256": "879c9d67c31fc8dbce49430ef826b60941aa7d342ab20ef66380bd63909ad93d"
+      },
+      {
+        "id": "land-024",
+        "file": "vector-preview/10m/land-024.json",
+        "bbox": [
+          1321.1,
+          136879.8,
+          40211.4,
+          152029.2
+        ],
+        "featureCount": 8,
+        "pointCount": 1691,
+        "bytes": 32967,
+        "sha256": "7d8241c51d173fb5d05f9ce35e633404466e1b991a58a5d63dbde32d63eb4325"
+      },
+      {
+        "id": "land-025",
+        "file": "vector-preview/10m/land-025.json",
+        "bbox": [
+          64071.2,
+          127231.1,
+          110044.4,
+          157199.7
+        ],
+        "featureCount": 4,
+        "pointCount": 16545,
+        "bytes": 310523,
+        "sha256": "afa7dd5fd158aa748288b9405a40f4a98c8e4f4473a2b83494ed253a295a4c66"
+      },
+      {
+        "id": "land-026",
+        "file": "vector-preview/10m/land-026.json",
+        "bbox": [
+          51370.2,
+          144023,
+          82705.8,
+          180408.1
+        ],
+        "featureCount": 1,
+        "pointCount": 17197,
+        "bytes": 320420,
+        "sha256": "16c2bb376f4613f321f823933232eff32b67b5fa898f1fb3567700b5f33924ff"
+      },
+      {
+        "id": "land-027",
+        "file": "vector-preview/10m/land-027.json",
+        "bbox": [
+          77486.8,
+          136826.6,
+          126957.5,
+          185255.7
+        ],
+        "featureCount": 8,
+        "pointCount": 8450,
+        "bytes": 160005,
+        "sha256": "32ec9c7bc166186de2bef8a0954c3f90263a60e18566d5d979f1acb7893fadc1"
+      },
+      {
+        "id": "land-028",
+        "file": "vector-preview/10m/land-028.json",
+        "bbox": [
+          3973.4,
+          127628.8,
+          259850.9,
+          139473.9
+        ],
+        "featureCount": 1,
+        "pointCount": 709,
+        "bytes": 13845,
+        "sha256": "5ad2a468923d48250e08c208236dec8accec6a0de8a698dcc5894d4c50bd949f"
+      },
+      {
+        "id": "land-029",
+        "file": "vector-preview/10m/land-029.json",
+        "bbox": [
+          137403.9,
+          127152.1,
+          153849.7,
+          140963.5
+        ],
+        "featureCount": 3,
+        "pointCount": 5675,
+        "bytes": 112116,
+        "sha256": "bbba3c42dba44f1f46b63067ccbf25f6f263271394a614538ea74d737f099ea7"
+      },
+      {
+        "id": "land-030",
+        "file": "vector-preview/10m/land-030.json",
+        "bbox": [
+          0,
+          140228.9,
+          262144,
+          147274.1
+        ],
+        "featureCount": 1,
+        "pointCount": 1476,
+        "bytes": 28528,
+        "sha256": "952980b0bf5b0b130a7a1e003010c580b7addf9f9b4e167d556e11efbd1925a9"
+      },
+      {
+        "id": "land-031",
+        "file": "vector-preview/10m/land-031.json",
+        "bbox": [
+          139569.4,
+          131789.9,
+          163497.1,
+          153119.4
+        ],
+        "featureCount": 10,
+        "pointCount": 10767,
+        "bytes": 213187,
+        "sha256": "d6024c6f38000091e5e84075a588f7dd61710785b37c970dd79303efb1f64cfb"
+      },
+      {
+        "id": "land-032",
+        "file": "vector-preview/10m/land-032.json",
+        "bbox": [
+          1486.9,
+          137316.2,
+          261302.2,
+          176268.7
+        ],
+        "featureCount": 1,
+        "pointCount": 4532,
+        "bytes": 88792,
+        "sha256": "ffc5e6b8c3217723399ce69d45a62f4a1a7ec84cd7f2964e4a3135cb7610f73d"
+      },
+      {
+        "id": "land-033",
+        "file": "vector-preview/10m/land-033.json",
+        "bbox": [
+          143065.1,
+          133834.6,
+          208051.1,
+          176983.6
+        ],
+        "featureCount": 11,
+        "pointCount": 6403,
+        "bytes": 128425,
+        "sha256": "8766690477055f909447c0ba4a9c047d3fd62a86acee9240d255623443f88391"
+      },
+      {
+        "id": "land-034",
+        "file": "vector-preview/10m/land-034.json",
+        "bbox": [
+          200258.1,
+          126760.7,
+          233728.8,
+          139074.2
+        ],
+        "featureCount": 1,
+        "pointCount": 19563,
+        "bytes": 384640,
+        "sha256": "4c285ed88909e132c213069e995af76bbe5192b32e5dc58c52d78ec365a7938c"
+      },
+      {
+        "id": "land-035",
+        "file": "vector-preview/10m/land-035.json",
+        "bbox": [
+          221056.6,
+          131429.1,
+          262076.1,
+          148028.7
+        ],
+        "featureCount": 9,
+        "pointCount": 9339,
+        "bytes": 185563,
+        "sha256": "75e9fcf34dae48c4f05a7fd9f86e6a8b3dd79b4e978cc51b5b2375d80c173080"
+      },
+      {
+        "id": "land-036",
+        "file": "vector-preview/10m/land-036.json",
+        "bbox": [
+          213297.4,
+          137829.8,
+          253403.2,
+          178912.5
+        ],
+        "featureCount": 2,
+        "pointCount": 13676,
+        "bytes": 268865,
+        "sha256": "1f6bc5978e6105a87bcd5fb1ee66c6e1f1ac2bd89008748ebeebdc3c4c84d5b5"
+      },
+      {
+        "id": "land-037",
+        "file": "vector-preview/10m/land-037.json",
+        "bbox": [
+          0,
+          186775.2,
+          262144,
+          262144
+        ],
+        "featureCount": 1,
+        "pointCount": 23796,
+        "bytes": 452293,
+        "sha256": "940f81bd94e105f40f0700d6b29c0e8b40cc7bafdac808957659295d1e972133"
+      }
+    ],
+    "borders": [
+      {
+        "id": "borders-000",
+        "file": "vector-preview/10m/borders-000.json",
+        "bbox": [
+          28394.9,
+          59404.9,
+          82155.9,
+          120364.1
+        ],
+        "featureCount": 8,
+        "pointCount": 2582,
+        "bytes": 48684,
+        "sha256": "6816a260164beb59bdeace20a46082af803356286a60980fb25ea79098cbd54b"
+      },
+      {
+        "id": "borders-001",
+        "file": "vector-preview/10m/borders-001.json",
+        "bbox": [
+          125084.7,
+          82827.5,
+          132112.8,
+          97251.5
+        ],
+        "featureCount": 3,
+        "pointCount": 529,
+        "bytes": 10600,
+        "sha256": "ca5dd6494efb33b86a3dbbea5cec1fe15ccbda219a1dbb1d61f35cf97e3d119f"
+      },
+      {
+        "id": "borders-002",
+        "file": "vector-preview/10m/borders-002.json",
+        "bbox": [
+          65452.4,
+          97161.6,
+          130320.5,
+          131149.9
+        ],
+        "featureCount": 58,
+        "pointCount": 5290,
+        "bytes": 110629,
+        "sha256": "4914713ff7f5465ab35b8de2f222c590799c16cf77ad0e3be1b896b5c2bbf25f"
+      },
+      {
+        "id": "borders-003",
+        "file": "vector-preview/10m/borders-003.json",
+        "bbox": [
+          118872.4,
+          112264.8,
+          134151.2,
+          127899.3
+        ],
+        "featureCount": 20,
+        "pointCount": 4495,
+        "bytes": 92931,
+        "sha256": "4a57b1188e2392b161c3f8c90a08ac675175e017def9c1f631c78f0afa43a512"
+      },
+      {
+        "id": "borders-004",
+        "file": "vector-preview/10m/borders-004.json",
+        "bbox": [
+          132096.2,
+          58507.2,
+          195017.9,
+          98684.1
+        ],
+        "featureCount": 119,
+        "pointCount": 17669,
+        "bytes": 353703,
+        "sha256": "15a2b653b3ae14d4a0256040196c56c43f7243ffd86e6212f4e3043c689847bf"
+      },
+      {
+        "id": "borders-005",
+        "file": "vector-preview/10m/borders-005.json",
+        "bbox": [
+          130951,
+          89881.8,
+          194659.2,
+          132307.4
+        ],
+        "featureCount": 160,
+        "pointCount": 17828,
+        "bytes": 379317,
+        "sha256": "a08cf5692ffa8e786ebd5c2df5eb6e96810b07a56cec50a3a093be9b7df8d1d5"
+      },
+      {
+        "id": "borders-006",
+        "file": "vector-preview/10m/borders-006.json",
+        "bbox": [
+          162126.8,
+          86436.6,
+          218385.6,
+          125230.1
+        ],
+        "featureCount": 27,
+        "pointCount": 4022,
+        "bytes": 82895,
+        "sha256": "5cfde4389b6c0b2e61c204ad36c47328eb255ecee347f2997bcb4175241f8553"
+      },
+      {
+        "id": "borders-007",
+        "file": "vector-preview/10m/borders-007.json",
+        "bbox": [
+          195167.5,
+          84700.3,
+          237343,
+          130452
+        ],
+        "featureCount": 34,
+        "pointCount": 9694,
+        "bytes": 195891,
+        "sha256": "612787b87b83e62f13b5da9e8a3e761a47f71b6b3d69f7df0de0c7b866ea7642"
+      },
+      {
+        "id": "borders-008",
+        "file": "vector-preview/10m/borders-008.json",
+        "bbox": [
+          72443.4,
+          129780.9,
+          92397.9,
+          179382.2
+        ],
+        "featureCount": 38,
+        "pointCount": 7131,
+        "bytes": 140799,
+        "sha256": "3d3e90a37792a8b4ab0c03719a358c771e2c56af16c741873aa1853cf9558e2f"
+      },
+      {
+        "id": "borders-009",
+        "file": "vector-preview/10m/borders-009.json",
+        "bbox": [
+          139165,
+          128538.7,
+          160517.2,
+          154545.7
+        ],
+        "featureCount": 43,
+        "pointCount": 7687,
+        "bytes": 160050,
+        "sha256": "e899cbddc39612a3d44119fb8956dc11414a688e1f702b5083cfbb293c08523f"
+      },
+      {
+        "id": "borders-010",
+        "file": "vector-preview/10m/borders-010.json",
+        "bbox": [
+          221387.9,
+          132966.3,
+          233728.8,
+          138022.5
+        ],
+        "featureCount": 3,
+        "pointCount": 217,
+        "bytes": 4922,
+        "sha256": "34bcab374f7cd3f3cd524b7c08b5b29cf7bb381651e9840846f9ef9ea7fa4087"
+      }
+    ],
+    "coastlines": [
+      {
+        "id": "coastlines-000",
+        "file": "vector-preview/10m/coastlines-000.json",
+        "bbox": [
+          58113.2,
+          23170.6,
+          69240.5,
+          36572.2
+        ],
+        "featureCount": 3,
+        "pointCount": 1330,
+        "bytes": 23983,
+        "sha256": "44499f0d9c4b82f1c0d422c8d4e4805ae057a635cc8842aec7c734021c9e9018"
+      },
+      {
+        "id": "coastlines-001",
+        "file": "vector-preview/10m/coastlines-001.json",
+        "bbox": [
+          0,
+          32017.2,
+          63277.8,
+          69510.1
+        ],
+        "featureCount": 28,
+        "pointCount": 3693,
+        "bytes": 68326,
+        "sha256": "f05c1c57c97c62043626f046ae77a0b39f91cd0747538484e0298af8ae8d7a1e"
+      },
+      {
+        "id": "coastlines-002",
+        "file": "vector-preview/10m/coastlines-002.json",
+        "bbox": [
+          30678.5,
+          38264,
+          65794.9,
+          65836
+        ],
+        "featureCount": 85,
+        "pointCount": 12897,
+        "bytes": 242188,
+        "sha256": "9ab468f2e933695660cb53b43ca14df0340472d266dd9b6890e026cff658605d"
+      },
+      {
+        "id": "coastlines-003",
+        "file": "vector-preview/10m/coastlines-003.json",
+        "bbox": [
+          60463.8,
+          12247.7,
+          118502.9,
+          76144.1
+        ],
+        "featureCount": 47,
+        "pointCount": 17623,
+        "bytes": 320598,
+        "sha256": "422e181db7212c93da840e805b493e5ccad1a895d3348a6be24ad85dc7e857e6"
+      },
+      {
+        "id": "coastlines-004",
+        "file": "vector-preview/10m/coastlines-004.json",
+        "bbox": [
+          65449.6,
+          10522.3,
+          122787.7,
+          73341
+        ],
+        "featureCount": 44,
+        "pointCount": 17978,
+        "bytes": 330267,
+        "sha256": "c36fb45ec0fd02d75ced27c10ea380a5aedf02fa3e115fc35943860e43573015"
+      },
+      {
+        "id": "coastlines-005",
+        "file": "vector-preview/10m/coastlines-005.json",
+        "bbox": [
+          106331.7,
+          47244,
+          125291.4,
+          65499.2
+        ],
+        "featureCount": 18,
+        "pointCount": 851,
+        "bytes": 19173,
+        "sha256": "9b0a821f9a6be14998a6ef552239086421fe534a8c91bd8f8c7d2b8cca5b7472"
+      },
+      {
+        "id": "coastlines-006",
+        "file": "vector-preview/10m/coastlines-006.json",
+        "bbox": [
+          623.7,
+          55553.5,
+          65099.3,
+          87510.1
+        ],
+        "featureCount": 198,
+        "pointCount": 17868,
+        "bytes": 347352,
+        "sha256": "d0d06d612d5a59454ddf2c302d8b971fd1c18ae441a9188b569a1aae1f9fdd10"
+      },
+      {
+        "id": "coastlines-007",
+        "file": "vector-preview/10m/coastlines-007.json",
+        "bbox": [
+          1234.7,
+          75919,
+          65542.2,
+          130933.4
+        ],
+        "featureCount": 175,
+        "pointCount": 16285,
+        "bytes": 324732,
+        "sha256": "71725b835c9c3cef249bf1ec16262a90d0f514210ae3a5e377611c7c0f8ec99e"
+      },
+      {
+        "id": "coastlines-008",
+        "file": "vector-preview/10m/coastlines-008.json",
+        "bbox": [
+          51530.1,
+          65626.1,
+          82000.7,
+          130880.4
+        ],
+        "featureCount": 39,
+        "pointCount": 3962,
+        "bytes": 78934,
+        "sha256": "d84ed3b1aa249900e6cd26459629bda6fc276a96866e752fd4f2f345d9658aa0"
+      },
+      {
+        "id": "coastlines-009",
+        "file": "vector-preview/10m/coastlines-009.json",
+        "bbox": [
+          56380.7,
+          54185.5,
+          90573.3,
+          96239.3
+        ],
+        "featureCount": 47,
+        "pointCount": 17983,
+        "bytes": 325231,
+        "sha256": "0a801317f6e76e8b450c7258f4773bc674280b03af5689d52ffc3d5a35afa17e"
+      },
+      {
+        "id": "coastlines-010",
+        "file": "vector-preview/10m/coastlines-010.json",
+        "bbox": [
+          71315.8,
+          65493.3,
+          130522.4,
+          98253.9
+        ],
+        "featureCount": 249,
+        "pointCount": 17850,
+        "bytes": 368240,
+        "sha256": "b31530b3da359a4db1746bd7439b8e6cb7901aa761dcc0dba9975ee63890e3cd"
+      },
+      {
+        "id": "coastlines-011",
+        "file": "vector-preview/10m/coastlines-011.json",
+        "bbox": [
+          123477.8,
+          78015.8,
+          132361.7,
+          93455.3
+        ],
+        "featureCount": 21,
+        "pointCount": 4190,
+        "bytes": 81778,
+        "sha256": "fabb5a7f2f563e8e360e9ebe758f8bcdb940dc988dfe5111827aab12b0db803c"
+      },
+      {
+        "id": "coastlines-012",
+        "file": "vector-preview/10m/coastlines-012.json",
+        "bbox": [
+          59788.3,
+          96237,
+          83997,
+          124652
+        ],
+        "featureCount": 223,
+        "pointCount": 17113,
+        "bytes": 356494,
+        "sha256": "df2d774f359cbb76e60bd00d01c19f7e0104c8169ab6ebd418821eabb36f19a5"
+      },
+      {
+        "id": "coastlines-013",
+        "file": "vector-preview/10m/coastlines-013.json",
+        "bbox": [
+          67634.9,
+          99500,
+          131075.2,
+          131110.4
+        ],
+        "featureCount": 174,
+        "pointCount": 8946,
+        "bytes": 199504,
+        "sha256": "6cbc35f9a9f70c421e18dac96e83108828d4414c2d9ba2ec3a4b31cb213c9098"
+      },
+      {
+        "id": "coastlines-014",
+        "file": "vector-preview/10m/coastlines-014.json",
+        "bbox": [
+          138706.5,
+          20812.8,
+          204115.4,
+          70255.9
+        ],
+        "featureCount": 176,
+        "pointCount": 16745,
+        "bytes": 343266,
+        "sha256": "d3b7ae03d6ad2f04bae9e8486c14085eec16ff36d2106a635a2ca8973e40a54a"
+      },
+      {
+        "id": "coastlines-015",
+        "file": "vector-preview/10m/coastlines-015.json",
+        "bbox": [
+          198126.4,
+          31742.3,
+          262144,
+          61705.7
+        ],
+        "featureCount": 51,
+        "pointCount": 6606,
+        "bytes": 132192,
+        "sha256": "7dd4f6591d6389dd6625ff5bb781fc153b4792e01fd650e4a9fa88234ff962df"
+      },
+      {
+        "id": "coastlines-016",
+        "file": "vector-preview/10m/coastlines-016.json",
+        "bbox": [
+          134453.5,
+          65632.9,
+          149321.5,
+          81941.8
+        ],
+        "featureCount": 143,
+        "pointCount": 4558,
+        "bytes": 110627,
+        "sha256": "97f07c47f91220264f6d86665a499169d56a9f326c61efe7173ed3ecb132928d"
+      },
+      {
+        "id": "coastlines-017",
+        "file": "vector-preview/10m/coastlines-017.json",
+        "bbox": [
+          131606.4,
+          56200.7,
+          161211.6,
+          87336.6
+        ],
+        "featureCount": 67,
+        "pointCount": 16771,
+        "bytes": 324318,
+        "sha256": "dc890f342e00f8370dc3ee683f8aae17fa3a10b8943c3ec583ef1d1150bfdc72"
+      },
+      {
+        "id": "coastlines-018",
+        "file": "vector-preview/10m/coastlines-018.json",
+        "bbox": [
+          124156.2,
+          79295.9,
+          170952.4,
+          105033.7
+        ],
+        "featureCount": 81,
+        "pointCount": 17970,
+        "bytes": 353048,
+        "sha256": "ccce50603f0eb12ede85f6d294ecc40d3364b244c04ece050555fd2c055b0b65"
+      },
+      {
+        "id": "coastlines-019",
+        "file": "vector-preview/10m/coastlines-019.json",
+        "bbox": [
+          118302.6,
+          91894.8,
+          180213.3,
+          131200.7
+        ],
+        "featureCount": 146,
+        "pointCount": 16861,
+        "bytes": 355259,
+        "sha256": "68434968ef5a6fe60903ff3229aead1563895422ab1d7c37655c87358ad60913"
+      },
+      {
+        "id": "coastlines-020",
+        "file": "vector-preview/10m/coastlines-020.json",
+        "bbox": [
+          154619.6,
+          108144.5,
+          195985.2,
+          130916.6
+        ],
+        "featureCount": 200,
+        "pointCount": 10577,
+        "bytes": 243946,
+        "sha256": "16f86a141b3449f2200d29f3bbd277304cddfe514fb9f719fc013161905bef33"
+      },
+      {
+        "id": "coastlines-021",
+        "file": "vector-preview/10m/coastlines-021.json",
+        "bbox": [
+          196855.3,
+          68063.2,
+          262144,
+          114721.4
+        ],
+        "featureCount": 121,
+        "pointCount": 17972,
+        "bytes": 363384,
+        "sha256": "08199b519ad8769e19e2d50d298c92c4de34a3417ee8dadf703cec657ec59be8"
+      },
+      {
+        "id": "coastlines-022",
+        "file": "vector-preview/10m/coastlines-022.json",
+        "bbox": [
+          194718.3,
+          102631.3,
+          229397.9,
+          130146.8
+        ],
+        "featureCount": 239,
+        "pointCount": 17976,
+        "bytes": 396104,
+        "sha256": "da935a86c9f1f54c96f26d1dd56bc9e5f8dd94836a0c648a7c1597a646633096"
+      },
+      {
+        "id": "coastlines-023",
+        "file": "vector-preview/10m/coastlines-023.json",
+        "bbox": [
+          200258.1,
+          97754.8,
+          257717.9,
+          134121.5
+        ],
+        "featureCount": 359,
+        "pointCount": 17967,
+        "bytes": 417442,
+        "sha256": "125dbdee5e0c048ca4255f28d09e0a3a57e8a09fed8cc05abfa7381d2e400a88"
+      },
+      {
+        "id": "coastlines-024",
+        "file": "vector-preview/10m/coastlines-024.json",
+        "bbox": [
+          0,
+          130960,
+          65404.5,
+          167169.7
+        ],
+        "featureCount": 168,
+        "pointCount": 2671,
+        "bytes": 78479,
+        "sha256": "53b562fcf73833d46f9fc72cad04edfbe875fb084b33269ee5f85a8832284a01"
+      },
+      {
+        "id": "coastlines-025",
+        "file": "vector-preview/10m/coastlines-025.json",
+        "bbox": [
+          65713,
+          124384.2,
+          126957.5,
+          178293.7
+        ],
+        "featureCount": 185,
+        "pointCount": 17915,
+        "bytes": 368364,
+        "sha256": "9e9cca07f20c6bcc0a93225a78b3bcf8d91ffcb439856860396c953fd3d1b37e"
+      },
+      {
+        "id": "coastlines-026",
+        "file": "vector-preview/10m/coastlines-026.json",
+        "bbox": [
+          75940.6,
+          158708.7,
+          111965.1,
+          196382.6
+        ],
+        "featureCount": 108,
+        "pointCount": 13341,
+        "bytes": 268362,
+        "sha256": "9bc0814374f8f9978d3ab008b506405180011f1300fc6bac5d8ff1f179d70f8c"
+      },
+      {
+        "id": "coastlines-027",
+        "file": "vector-preview/10m/coastlines-027.json",
+        "bbox": [
+          18523.5,
+          200843.7,
+          65171,
+          223279.2
+        ],
+        "featureCount": 33,
+        "pointCount": 1419,
+        "bytes": 32474,
+        "sha256": "92595d0a814277834a82f17e61c61d14322c418f941f0f14330ee92a0d9539eb"
+      },
+      {
+        "id": "coastlines-028",
+        "file": "vector-preview/10m/coastlines-028.json",
+        "bbox": [
+          0,
+          190945.5,
+          93402.9,
+          262144
+        ],
+        "featureCount": 1,
+        "pointCount": 6605,
+        "bytes": 122945,
+        "sha256": "cc1e08db5c42a4c84de0683899d12418a7179d121e98f776c7511a36c3a4486e"
+      },
+      {
+        "id": "coastlines-029",
+        "file": "vector-preview/10m/coastlines-029.json",
+        "bbox": [
+          5897.3,
+          227610.8,
+          19009.4,
+          249028.7
+        ],
+        "featureCount": 8,
+        "pointCount": 321,
+        "bytes": 7438,
+        "sha256": "1258cbe6f380c06609f0117df62d9a07e10e5fc057c36b97f553f6f536ad73dd"
+      },
+      {
+        "id": "coastlines-030",
+        "file": "vector-preview/10m/coastlines-030.json",
+        "bbox": [
+          65291.1,
+          196800,
+          129556.9,
+          236947.8
+        ],
+        "featureCount": 48,
+        "pointCount": 3041,
+        "bytes": 65794,
+        "sha256": "38a2fba80d242bd532ccddc0b0d805a327647155e3eaf7d8f5a6392257b3fa33"
+      },
+      {
+        "id": "coastlines-031",
+        "file": "vector-preview/10m/coastlines-031.json",
+        "bbox": [
+          133508.2,
+          126540.5,
+          187567.8,
+          178550.6
+        ],
+        "featureCount": 96,
+        "pointCount": 9491,
+        "bytes": 203632,
+        "sha256": "77a01bca26d41c3533edf76d35e3dea8fd66e159227c63fc3525ba2f36f0ee0f"
+      },
+      {
+        "id": "coastlines-032",
+        "file": "vector-preview/10m/coastlines-032.json",
+        "bbox": [
+          200392.5,
+          126947.7,
+          229374.7,
+          152726.6
+        ],
+        "featureCount": 201,
+        "pointCount": 13625,
+        "bytes": 303677,
+        "sha256": "c9115da3e962607c60b183072d0bacd91be07f3864e533f2df11eb8effb68ab9"
+      },
+      {
+        "id": "coastlines-033",
+        "file": "vector-preview/10m/coastlines-033.json",
+        "bbox": [
+          213470.4,
+          131324.8,
+          262076.1,
+          158432
+        ],
+        "featureCount": 224,
+        "pointCount": 17942,
+        "bytes": 392657,
+        "sha256": "ab56e3c4098cc0bd5442a91328550855ef569089e4276bdaa3ab2a01426fd618"
+      },
+      {
+        "id": "coastlines-034",
+        "file": "vector-preview/10m/coastlines-034.json",
+        "bbox": [
+          198236.1,
+          138900.1,
+          262144,
+          196647
+        ],
+        "featureCount": 93,
+        "pointCount": 12215,
+        "bytes": 256482,
+        "sha256": "e62319b25dab2ad430512869477d05617d1a2f14c302c9b03708f3c6710e38af"
+      },
+      {
+        "id": "coastlines-035",
+        "file": "vector-preview/10m/coastlines-035.json",
+        "bbox": [
+          131756.3,
+          202854.5,
+          150646.6,
+          204938.3
+        ],
+        "featureCount": 9,
+        "pointCount": 167,
+        "bytes": 4977,
+        "sha256": "7d20d739de0a053be5589bfae490b953b95873331067f9dd3dcb9b3d5b2db1c4"
+      },
+      {
+        "id": "coastlines-036",
+        "file": "vector-preview/10m/coastlines-036.json",
+        "bbox": [
+          93402.9,
+          195403.8,
+          174701.5,
+          245072.1
+        ],
+        "featureCount": 1,
+        "pointCount": 3162,
+        "bytes": 62096,
+        "sha256": "3549f26db8ef3ca2e52035bcfc969755cfedd4f56a3728cee2999eb72268366f"
+      },
+      {
+        "id": "coastlines-037",
+        "file": "vector-preview/10m/coastlines-037.json",
+        "bbox": [
+          165595.9,
+          196613.7,
+          219323.6,
+          208700.1
+        ],
+        "featureCount": 11,
+        "pointCount": 272,
+        "bytes": 7421,
+        "sha256": "3655c4afc05bfee0149f2271b6465878d297df0b7d3c47082bbcf73dedd6b5f3"
+      },
+      {
+        "id": "coastlines-038",
+        "file": "vector-preview/10m/coastlines-038.json",
+        "bbox": [
+          174701.5,
+          195261.6,
+          262144,
+          256628.9
+        ],
+        "featureCount": 1,
+        "pointCount": 5442,
+        "bytes": 106915,
+        "sha256": "d2f5c14114b526f423d74616da88d0b57c534b660706dabc29328e0190473df6"
+      },
+      {
+        "id": "coastlines-039",
+        "file": "vector-preview/10m/coastlines-039.json",
+        "bbox": [
+          248899.8,
+          196927.1,
+          254834.3,
+          226163.3
+        ],
+        "featureCount": 12,
+        "pointCount": 371,
+        "bytes": 9562,
+        "sha256": "2b25e02c303fd4d680bee9d825cb498970bcc47b92b7fa61069c0a4e7d07c1bd"
+      }
+    ]
+  },
+  "totals": {
+    "chunks": 89,
+    "features": 4904,
+    "points": 1036072,
+    "bytes": 20363411
+  }
+}

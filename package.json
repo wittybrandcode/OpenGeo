@@ -1,0 +1,50 @@
+{
+  "name": "opengeo",
+  "version": "1.0.0",
+  "description": "Interactive map extension for Adobe After Effects",
+  "main": "client/index.html",
+  "scripts": {
+    "clean": "node scripts/build.js",
+    "build": "node scripts/build.js",
+    "vector:data": "node scripts/build-vector-runtime-data.js",
+    "vector:preview-index": "node scripts/build-vector-runtime-data.js",
+    "verify:data": "node scripts/verify-vector-data-reproducibility.js",
+    "record:data-baseline": "node scripts/verify-vector-data-reproducibility.js --record",
+    "benchmark:preview": "node scripts/benchmark-preview.js",
+    "audit:events": "node scripts/audit-events.js",
+    "audit:security": "node scripts/security-audit.js",
+    "audit:dependencies": "node scripts/supply-chain-audit.js",
+    "audit:compatibility": "node scripts/compatibility-audit.js",
+    "audit:performance": "node scripts/performance-audit.js",
+    "sbom:generate": "node scripts/supply-chain-audit.js",
+    "artifact:manifest": "node scripts/artifact-manifest.js",
+    "artifact:verify": "node scripts/artifact-manifest.js --verify",
+    "land-borders:data": "node scripts/build-vector-runtime-data.js",
+    "verify:geometry": "node scripts/verify-vector-geometry.js",
+    "verify:runtime-data": "node scripts/runtime-data-contract.js",
+    "test": "node scripts/test.js",
+    "baseline:record": "node scripts/baseline-manifest.js",
+    "baseline:verify": "node scripts/baseline-manifest.js verify",
+    "sync:versions": "node scripts/sync-versions.js",
+    "verify:package": "node scripts/verify-package.js",
+    "verify:release": "node scripts/verify-release.js",
+    "package:zxp": "npm run verify:release && npm run sync:versions && npm run verify:package && node scripts/zxp.js"
+  },
+  "keywords": [
+    "after-effects",
+    "cep",
+    "map",
+    "extension"
+  ],
+  "license": "MIT",
+  "directories": {
+    "doc": "docs"
+  },
+  "author": "",
+  "type": "commonjs",
+  "devDependencies": {
+    "@turf/bbox-clip": "^7.3.1",
+    "@turf/helpers": "^7.3.1",
+    "@turf/union": "^7.4.0"
+  }
+}

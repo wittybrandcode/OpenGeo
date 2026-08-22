@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyId": "opengeo-cartography-policy",
+  "policyVersion": "1.0.0",
+  "effectiveDate": "2026-08-14",
+  "dataBundleVersion": "1.0.0",
+  "sourceCatalog": {
+    "path": "scripts/vector-data-sources/SOURCES_MANIFEST.json",
+    "version": "1.0.0"
+  },
+  "governance": {
+    "defaultDisputedBoundaryAuthority": "United Nations",
+    "defaultRule": "Use a reviewed and pinned United Nations cartographic or geospatial reference when OpenGeo introduces a disputed-boundary profile.",
+    "productOwnerOverrideAllowed": true,
+    "precedence": [
+      "explicit-versioned-product-owner-override",
+      "reviewed-and-pinned-united-nations-reference",
+      "pinned-canonical-source-default"
+    ],
+    "activationRequirements": [
+      "affected ISO3 identities",
+      "source provenance and license",
+      "source SHA-256",
+      "rule identifier and rationale",
+      "expected output geometry SHA-256",
+      "policy version increment"
+    ]
+  },
+  "geometryRules": {
+    "projection": "EPSG:3857 world size 262144",
+    "simplification": "none",
+    "countryOutline": "exterior land polygon rings including coastline; exclude holes, EEZ, and maritime-political lines",
+    "landBorders": "Natural Earth TYPE === Land only"
+  },
+  "activeProfiles": [
+    {
+      "profileId": "western-sahara-separated-v1",
+      "status": "active-locked",
+      "decisionType": "explicit-versioned-product-owner-override",
+      "ruleIds": [
+        "outline.country-exterior.no-simplification.v1",
+        "dispute.mar-esh.separate.v1"
+      ],
+      "affectedIso3": [
+        "MAR",
+        "ESH"
+      ],
+      "rationale": "Preserve the currently approved OpenGeo product geometry: Morocco and Western Sahara remain separate drawing identities and neither outline may drift during unrelated cartographic work.",
+      "build": {
+        "strategy": "latitude-split-and-union",
+        "splitLatitude": 27.666666666666668,
+        "morocco": "topology MAR geometry north of the split",
+        "westernSahara": "topology MAR geometry south of the split unioned with the canonical ESH geometry"
+      },
+      "sources": [
+        {
+          "path": "scripts/vector-data-sources/opengeo-profiles/countries_clipped.topojson",
+          "catalogVersion": "1.0.0",
+          "provenance": "User-supplied OpenGeo profile source",
+          "license": "Project-owner supplied and approved for this product profile",
+          "sha256": "f7029df755d0c015fc73aaf20059bae2dca31d29598a5baee17aef1fb26e6266"
+        },
+        {
+          "path": "scripts/vector-data-sources/natural-earth/10m/ne_10m_admin_0_countries.geojson",
+          "catalogVersion": "1.0.0",
+          "provenance": "Natural Earth 1:10m source pinned by the OpenGeo source catalog",
+          "license": "Public Domain",
+          "sha256": "239eec57ac17f100a11e2536cffc56752c318b50ae765b0918ff7aab4ce8f255"
+        }
+      ],
+      "expectedGeometrySha256": {
+        "MAR": "0957580f738236ebde5e82d0e63c92a6670d07e8bfc43697b6d53763bd820ad1",
+        "ESH": "2ceea2ecb47853f2c30a08328ec114fc92486b235966cfaa7507cc8cce2133a3"
+      }
+    }
+  ],
+  "plannedReviews": [
+    {
+      "reviewId": "palestine-boundary-review-v1",
+      "status": "planned-no-runtime-effect",
+      "affectedIso3": [
+        "PSE",
+        "ISR"
+      ],
+      "startingAuthority": "United Nations",
+      "note": "Future work only. No geometry changes are authorized by this entry."
+    },
+    {
+      "reviewId": "global-disputed-boundaries-inventory-v1",
+      "status": "planned-no-runtime-effect",
+      "affectedIso3": [],
+      "startingAuthority": "United Nations",
+      "note": "Inventory disputed territories individually; never apply one global geometry rewrite."
+    }
+  ]
+}

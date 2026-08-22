@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+  <!-- Outer glowing ring -->
+  <circle cx="100" cy="100" r="90" fill="none" stroke="#1473e6" stroke-width="4" opacity="0.3" />
+  <circle cx="100" cy="100" r="75" fill="none" stroke="#1473e6" stroke-width="2" stroke-dasharray="8 8" opacity="0.6" />
+  
+  <!-- Planet Core -->
+  <circle cx="100" cy="100" r="60" fill="url(#globeGrad)" />
+  
+  <!-- Simple continents/abstract geometry -->
+  <path d="M 60,100 C 60,70 140,70 140,100 C 140,130 60,130 60,100" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8" />
+  <path d="M 100,40 C 70,70 70,130 100,160 C 130,130 130,70 100,40" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8" />
+  
+  <circle cx="100" cy="100" r="8" fill="#ffffff" />
+  <circle cx="100" cy="100" r="16" fill="none" stroke="#ffffff" stroke-width="2" />
+  
+  <defs>
+    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c8cff" />
+      <stop offset="100%" stop-color="#0d47a1" />
+    </linearGradient>
+  </defs>
+</svg>

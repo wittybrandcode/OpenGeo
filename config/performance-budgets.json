@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0.0",
+  "previewVector": {
+    "parseP95Ms": 50,
+    "maxChunkBytes": 2097152,
+    "maxVisiblePoints": 400000,
+    "maxVisibleChunks": 24
+  },
+  "runtimeLimits": {
+    "tileMemoryEntries": 200,
+    "tileDownloadConcurrency": 4,
+    "vectorChunkConcurrency": 2,
+    "vectorPointBudget": 400000,
+    "vectorUnloadDelayMs": 15000,
+    "trajectoryPreviewTiles": 2500,
+    "finalizeTiles": 20000,
+    "cameraWriteRevisions": 32,
+    "operationLogBytes": 1048576,
+    "operationLogFiles": 3
+  }
+}

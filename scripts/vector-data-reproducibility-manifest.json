@@ -1,0 +1,826 @@
+{
+  "schemaVersion": "1.0.0",
+  "purpose": "Deterministic clean-build baseline for all OpenGeo vector runtime artifacts.",
+  "sourceManifest": {
+    "path": "scripts/vector-data-sources/SOURCES_MANIFEST.json",
+    "version": "2.0.0",
+    "sha256": "1e2dab38116a685d58343cc5b6d8316e6e602bf19e3587bbe1dc9c8b31c005ee"
+  },
+  "toolchain": {
+    "node": "22.18.0",
+    "npmLockfileVersion": 3,
+    "dependencies": {
+      "@turf/bbox-clip": "7.4.0",
+      "@turf/helpers": "7.4.0",
+      "@turf/union": "7.4.0"
+    }
+  },
+  "buildTools": [
+    {
+      "path": "scripts/build-vector-data.js",
+      "bytes": 5592,
+      "sha256": "967c7518735e0adeb669ee3a656c343f8856b7a6a74e03dde4adcada6a233eb5"
+    },
+    {
+      "path": "scripts/build-vector-preview-index.js",
+      "bytes": 5974,
+      "sha256": "1aef0f4d578afca57c4df29062eeb68b8f919decb99076c9fcaec1c0ae35c6c7"
+    },
+    {
+      "path": "scripts/build-land-border-data.js",
+      "bytes": 20634,
+      "sha256": "eabbcb0f1398e39f88f7ca893dfabcfa74685a1d15cd39a7c5a2be379ff25c7d"
+    },
+    {
+      "path": "scripts/verify-vector-geometry.js",
+      "bytes": 15287,
+      "sha256": "9fadd3c2ad83a6341c8e8323dbeecc46798773da5310a80de9a3abfa5d6f3a70"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 4723,
+      "sha256": "5d2b1fc483777b75ba71a0f5a799b284875783abac6d3f50ee4158710ff8a57d"
+    }
+  ],
+  "outputCount": 97,
+  "outputBytes": 51395972,
+  "aggregateSha256": "8e14c2f0eb2651c60cd9117ad2fdd8e36e2c000271e2467dff770e14c6f0f1d2",
+  "outputs": [
+    {
+      "path": "vector-preview/10m/borders-000.json",
+      "bytes": 48684,
+      "sha256": "6816a260164beb59bdeace20a46082af803356286a60980fb25ea79098cbd54b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-001.json",
+      "bytes": 10600,
+      "sha256": "ca5dd6494efb33b86a3dbbea5cec1fe15ccbda219a1dbb1d61f35cf97e3d119f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-002.json",
+      "bytes": 110629,
+      "sha256": "4914713ff7f5465ab35b8de2f222c590799c16cf77ad0e3be1b896b5c2bbf25f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-003.json",
+      "bytes": 92931,
+      "sha256": "4a57b1188e2392b161c3f8c90a08ac675175e017def9c1f631c78f0afa43a512",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-004.json",
+      "bytes": 353703,
+      "sha256": "15a2b653b3ae14d4a0256040196c56c43f7243ffd86e6212f4e3043c689847bf",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-005.json",
+      "bytes": 379317,
+      "sha256": "a08cf5692ffa8e786ebd5c2df5eb6e96810b07a56cec50a3a093be9b7df8d1d5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-006.json",
+      "bytes": 82895,
+      "sha256": "5cfde4389b6c0b2e61c204ad36c47328eb255ecee347f2997bcb4175241f8553",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-007.json",
+      "bytes": 195891,
+      "sha256": "612787b87b83e62f13b5da9e8a3e761a47f71b6b3d69f7df0de0c7b866ea7642",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-008.json",
+      "bytes": 140799,
+      "sha256": "3d3e90a37792a8b4ab0c03719a358c771e2c56af16c741873aa1853cf9558e2f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-009.json",
+      "bytes": 160050,
+      "sha256": "e899cbddc39612a3d44119fb8956dc11414a688e1f702b5083cfbb293c08523f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/borders-010.json",
+      "bytes": 4922,
+      "sha256": "34bcab374f7cd3f3cd524b7c08b5b29cf7bb381651e9840846f9ef9ea7fa4087",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-000.json",
+      "bytes": 23983,
+      "sha256": "44499f0d9c4b82f1c0d422c8d4e4805ae057a635cc8842aec7c734021c9e9018",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-001.json",
+      "bytes": 68326,
+      "sha256": "f05c1c57c97c62043626f046ae77a0b39f91cd0747538484e0298af8ae8d7a1e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-002.json",
+      "bytes": 242188,
+      "sha256": "9ab468f2e933695660cb53b43ca14df0340472d266dd9b6890e026cff658605d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-003.json",
+      "bytes": 320598,
+      "sha256": "422e181db7212c93da840e805b493e5ccad1a895d3348a6be24ad85dc7e857e6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-004.json",
+      "bytes": 330267,
+      "sha256": "c36fb45ec0fd02d75ced27c10ea380a5aedf02fa3e115fc35943860e43573015",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-005.json",
+      "bytes": 19173,
+      "sha256": "9b0a821f9a6be14998a6ef552239086421fe534a8c91bd8f8c7d2b8cca5b7472",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-006.json",
+      "bytes": 347352,
+      "sha256": "d0d06d612d5a59454ddf2c302d8b971fd1c18ae441a9188b569a1aae1f9fdd10",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-007.json",
+      "bytes": 324732,
+      "sha256": "71725b835c9c3cef249bf1ec16262a90d0f514210ae3a5e377611c7c0f8ec99e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-008.json",
+      "bytes": 78934,
+      "sha256": "d84ed3b1aa249900e6cd26459629bda6fc276a96866e752fd4f2f345d9658aa0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-009.json",
+      "bytes": 325231,
+      "sha256": "0a801317f6e76e8b450c7258f4773bc674280b03af5689d52ffc3d5a35afa17e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-010.json",
+      "bytes": 368240,
+      "sha256": "b31530b3da359a4db1746bd7439b8e6cb7901aa761dcc0dba9975ee63890e3cd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-011.json",
+      "bytes": 81778,
+      "sha256": "fabb5a7f2f563e8e360e9ebe758f8bcdb940dc988dfe5111827aab12b0db803c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-012.json",
+      "bytes": 356494,
+      "sha256": "df2d774f359cbb76e60bd00d01c19f7e0104c8169ab6ebd418821eabb36f19a5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-013.json",
+      "bytes": 199504,
+      "sha256": "6cbc35f9a9f70c421e18dac96e83108828d4414c2d9ba2ec3a4b31cb213c9098",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-014.json",
+      "bytes": 343266,
+      "sha256": "d3b7ae03d6ad2f04bae9e8486c14085eec16ff36d2106a635a2ca8973e40a54a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-015.json",
+      "bytes": 132192,
+      "sha256": "7dd4f6591d6389dd6625ff5bb781fc153b4792e01fd650e4a9fa88234ff962df",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-016.json",
+      "bytes": 110627,
+      "sha256": "97f07c47f91220264f6d86665a499169d56a9f326c61efe7173ed3ecb132928d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-017.json",
+      "bytes": 324318,
+      "sha256": "dc890f342e00f8370dc3ee683f8aae17fa3a10b8943c3ec583ef1d1150bfdc72",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-018.json",
+      "bytes": 353048,
+      "sha256": "ccce50603f0eb12ede85f6d294ecc40d3364b244c04ece050555fd2c055b0b65",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-019.json",
+      "bytes": 355259,
+      "sha256": "68434968ef5a6fe60903ff3229aead1563895422ab1d7c37655c87358ad60913",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-020.json",
+      "bytes": 243946,
+      "sha256": "16f86a141b3449f2200d29f3bbd277304cddfe514fb9f719fc013161905bef33",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-021.json",
+      "bytes": 363384,
+      "sha256": "08199b519ad8769e19e2d50d298c92c4de34a3417ee8dadf703cec657ec59be8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-022.json",
+      "bytes": 396104,
+      "sha256": "da935a86c9f1f54c96f26d1dd56bc9e5f8dd94836a0c648a7c1597a646633096",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-023.json",
+      "bytes": 417442,
+      "sha256": "125dbdee5e0c048ca4255f28d09e0a3a57e8a09fed8cc05abfa7381d2e400a88",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-024.json",
+      "bytes": 78479,
+      "sha256": "53b562fcf73833d46f9fc72cad04edfbe875fb084b33269ee5f85a8832284a01",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-025.json",
+      "bytes": 368364,
+      "sha256": "9e9cca07f20c6bcc0a93225a78b3bcf8d91ffcb439856860396c953fd3d1b37e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-026.json",
+      "bytes": 268362,
+      "sha256": "9bc0814374f8f9978d3ab008b506405180011f1300fc6bac5d8ff1f179d70f8c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-027.json",
+      "bytes": 32474,
+      "sha256": "92595d0a814277834a82f17e61c61d14322c418f941f0f14330ee92a0d9539eb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-028.json",
+      "bytes": 122945,
+      "sha256": "cc1e08db5c42a4c84de0683899d12418a7179d121e98f776c7511a36c3a4486e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-029.json",
+      "bytes": 7438,
+      "sha256": "1258cbe6f380c06609f0117df62d9a07e10e5fc057c36b97f553f6f536ad73dd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-030.json",
+      "bytes": 65794,
+      "sha256": "38a2fba80d242bd532ccddc0b0d805a327647155e3eaf7d8f5a6392257b3fa33",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-031.json",
+      "bytes": 203632,
+      "sha256": "77a01bca26d41c3533edf76d35e3dea8fd66e159227c63fc3525ba2f36f0ee0f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-032.json",
+      "bytes": 303677,
+      "sha256": "c9115da3e962607c60b183072d0bacd91be07f3864e533f2df11eb8effb68ab9",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-033.json",
+      "bytes": 392657,
+      "sha256": "ab56e3c4098cc0bd5442a91328550855ef569089e4276bdaa3ab2a01426fd618",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-034.json",
+      "bytes": 256482,
+      "sha256": "e62319b25dab2ad430512869477d05617d1a2f14c302c9b03708f3c6710e38af",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-035.json",
+      "bytes": 4977,
+      "sha256": "7d20d739de0a053be5589bfae490b953b95873331067f9dd3dcb9b3d5b2db1c4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-036.json",
+      "bytes": 62096,
+      "sha256": "3549f26db8ef3ca2e52035bcfc969755cfedd4f56a3728cee2999eb72268366f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-037.json",
+      "bytes": 7421,
+      "sha256": "3655c4afc05bfee0149f2271b6465878d297df0b7d3c47082bbcf73dedd6b5f3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-038.json",
+      "bytes": 106915,
+      "sha256": "d2f5c14114b526f423d74616da88d0b57c534b660706dabc29328e0190473df6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/coastlines-039.json",
+      "bytes": 9562,
+      "sha256": "2b25e02c303fd4d680bee9d825cb498970bcc47b92b7fa61069c0a4e7d07c1bd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/index.json",
+      "bytes": 33566,
+      "sha256": "060a8896f506e7d8ae5ff9826e09017ba7b304570da2ca4daed8ddb3da6b2086",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-000.json",
+      "bytes": 1202194,
+      "sha256": "c9a5e9e77e73bcb4273469409dd436ea04abda03bdb275146b6b57749e51bf00",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-001.json",
+      "bytes": 364207,
+      "sha256": "7214eba0a4a6f8c88fd7ef5cc50b2c108f1084b487aa85c317200a4849159e7a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-002.json",
+      "bytes": 149283,
+      "sha256": "69f322e24d4af55484c4aafaa701a17ef60d7c8803a761493c387c0d2e8d88e2",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-003.json",
+      "bytes": 281365,
+      "sha256": "17f419b7bab8911a9efff82bd0449a57816d752c5c323bc89a7f8e10048e4be3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-004.json",
+      "bytes": 342314,
+      "sha256": "ddec667c97d9f0676cb052cdf4e635041f8d9351dda5ed6c8c74e7951ed52945",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-005.json",
+      "bytes": 254661,
+      "sha256": "a2c9dfbbdeda54a317ecf894cfcf60132b6603ab4b8c02068f989e95f79a3f43",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-006.json",
+      "bytes": 86808,
+      "sha256": "9cde61ba12cb7c4050b0ea085c2006e34bffdf464a4acf810a3102f9a417d2eb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-007.json",
+      "bytes": 34499,
+      "sha256": "139905c8cca08c4d8f1fbbe3f538db276e9c47aa0ebc7f8333c1e102d885e3dc",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-008.json",
+      "bytes": 2628,
+      "sha256": "60881663ce3c8919712369b4c4910649aabac3366d35631446c7074fbd61e4d6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-009.json",
+      "bytes": 129922,
+      "sha256": "a939ed885cd76d2b379e1cf5736da5e30d82327be294e5e935f35e4695e639eb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-010.json",
+      "bytes": 681377,
+      "sha256": "45b2bd9ab1fd4348b574c385f022f27441e664c97807efbf574a3f25ffdbbb03",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-011.json",
+      "bytes": 227181,
+      "sha256": "dc8b19b5df3b1489cb16b29ddaf403b31f29f9716f8ebd3b7265ca46b554cab4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-012.json",
+      "bytes": 643850,
+      "sha256": "0bd1fb5c6b427a0add2c15f61b5c49a62ac193ae7ad972ad3485870627590bce",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-013.json",
+      "bytes": 338352,
+      "sha256": "5b1de6d55b63d2ff52e0ac2c65f04b57d9d99c058881ee8684f1c62bd4fb00dd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-014.json",
+      "bytes": 310598,
+      "sha256": "d081d1d32e1cf0783ef558c0ff550731c96f9049b4ba0d7569d5a12cda0cf7ef",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-015.json",
+      "bytes": 294769,
+      "sha256": "61c90bdb132c3a3ef959e4154d101c5a4a8249fd20910e9f84f55819ca50b4f6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-016.json",
+      "bytes": 340410,
+      "sha256": "7badc17d8e86c298a6913d11bee9a11fd441243e5144a78c25a6b8759b453e86",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-017.json",
+      "bytes": 321637,
+      "sha256": "ed2e8357297f54dc3dce445099b7410e9ddf332202bed880150bc3821fea885d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-018.json",
+      "bytes": 339772,
+      "sha256": "7f7e9ea74aaf41477e1aa4c7e1787ac0a98ccd309ac6b9b8f6a6ae81e10e0f70",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-019.json",
+      "bytes": 225695,
+      "sha256": "cf954112f288b53b4a095373d7f12af86c51126bd493bf81babbe05fa327e5c3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-020.json",
+      "bytes": 324850,
+      "sha256": "33a9361a2fd00ea44447ce7aa6b4eeac4c84b51f1a5df6dccfdbb91e2177e7e1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-021.json",
+      "bytes": 322843,
+      "sha256": "8d6fe3ab182c9560bcbe377bc3b64e6b58c2147a3159dba2e2925e6d2ef0f74e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-022.json",
+      "bytes": 295652,
+      "sha256": "494948bddb75ee786de75fad4c7fde6760f2272d6fe354e9b7cb827c76939350",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-023.json",
+      "bytes": 150293,
+      "sha256": "879c9d67c31fc8dbce49430ef826b60941aa7d342ab20ef66380bd63909ad93d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-024.json",
+      "bytes": 32967,
+      "sha256": "7d8241c51d173fb5d05f9ce35e633404466e1b991a58a5d63dbde32d63eb4325",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-025.json",
+      "bytes": 310523,
+      "sha256": "afa7dd5fd158aa748288b9405a40f4a98c8e4f4473a2b83494ed253a295a4c66",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-026.json",
+      "bytes": 320420,
+      "sha256": "16c2bb376f4613f321f823933232eff32b67b5fa898f1fb3567700b5f33924ff",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-027.json",
+      "bytes": 160005,
+      "sha256": "32ec9c7bc166186de2bef8a0954c3f90263a60e18566d5d979f1acb7893fadc1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-028.json",
+      "bytes": 13845,
+      "sha256": "5ad2a468923d48250e08c208236dec8accec6a0de8a698dcc5894d4c50bd949f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-029.json",
+      "bytes": 112116,
+      "sha256": "bbba3c42dba44f1f46b63067ccbf25f6f263271394a614538ea74d737f099ea7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-030.json",
+      "bytes": 28528,
+      "sha256": "952980b0bf5b0b130a7a1e003010c580b7addf9f9b4e167d556e11efbd1925a9",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-031.json",
+      "bytes": 213187,
+      "sha256": "d6024c6f38000091e5e84075a588f7dd61710785b37c970dd79303efb1f64cfb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-032.json",
+      "bytes": 88792,
+      "sha256": "ffc5e6b8c3217723399ce69d45a62f4a1a7ec84cd7f2964e4a3135cb7610f73d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-033.json",
+      "bytes": 128425,
+      "sha256": "8766690477055f909447c0ba4a9c047d3fd62a86acee9240d255623443f88391",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-034.json",
+      "bytes": 384640,
+      "sha256": "4c285ed88909e132c213069e995af76bbe5192b32e5dc58c52d78ec365a7938c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-035.json",
+      "bytes": 185563,
+      "sha256": "75e9fcf34dae48c4f05a7fd9f86e6a8b3dd79b4e978cc51b5b2375d80c173080",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-036.json",
+      "bytes": 268865,
+      "sha256": "1f6bc5978e6105a87bcd5fb1ee66c6e1f1ac2bd89008748ebeebdc3c4c84d5b5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vector-preview/10m/land-037.json",
+      "bytes": 452293,
+      "sha256": "940f81bd94e105f40f0700d6b29c0e8b40cc7bafdac808957659295d1e972133",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "spatially indexed offline 10m preview"
+    },
+    {
+      "path": "vectors/cartography-policy.json",
+      "bytes": 3889,
+      "sha256": "e54a2937431b14e25984d0ba45df73dd27c42b7519a16c89a9b7b9724e4b5880",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "country identity, policy or drawing geometry"
+    },
+    {
+      "path": "vectors/country-index-10m.json",
+      "bytes": 50818,
+      "sha256": "956a38826b708fd9a893e7b64dec4db8aab0f9fe0d8d019f124532a9739973b5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "country identity, policy or drawing geometry"
+    },
+    {
+      "path": "vectors/country-outlines-10m.json",
+      "bytes": 4062195,
+      "sha256": "e4e152476d5f5d769d24787fb4807138c891845319134db2c81dadf2141b7785",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "country identity, policy or drawing geometry"
+    },
+    {
+      "path": "vectors/land-borders-10m.json",
+      "bytes": 3067079,
+      "sha256": "2c4abc4f5a4f263839ae323297ed234da44c4da9f26a6c5f88ef32f02fad2b4e",
+      "classification": "build-evidence",
+      "packaged": false,
+      "purpose": "build-time provenance or validation output"
+    },
+    {
+      "path": "vectors/manifest.json",
+      "bytes": 2711,
+      "sha256": "50449e88e90c854ab8b7f4773bc1305c4b9e8502b5408a4ac0e5f16369a9954c",
+      "classification": "build-evidence",
+      "packaged": false,
+      "purpose": "build-time provenance or validation output"
+    },
+    {
+      "path": "world_vector_layers_10m.json",
+      "bytes": 20148184,
+      "sha256": "1e9d64643009789be11634ae3a7f47d1db5e570112018e53b3422ab419a76876",
+      "classification": "build-intermediate",
+      "packaged": false,
+      "purpose": "monolithic input used only to generate 10m preview chunks"
+    },
+    {
+      "path": "world_vector_layers_50m.json",
+      "bytes": 3664119,
+      "sha256": "3871b241e61a714d7f08b128371ba1d1c09c5e002584f88123fcff10f366b682",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "offline 50m overview"
+    }
+  ]
+}

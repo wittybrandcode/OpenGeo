@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ExtensionManifest
+  ExtensionBundleId="com.opengeo.map"
+  ExtensionBundleName="OpenGeo"
+  ExtensionBundleVersion="1.0.0"
+  Version="7.0">
+  <ExtensionList>
+    <Extension Id="com.opengeo.map.panel" Version="1.0.0" />
+  </ExtensionList>
+  <ExecutionEnvironment>
+    <HostList>
+      <Host Name="AEFT" Version="[18.4,24.99]" />
+    </HostList>
+    <LocaleList>
+      <Locale Code="All" />
+    </LocaleList>
+    <RequiredRuntimeList>
+      <RequiredRuntime Name="CSXS" Version="11.0" />
+    </RequiredRuntimeList>
+  </ExecutionEnvironment>
+  <DispatchInfoList>
+    <Extension Id="com.opengeo.map.panel">
+      <DispatchInfo>
+        <Resources>
+          <MainPath>./client/index.html</MainPath>
+          <ScriptPath>./host/index.jsx</ScriptPath>
+          <CEFCommandLine>
+            <Parameter>--enable-nodejs</Parameter>
+          </CEFCommandLine>
+        </Resources>
+        <Lifecycle>
+          <AutoVisible>true</AutoVisible>
+        </Lifecycle>
+        <UI>
+          <Type>Panel</Type>
+          <Menu>OpenGeo</Menu>
+          <Geometry>
+            <Size>
+              <Width>300</Width>
+              <Height>500</Height>
+            </Size>
+            <MinSize>
+              <Width>280</Width>
+              <Height>200</Height>
+            </MinSize>
+            <MaxSize>
+              <Width>800</Width>
+              <Height>1200</Height>
+            </MaxSize>
+          </Geometry>
+          <Icons>
+            <Icon Type="Default">./client/assets/icons/icon-16.png</Icon>
+          </Icons>
+        </UI>
+      </DispatchInfo>
+    </Extension>
+  </DispatchInfoList>
+</ExtensionManifest>

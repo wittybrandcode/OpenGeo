@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0.0",
+  "description": "Reviewed geometric baselines for the OpenGeo 1:10m country-outline runtime package. Updating a value is a cartographic decision, not a test maintenance shortcut.",
+  "dataset": {
+    "outlinesPath": "client/assets/data/vectors/country-outlines-10m.json",
+    "indexPath": "client/assets/data/vectors/country-index-10m.json",
+    "version": "1.0.0",
+    "cartographyPolicyVersion": "1.0.0",
+    "mapSize": 262144
+  },
+  "tolerances": {
+    "coordinate": 0.000001,
+    "bbox": 0.000001,
+    "areaRelative": 1e-9,
+    "sharedBoundaryLength": 0.000001
+  },
+  "countries": {
+    "DZA": {
+      "coverageClass": "continental-single-polygon",
+      "ringCount": 1,
+      "pointCount": 201,
+      "bbox": [124750.31901000353, 101949.44884576063, 139788.3897860686, 116994.06393565671],
+      "projectedArea": 128504729.3641901,
+      "geometrySha256": "d1aaae0bb999ca78f513a9e229154f1ae97fb3be674a552abaeec9d96e557f9b",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 0
+    },
+    "MAR": {
+      "coverageClass": "locked-disputed-profile-north",
+      "ringCount": 1,
+      "pointCount": 116,
+      "bbox": [121474.72887766885, 103008.29290020617, 130321.1909350524, 110093.86423964509],
+      "projectedArea": 24641393.787189484,
+      "geometrySha256": "0957580f738236ebde5e82d0e63c92a6670d07e8bfc43697b6d53763bd820ad1",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 0
+    },
+    "ESH": {
+      "coverageClass": "locked-disputed-profile-south",
+      "ringCount": 1,
+      "pointCount": 125,
+      "bbox": [118616.7783424, 110093.86423964509, 124750.82779306665, 115607.59021943058],
+      "projectedArea": 13997287.536035538,
+      "geometrySha256": "2ceea2ecb47853f2c30a08328ec114fc92486b235966cfaa7507cc8cce2133a3",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 0
+    },
+    "ISL": {
+      "coverageClass": "island-single-polygon",
+      "ringCount": 1,
+      "pointCount": 411,
+      "bbox": [113203.61983333058, 65494.34787031522, 121239.24688121048, 70902.89910028764],
+      "projectedArea": 24275527.49450302,
+      "geometrySha256": "7af79f70f4a93f83553db8dc277be2d6ea053dd8492654c8d4a946abd91354dd",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 0
+    },
+    "IDN": {
+      "coverageClass": "archipelago-many-polygons",
+      "ringCount": 240,
+      "pointCount": 3378,
+      "bbox": [200260.25925616664, 126766.86536349039, 233729.26976068408, 139073.54359425404],
+      "projectedArea": 81166244.83518982,
+      "geometrySha256": "44465d4f4b8ac7a304c26b4163ec0e2780c97834fb8901b8005dc007edbbf4a1",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 1,
+      "knownExceptionId": "IDN-OVERLAP-001"
+    },
+    "FJI": {
+      "coverageClass": "antimeridian-archipelago",
+      "ringCount": 35,
+      "pointCount": 223,
+      "bbox": [6.20881716410319e-11, 140237.13561718725, 262144, 145314.96392179083],
+      "projectedArea": 873415.7059878767,
+      "geometrySha256": "ff3a70e192e9b803f613020d7f3625cb6915a4d13074f8e0c2c5b2bdc9e8ccf6",
+      "labelInside": true,
+      "selfIntersections": 0,
+      "unexpectedRingOverlaps": 0,
+      "expectAntimeridianSplit": true
+    }
+  },
+  "knownSourceExceptions": {
+    "IDN-OVERLAP-001": {
+      "iso3": "IDN",
+      "ringIndexes": [48, 206],
+      "expectedOverlapCount": 1,
+      "status": "pinned-source-anomaly",
+      "note": "One tiny three-point exterior component intersects a larger exterior component in the approved source. The baseline prevents silent growth; replacement belongs to a reviewed source-data upgrade."
+    }
+  },
+  "relationships": {
+    "MAR_ESH": {
+      "firstIso3": "MAR",
+      "secondIso3": "ESH",
+      "properBoundaryCrossings": 0,
+      "interiorVertexOverlaps": 0,
+      "sharedBoundaryLength": 3275.6399732918944,
+      "sharedBoundaryAxis": "horizontal",
+      "sharedBoundaryCoordinate": 110093.86423964509
+    }
+  }
+}

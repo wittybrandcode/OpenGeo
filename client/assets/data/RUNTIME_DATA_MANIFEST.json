@@ -1,0 +1,74 @@
+{
+  "schemaVersion": "1.0.0",
+  "scope": "client/assets/data",
+  "policy": "default-deny",
+  "description": "Every packaged OpenGeo data asset must match exactly one group and have an identified runtime or package-audit consumer.",
+  "expectedFileCount": 96,
+  "groups": [
+    {
+      "id": "runtime-data-contract",
+      "path": "RUNTIME_DATA_MANIFEST.json",
+      "purpose": "Package-time allowlist and runtime-data ownership contract",
+      "consumer": "scripts/runtime-data-contract.js",
+      "origin": "maintained-source"
+    },
+    {
+      "id": "geography-identity-aliases",
+      "path": "geography/identity-aliases.json",
+      "purpose": "Multilingual aliases and explicit geography identity rules",
+      "consumer": "client/js/core/GeographyIdentityResolver.js",
+      "origin": "maintained-source"
+    },
+    {
+      "id": "vector-overview-50m",
+      "path": "world_vector_layers_50m.json",
+      "purpose": "Fast offline world overview at low zoom",
+      "consumer": "client/js/overlays/VectorPreviewLayer.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "vector-preview-index-10m",
+      "path": "vector-preview/10m/index.json",
+      "purpose": "Spatial index and integrity metadata for visible 10m chunks",
+      "consumer": "client/js/overlays/VectorPreviewLayer.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "vector-preview-chunks-10m",
+      "regex": "^vector-preview/10m/(?:land|borders|coastlines)-\\d{3}\\.json$",
+      "expectedCount": 89,
+      "purpose": "Spatially chunked offline 10m land, border and coastline preview",
+      "consumer": "client/js/overlays/VectorPreviewLayer.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "cartography-policy-runtime",
+      "path": "vectors/cartography-policy.json",
+      "purpose": "Immutable policy/profile stamp persisted into composition metadata",
+      "consumer": "client/js/core/CartographyPolicy.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "country-index-runtime",
+      "path": "vectors/country-index-10m.json",
+      "purpose": "Country identity, labels and country-outline lookup",
+      "consumer": "client/js/core/GeoDataRepository.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "country-outlines-runtime",
+      "path": "vectors/country-outlines-10m.json",
+      "purpose": "High-detail local country perimeter drawn from the Search pen action",
+      "consumer": "client/js/core/VectorMapManager.js",
+      "origin": "generated-runtime"
+    }
+  ],
+  "forbiddenRuntimeArtifacts": [
+    "countries_ar.json",
+    "ne_50m_admin_0_countries.json",
+    "world_mercator_boundaries.json",
+    "world_vector_layers_10m.json",
+    "vectors/land-borders-10m.json",
+    "vectors/manifest.json"
+  ]
+}
