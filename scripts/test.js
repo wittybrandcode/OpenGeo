@@ -1230,6 +1230,66 @@ assertDoesNotThrow(() => {
   }
 }, 'Add Key supersedes stale sync and commits one packed preview generation atomically');
 
+assertAsync(async () => {
+  const emitted = [];
+  let releaseHostMutation;
+  let keyframeInvocations = 0;
+  const hostMutation = new Promise(resolve => { releaseHostMutation = resolve; });
+  const sandbox = {
+    console, Number, Map, Promise,
+    document: { getElementById() { return null; } },
+    globalEventBus: { emit(event, payload) { emitted.push({ event, payload }); } }
+  };
+  const ToolbarController = loadBrowserClass(path.resolve(__dirname, '../client/js/ui/ToolbarController.js'), 'ToolbarController', sandbox);
+  const FinalizeController = loadBrowserClass(path.resolve(__dirname, '../client/js/core/FinalizeController.js'), 'FinalizeController', {
+    console,
+    globalEventBus: sandbox.globalEventBus
+  });
+  const app = {
+    activeCompId: 41,
+    mapState: { latitude: 12, longitude: 23, compZoom: 6 },
+    lifecycle: {},
+    syncManager: { prepareForKeyframeMutation() {}, queueTrajectoryPreview() {} },
+    aeBridge: {
+      invoke(command) {
+        if (command !== 'keyframe.add') throw new Error('Unexpected bridge command');
+        keyframeInvocations++;
+        return hostMutation;
+      }
+    }
+  };
+  const toolbar = new ToolbarController(app);
+  app.toolbarController = toolbar;
+  const finalize = new FinalizeController(app);
+  app.finalizeController = finalize;
+
+  const keyframe = toolbar._addKeyframe({ silent: true });
+  await Promise.resolve();
+  if (!toolbar.hasPendingKeyframeMutation(41) || keyframeInvocations !== 1) {
+    throw new Error('Add Key did not publish its in-flight host mutation barrier');
+  }
+
+  finalize.isFinalizing = true;
+  let finalizeBarrierResolved = false;
+  const finalizeBarrier = finalize.awaitPendingCameraMutations(41).then(result => {
+    finalizeBarrierResolved = true;
+    return result;
+  });
+  const rejectedDuringFinalize = await toolbar._addKeyframe({ silent: true });
+  await Promise.resolve();
+  if (finalizeBarrierResolved || rejectedDuringFinalize !== false || keyframeInvocations !== 1) {
+    throw new Error('Finalize crossed an unfinished Add Key or accepted a later camera mutation');
+  }
+
+  releaseHostMutation();
+  if (!await keyframe || !await finalizeBarrier || toolbar.hasPendingKeyframeMutation(41)) {
+    throw new Error('Finalize did not resume after the authoritative keyframe commit');
+  }
+  if (!emitted.some(entry => entry.event === 'ui:status' && /Waiting for the latest camera keyframe/.test(entry.payload.message))) {
+    throw new Error('The keyframe/finalize barrier did not expose its waiting state');
+  }
+}, 'Finalize waits for an in-flight Add Key and blocks camera mutations after trajectory capture starts');
+
 // 24. Add Keyframe and Record are intentionally separate: Record creates a
 // new key, while ordinary navigation may safely edit only a key already at CTI.
 assertDoesNotThrow(() => {

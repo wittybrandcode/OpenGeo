@@ -32,6 +32,8 @@ class FinalizeController {
       // 1. Validation Phase
       const { projectPath, activeCompId } = await this.validate();
       this._assertCurrentRun(runId, activeCompId, documentId);
+      await this.awaitPendingCameraMutations(activeCompId);
+      this._assertCurrentRun(runId, activeCompId, documentId);
       if (this.app.featureManager && typeof this.app.featureManager.waitForIdle === 'function') {
         await this.app.featureManager.waitForIdle();
       }
@@ -224,6 +226,25 @@ class FinalizeController {
     projectPath = state.path;
 
     return { projectPath, activeCompId };
+  }
+
+  async awaitPendingCameraMutations(activeCompId) {
+    const toolbar = this.app.toolbarController;
+    if (!toolbar || typeof toolbar.waitForKeyframeMutations !== 'function') return true;
+    if (typeof toolbar.hasPendingKeyframeMutation === 'function' &&
+        toolbar.hasPendingKeyframeMutation(activeCompId)) {
+      globalEventBus.emit('ui:status', {
+        message: 'Finalize: Waiting for the latest camera keyframe...',
+        isError: false
+      });
+    }
+    const committed = await toolbar.waitForKeyframeMutations(activeCompId);
+    if (committed !== true) {
+      const error = new Error('The latest camera keyframe was not committed. Finalize was stopped before scanning the path.');
+      error.code = 'FINALIZE_KEYFRAME_MUTATION_FAILED';
+      throw error;
+    }
+    return true;
   }
 
   async scanTimeline(activeCompId, snapshot) {

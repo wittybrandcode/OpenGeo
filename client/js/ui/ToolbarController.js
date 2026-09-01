@@ -11,6 +11,7 @@ class ToolbarController {
     this._geoJsonProgressAt = 0;
     this._recordTogglePending = false;
     this._clearPending = false;
+    this._keyframeMutationTails = new Map();
     this._bound = false;
   }
 
@@ -372,26 +373,55 @@ class ToolbarController {
       if (!options.silent) globalEventBus.emit('toast:show', { message: 'No active comp! Create one first.', type: 'error' });
       return false;
     }
+    if (app.finalizeController && app.finalizeController.isFinalizing) {
+      if (!options.silent) globalEventBus.emit('toast:show', {
+        message: 'Finalize is already reading the camera path. Wait for it to finish before adding another key.',
+        type: 'warning', duration: 5000
+      });
+      return false;
+    }
     const camera = {
       lat: app.mapState.latitude,
       lng: app.mapState.longitude,
       zoom: app.mapState.compZoom
     };
-    try {
-      // Add Key is an explicit user command. Supersede debounced Live Sync
-      // work before entering the host so it cannot sit behind a stale tile
-      // build or trigger a second, redundant viewport preview afterwards.
-      app.syncManager.prepareForKeyframeMutation();
-      await app.aeBridge.invoke('keyframe.add', {
-        compId, lat: camera.lat, lng: camera.lng, zoom: camera.zoom
-      });
-      if (!options.silent) globalEventBus.emit('toast:show', { message: 'Keyframe added!', type: 'success' });
-      if (app.activeCompId === compId) app.syncManager.queueTrajectoryPreview();
-      return true;
-    } catch (error) {
-      globalEventBus.emit('toast:show', { message: 'Error adding keyframe: ' + error.message, type: 'error' });
-      return false;
-    }
+    const mutationKey = String(compId);
+    const previous = this._keyframeMutationTails.get(mutationKey) || Promise.resolve(true);
+    const operation = previous.then(async () => {
+      try {
+        // Add Key is an explicit user command. Supersede debounced Live Sync
+        // work before entering the host so it cannot sit behind a stale tile
+        // build or trigger a second, redundant viewport preview afterwards.
+        app.syncManager.prepareForKeyframeMutation();
+        await app.aeBridge.invoke('keyframe.add', {
+          compId, lat: camera.lat, lng: camera.lng, zoom: camera.zoom
+        });
+        if (!options.silent) globalEventBus.emit('toast:show', { message: 'Keyframe added!', type: 'success' });
+        if (app.activeCompId === compId) app.syncManager.queueTrajectoryPreview();
+        return true;
+      } catch (error) {
+        globalEventBus.emit('toast:show', { message: 'Error adding keyframe: ' + error.message, type: 'error' });
+        return false;
+      }
+    });
+    this._keyframeMutationTails.set(mutationKey, operation);
+    operation.then(() => {
+      if (this._keyframeMutationTails.get(mutationKey) === operation) {
+        this._keyframeMutationTails.delete(mutationKey);
+      }
+    });
+    return operation;
+  }
+
+  hasPendingKeyframeMutation(compId) {
+    return !!compId && this._keyframeMutationTails.has(String(compId));
+  }
+
+  async waitForKeyframeMutations(compId) {
+    if (!compId) return true;
+    const pending = this._keyframeMutationTails.get(String(compId));
+    if (!pending) return true;
+    return pending;
   }
 
   async _clearMapAnimation() {
@@ -516,6 +546,7 @@ class ToolbarController {
     if (this._geoJsonReader && this._geoJsonReader.readyState === FileReader.LOADING) this._geoJsonReader.abort();
     this._geoJsonLoadRevision++;
     this._geoJsonReader = null;
+    this._keyframeMutationTails.clear();
   }
 }
 
