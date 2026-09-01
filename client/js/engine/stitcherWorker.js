@@ -5,9 +5,26 @@
  */
 
 self.onmessage = async function(e) {
-  const { id, children, startX, startY, size, sourceTileSize, outputPath } = e.data;
+  const {
+    id, children, originalExpectedCount, expectedCells,
+    startX, startY, size, sourceTileSize, outputPath
+  } = e.data;
 
   try {
+    const canonicalExpected = (Array.isArray(expectedCells) ? expectedCells : []).map(String).sort();
+    const inputCells = (Array.isArray(children) ? children : []).map(child =>
+      `${child.x - startX},${child.y - startY}`
+    ).sort();
+    if (!Number.isInteger(originalExpectedCount) || originalExpectedCount < 1 ||
+        children.length !== originalExpectedCount ||
+        canonicalExpected.length !== originalExpectedCount ||
+        new Set(canonicalExpected).size !== originalExpectedCount ||
+        JSON.stringify(inputCells) !== JSON.stringify(canonicalExpected)) {
+      const inputError = new Error(`MegaTile worker input coverage mismatch: ${children.length}/${originalExpectedCount || 0}.`);
+      inputError.code = 'MEGATILE_WORKER_INPUT_INCOMPLETE';
+      throw inputError;
+    }
+
     // Initialize OffscreenCanvas
     const canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
@@ -38,7 +55,13 @@ self.onmessage = async function(e) {
 
     const drawResults = await Promise.all(drawPromises);
     const decoded = drawResults.filter(result => result && result.ok);
-    if (decoded.length === 0) throw new Error('MegaTile contains no decodable child tiles');
+    const decodedCells = decoded.map(result => `${result.x},${result.y}`).sort();
+    if (decoded.length !== originalExpectedCount ||
+        JSON.stringify(decodedCells) !== JSON.stringify(canonicalExpected)) {
+      const decodeError = new Error(`MegaTile worker decoded ${decoded.length}/${originalExpectedCount} expected cells.`);
+      decodeError.code = 'MEGATILE_WORKER_DECODE_INCOMPLETE';
+      throw decodeError;
+    }
 
     // Export the canvas to a PNG Blob
     const finalBlob = await canvas.convertToBlob({ type: 'image/png' });
@@ -54,8 +77,10 @@ self.onmessage = async function(e) {
       outputPath: outputPath,
       buffer: arrayBuffer,
       decodedCount: decoded.length,
-      expectedCount: children.length,
-      coverageMask: decoded.map(result => `${result.x},${result.y}`)
+      originalExpectedCount: originalExpectedCount,
+      expectedCells: canonicalExpected,
+      decodedCells: decodedCells,
+      coverageMask: decodedCells
     }, [arrayBuffer]);
 
   } catch (error) {
@@ -63,6 +88,7 @@ self.onmessage = async function(e) {
       id: id,
       status: 'error',
       outputPath: outputPath,
+      code: error.code || 'MEGATILE_WORKER_FAILED',
       error: error.message || error.toString()
     });
   }

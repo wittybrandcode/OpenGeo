@@ -1,9 +1,17 @@
 class MegaTileStitcher {
-  constructor(cacheDir, compId, cacheSignature) {
+  constructor(cacheDir, compId, cacheSignature, options = {}) {
     this.cacheDir = cacheDir.replace(/\\/g, '/').replace(/\/$/, '');
     this.compId = compId || 'global';
     this.cacheSignature = String(cacheSignature || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
     this.coverageReports = [];
+    this._destroyed = false;
+    this.artifactStore = new MegaTileArtifactStore({
+      artifactKind: options.artifactKind || 'preview-cache',
+      providerSignature: options.providerSignature || cacheSignature || 'default',
+      cacheSignature: this.cacheSignature,
+      operationId: options.operationId || compId || 'unknown',
+      tileMatrix: options.tileMatrix || 'webMercator'
+    });
     
     // Worker Lifecycle Management (Singleton per instance)
     this.supportsWorker = typeof window.Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined';
@@ -13,32 +21,19 @@ class MegaTileStitcher {
       this.jobCounter = 0;
       
       this.worker.onmessage = (e) => {
-        const { id, status, buffer, outputPath, error, decodedCount, expectedCount, coverageMask } = e.data;
+        const { id, status, buffer, error } = e.data;
         const job = this.jobQueue.get(id);
         if (job) {
-          this.jobQueue.delete(id);
           if (status === 'success') {
-            const fs = require('fs');
-            // Keep filesystem writes outside the CEP UI task. Resolve the
-            // worker job only after the buffer is durably handed to Node.
-            fs.writeFile(outputPath, Buffer.from(buffer), writeError => {
-              if (writeError) {
-                console.error("[MegaTileStitcher] FS Error writing worker buffer:", writeError);
-                job.reject(writeError);
-                return;
-              }
-              this.coverageReports.push({
-                outputPath,
-                decodedCount: decodedCount || 0,
-                expectedCount: expectedCount || 0,
-                coverageMask: coverageMask || [],
-                cached: false
-              });
-              job.resolve(outputPath);
+            this._publishWorkerResult(job, e.data).then(job.resolve, job.reject).finally(() => {
+              this.jobQueue.delete(id);
             });
           } else {
             console.error("[MegaTileStitcher] Worker Error:", error);
-            job.reject(new Error(error));
+            this.jobQueue.delete(id);
+            const workerError = new Error(error || 'MegaTile worker failed');
+            workerError.code = e.data.code || 'MEGATILE_WORKER_FAILED';
+            job.reject(workerError);
           }
         }
       };
@@ -55,6 +50,7 @@ class MegaTileStitcher {
   }
 
   destroy() {
+    this._destroyed = true;
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
@@ -65,6 +61,34 @@ class MegaTileStitcher {
 
   getCoverageReport() {
     return this.coverageReports.slice();
+  }
+
+  async _publishWorkerResult(job, message) {
+    const report = {
+      originalExpectedCount: message.originalExpectedCount,
+      decodedCount: message.decodedCount,
+      decodedCells: message.decodedCells || [],
+      coverageMask: message.coverageMask || []
+    };
+    const publication = await this.artifactStore.publish(
+      Buffer.from(message.buffer), job.spec, report, () => this._destroyed
+    );
+    this._recordCoverage(job.spec, publication.manifest, publication.cached);
+    return job.spec.outputPath;
+  }
+
+  _recordCoverage(spec, manifest, cached) {
+    this.coverageReports.push({
+      outputPath: spec.outputPath,
+      decodedCount: (manifest.decodedCells || []).length,
+      expectedCount: spec.originalExpectedCount,
+      expectedCells: spec.expectedCells.slice(),
+      decodedCells: (manifest.decodedCells || []).slice(),
+      coverageMask: (manifest.coverageMask || []).slice(),
+      cached: !!cached,
+      manifestPath: spec.manifestPath,
+      outputSha256: manifest.outputSha256
+    });
   }
 
   _baseAsset(tile) {
@@ -244,58 +268,88 @@ class MegaTileStitcher {
   }
 
   _stitchCanvas(children, startX, startY, size, sourceTileSize, outputPath) {
+    let spec;
+    try {
+      spec = this.artifactStore.createSpec(children, startX, startY, size, sourceTileSize, outputPath);
+    } catch (error) {
+      return Promise.reject(error);
+    }
+    return this.artifactStore.fingerprintChildren(spec, children).then(prepared =>
+      this._scheduleStitch(children, startX, startY, size, sourceTileSize, outputPath, prepared)
+    );
+  }
+
+  _scheduleStitch(children, startX, startY, size, sourceTileSize, outputPath, prepared) {
+    const spec = prepared.spec;
+    if (this._destroyed) {
+      const cancelled = new Error('MegaTile stitcher was disposed before publication.');
+      cancelled.code = 'MEGATILE_CANCELLED';
+      return Promise.reject(cancelled);
+    }
+    const flightKey = `${outputPath}|${spec.cacheSignature}`;
+    const active = MegaTileStitcher._singleFlights.get(flightKey);
+    if (active) {
+      if (this.artifactStore.artifactKind !== 'preview-cache') {
+        const conflict = new Error('Finalize MegaTile target is already being produced.');
+        conflict.code = 'MEGATILE_FINALIZE_SINGLE_FLIGHT_CONFLICT';
+        return Promise.reject(conflict);
+      }
+      return active.then(() => {
+        const manifest = this.artifactStore.validateCache(spec);
+        if (!manifest) {
+          const error = new Error('Concurrent Preview MegaTile publication did not produce a valid artifact.');
+          error.code = 'MEGATILE_SINGLE_FLIGHT_INVALID';
+          throw error;
+        }
+        this._recordCoverage(spec, manifest, true);
+        return outputPath;
+      });
+    }
+    const flight = this._stitchCanvasOwned(
+      children, startX, startY, size, sourceTileSize, outputPath, spec, prepared.loadedChildren
+    );
+    MegaTileStitcher._singleFlights.set(flightKey, flight);
+    const release = () => {
+      if (MegaTileStitcher._singleFlights.get(flightKey) === flight) MegaTileStitcher._singleFlights.delete(flightKey);
+    };
+    flight.then(release, release);
+    return flight;
+  }
+
+  _stitchCanvasOwned(children, startX, startY, size, sourceTileSize, outputPath, spec, fingerprintedChildren) {
     return new Promise((resolve, reject) => {
       try {
-          if (typeof require !== 'undefined') {
-            const fs = require('fs');
-            if (fs.existsSync(outputPath)) {
-              const stat = fs.statSync(outputPath);
-            if (stat.size > 1000) {
-              this.coverageReports.push({
-                outputPath,
-                decodedCount: children.length,
-                expectedCount: children.length,
-                coverageMask: [],
-                cached: true
-              });
-              return resolve(outputPath);
-            }
-          }
-        } else {
-          const cepFs = window.cep && window.cep.fs;
-          if (cepFs) {
-            const stat = cepFs.stat(outputPath);
-            if (stat.err === 0 && stat.data && stat.data.size > 1000) {
-              this.coverageReports.push({
-                outputPath,
-                decodedCount: children.length,
-                expectedCount: children.length,
-                coverageMask: [],
-                cached: true
-              });
-              return resolve(outputPath);
-            }
-          }
+        if (this._destroyed) {
+          const cancelled = new Error('MegaTile stitcher was disposed before cache validation.');
+          cancelled.code = 'MEGATILE_CANCELLED';
+          throw cancelled;
         }
-      } catch(e) {}
+        const cachedManifest = this.artifactStore.validateCache(spec);
+        if (cachedManifest) {
+          this._recordCoverage(spec, cachedManifest, true);
+          return resolve(outputPath);
+        }
+        this.artifactStore.assertFinalizeTargetAvailable(spec);
+      } catch(error) {
+        return reject(error);
+      }
 
       // Worker Route
       if (this.supportsWorker && this.worker) {
         const jobId = ++this.jobCounter;
-        this.jobQueue.set(jobId, { resolve, reject });
+        this.jobQueue.set(jobId, { resolve, reject, spec });
         
-        // Node.js fs is available in the main thread of CEP.
-        // We read the files into Node Buffers, convert them to ArrayBuffers, 
-        // and send the raw memory directly to the worker.
+        // Child bytes were read and SHA-256 fingerprinted before the cache
+        // decision. Reuse those exact bytes for the Worker to avoid a TOCTOU
+        // gap and a second filesystem read.
         (async () => {
           try {
             const loadedChildren = [];
             const transferables = [];
             
-            for (const child of children) {
-              let nodeBuffer;
-              try { nodeBuffer = await this._readFileAsync(child.filePath); }
-              catch (readError) { continue; }
+            for (const loaded of fingerprintedChildren) {
+              const child = loaded.child;
+              const nodeBuffer = loaded.buffer;
               // Extract underlying ArrayBuffer from Node Buffer
               const arrayBuffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
               
@@ -310,6 +364,8 @@ class MegaTileStitcher {
             this.worker.postMessage({
               id: jobId,
               children: loadedChildren,
+              originalExpectedCount: spec.originalExpectedCount,
+              expectedCells: spec.expectedCells,
               startX: startX,
               startY: startY,
               size: size,
@@ -332,7 +388,8 @@ class MegaTileStitcher {
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext('2d');
-      const promises = children.map(child => {
+      const promises = fingerprintedChildren.map(loaded => {
+        const child = loaded.child;
         return new Promise((res) => {
           const img = new Image();
           img.onload = () => {
@@ -342,39 +399,30 @@ class MegaTileStitcher {
             res({ ok: true, x: child.x - startX, y: child.y - startY });
           };
           img.onerror = () => res({ ok: false, x: child.x - startX, y: child.y - startY });
-          img.src = "file:///" + child.filePath;
+          const mime = loaded.buffer[0] === 0x89 && loaded.buffer[1] === 0x50 ? 'image/png' : 'image/jpeg';
+          img.src = `data:${mime};base64,${loaded.buffer.toString('base64')}`;
         });
       });
       
       Promise.all(promises).then((decodeResults) => {
         try {
           const decoded = decodeResults.filter(result => result.ok);
-          if (decoded.length === 0) throw new Error('MegaTile contains no decodable child tiles');
-          this.coverageReports.push({
-            outputPath,
+          const decodedCells = decoded.map(result => `${result.x},${result.y}`).sort();
+          const report = {
+            originalExpectedCount: spec.originalExpectedCount,
             decodedCount: decoded.length,
-            expectedCount: children.length,
-            coverageMask: decoded.map(result => `${result.x},${result.y}`),
-            cached: false
-          });
+            decodedCells,
+            coverageMask: decodedCells
+          };
+          this.artifactStore._assertReport(spec, report);
           const dataUrl = canvas.toDataURL('image/png');
           const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-          
-          if (typeof require !== 'undefined') {
-            const fs = require('fs');
-            fs.writeFile(outputPath, Buffer.from(base64Data, 'base64'), writeError => {
-              if (writeError) reject(writeError);
-              else resolve(outputPath);
-            });
-          } else {
-            const cepFs = window.cep && window.cep.fs;
-            if (cepFs) {
-              const enc = (window.cep && window.cep.encoding && window.cep.encoding.Base64) || 'Base64';
-              const writeResult = cepFs.writeFile(outputPath, base64Data, enc);
-              if (writeResult.err === 0) resolve(outputPath);
-              else reject(new Error('Write failed'));
-            } else resolve(null);
-          }
+          this.artifactStore.publish(
+            Buffer.from(base64Data, 'base64'), spec, report, () => this._destroyed
+          ).then(publication => {
+            this._recordCoverage(spec, publication.manifest, publication.cached);
+            resolve(outputPath);
+          }, reject);
         } catch (e) {
           reject(e);
         }
@@ -382,6 +430,8 @@ class MegaTileStitcher {
     });
   }
 }
+
+MegaTileStitcher._singleFlights = new Map();
 
 if (typeof window !== 'undefined') {
   window.MegaTileStitcher = MegaTileStitcher;

@@ -1,11 +1,9 @@
 {
   "schemaVersion": "1.0.0",
   "suite": "opengeo-tile-pipeline-red-baseline",
-  "phase": "T2",
-  "expectedPasses": ["FI-01", "FI-02", "FI-05", "FI-07", "FI-08"],
+  "phase": "T4",
+  "expectedPasses": ["FI-01", "FI-02", "FI-03", "FI-04", "FI-05", "FI-07", "FI-08"],
   "expectedFailures": [
-    { "id": "FI-03", "code": "WORKER_ACCEPTED_PARTIAL_DECODE" },
-    { "id": "FI-04", "code": "CACHE_SIZE_ONLY_ACCEPTED" },
     { "id": "FI-06", "code": "VISIBLE_TILE_NOT_RESCHEDULED" },
     { "id": "FI-09", "code": "FOUR_K_PREFLIGHT_MISSING" },
     { "id": "FI-10", "code": "HOST_ASSET_ID_SET_UNCHECKED" }

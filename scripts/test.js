@@ -1922,6 +1922,95 @@ assertDoesNotThrow(() => {
   }
 }, 'MegaTile worker and fallback preserve transparency and report decoded coverage');
 
+assertAsync(async () => {
+  const MegaTileArtifactStore = require(path.resolve(__dirname, '../client/js/engine/MegaTileArtifactStore.js'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'opengeo-megatile-preview-'));
+  try {
+    const outputPath = path.join(root, 'preview.png');
+    const store = new MegaTileArtifactStore({
+      artifactKind: 'preview-cache', providerSignature: 'provider-fixture',
+      cacheSignature: 'children-fixture', operationId: 'operation-fixture'
+    });
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X3d4WQAAAABJRU5ErkJggg==', 'base64');
+    const childPath = path.join(root, 'child.png');
+    fs.writeFileSync(childPath, png);
+    let spec = store.createSpec([
+      { z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath }
+    ], 0, 0, 1, 1, outputPath);
+    spec = (await store.fingerprintChildren(spec, [{
+      z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath
+    }])).spec;
+    const report = {
+      originalExpectedCount: 1, decodedCount: 1,
+      decodedCells: ['0,0'], coverageMask: ['0,0']
+    };
+    fs.writeFileSync(`${outputPath}.tmp-stale.png`, Buffer.from('stale'));
+    fs.writeFileSync(`${spec.manifestPath}.tmp-stale.json`, Buffer.from('stale'));
+    const publications = await Promise.all([
+      store.publish(png, spec, report, () => false),
+      store.publish(png, spec, report, () => false)
+    ]);
+    const manifest = store.validateCache(spec);
+    const remaining = fs.readdirSync(root);
+    if (!manifest || !fs.existsSync(outputPath) || !fs.existsSync(spec.manifestPath) ||
+        publications.filter(result => result.cached).length !== 1 ||
+        remaining.some(name => name.includes('.tmp-') || name.endsWith('.lock')) ||
+        manifest.operationId !== null || manifest.cacheSignature !== spec.cacheSignature ||
+        spec.cacheSignature === 'children-fixture' || !spec.childIdentities[0].includes(crypto.createHash('sha256').update(png).digest('hex')) ||
+        manifest.outputSha256 !== crypto.createHash('sha256').update(png).digest('hex')) {
+      throw new Error('Preview MegaTile was not published as one verified atomic PNG/manifest pair');
+    }
+    fs.appendFileSync(childPath, Buffer.from([0]));
+    let changedSpec = store.createSpec([{
+      z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath
+    }], 0, 0, 1, 1, outputPath);
+    changedSpec = (await store.fingerprintChildren(changedSpec, [{
+      z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath
+    }])).spec;
+    if (store.validateCache(changedSpec)) throw new Error('A Preview MegaTile survived a child-byte fingerprint change');
+    fs.appendFileSync(outputPath, Buffer.from([0]));
+    if (store.validateCache(spec)) throw new Error('A hash/length-mutated Preview MegaTile was accepted');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}, 'Preview MegaTiles publish atomically, single-flight by lock, clean temps and reject byte mutation');
+
+assertAsync(async () => {
+  const MegaTileArtifactStore = require(path.resolve(__dirname, '../client/js/engine/MegaTileArtifactStore.js'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'opengeo-megatile-final-'));
+  try {
+    const outputPath = path.join(root, 'final.png');
+    const store = new MegaTileArtifactStore({
+      artifactKind: 'finalize-revision', providerSignature: 'provider-fixture',
+      cacheSignature: 'must-not-be-reused', operationId: 'revision-42'
+    });
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X3d4WQAAAABJRU5ErkJggg==', 'base64');
+    const childPath = path.join(root, 'child.png');
+    fs.writeFileSync(childPath, png);
+    let spec = store.createSpec([
+      { z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath }
+    ], 0, 0, 1, 1, outputPath);
+    spec = (await store.fingerprintChildren(spec, [{
+      z: 1, x: 0, y: 0, downloadKey: 'download-a', placementKey: 'placement-a', filePath: childPath
+    }])).spec;
+    const report = {
+      originalExpectedCount: 1, decodedCount: 1,
+      decodedCells: ['0,0'], coverageMask: ['0,0']
+    };
+    const publication = await store.publish(png, spec, report, () => false);
+    const manifest = publication.manifest;
+    let conflict = null;
+    try { await store.publish(png, spec, report, () => false); } catch (error) { conflict = error; }
+    if (publication.cached || store.validateCache(spec) !== null ||
+        manifest.operationId !== 'revision-42' || manifest.cacheSignature !== null ||
+        !conflict || conflict.code !== 'MEGATILE_FINALIZE_TARGET_CONFLICT') {
+      throw new Error('Finalize revision artifact was reused as cache or did not reject an existing target');
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+}, 'Finalize MegaTiles remain revision-owned and reject every cross-run cache-style reuse');
+
 assertDoesNotThrow(() => {
   const assets = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionAssets.jsx'), 'utf8');
   const transaction = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTransaction.jsx'), 'utf8');

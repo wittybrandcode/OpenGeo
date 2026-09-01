@@ -316,7 +316,12 @@ class FinalizeController {
     const stitcher = new MegaTileStitcher(
       revisionDir.replace(/\\/g, '/'),
       this._safeIdentity(activeCompId),
-      snapshot.providerSignature
+      `final_${this._safeIdentity(transaction.revisionId)}`,
+      {
+        artifactKind: 'finalize-revision',
+        providerSignature: snapshot.providerSignature,
+        operationId: transaction.revisionId
+      }
     );
     try {
       const tiles = await stitcher.stitchHierarchical(assets, (done, total) => {
@@ -324,7 +329,11 @@ class FinalizeController {
         globalEventBus.emit('ui:download_modal', { show: true, cancelable: true, info: `Stitching MegaTiles...`, pct, done, total });
       }, snapshot.sourceTileSize);
       const coverage = stitcher.getCoverageReport();
-      if (!tiles.length || coverage.some(report => report.decodedCount < 1 || report.decodedCount > report.expectedCount)) {
+      if (!tiles.length || coverage.some(report =>
+        report.decodedCount !== report.expectedCount ||
+        JSON.stringify((report.decodedCells || []).slice().sort()) !==
+          JSON.stringify((report.expectedCells || []).slice().sort())
+      )) {
         throw new Error('MegaTile coverage validation failed. No AE mutation was performed.');
       }
       return { tiles, coverage, revisionDir };

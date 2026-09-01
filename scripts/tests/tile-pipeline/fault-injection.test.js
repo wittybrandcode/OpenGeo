@@ -257,7 +257,10 @@ async function fi03WorkerRejectsPartialDecode() {
   await sandbox.self.onmessage({ data: {
     id: 1,
     children: readFailureChildren,
-    expectedCount: megaTileFixtures.readFailure.plannedChildren,
+    originalExpectedCount: megaTileFixtures.readFailure.plannedChildren,
+    expectedCells: Array.from({ length: megaTileFixtures.readFailure.plannedChildren }, (_, index) =>
+      `${index % 8},${Math.floor(index / 8)}`
+    ),
     startX: 0,
     startY: 0,
     size: 2048,
@@ -274,47 +277,63 @@ async function fi03WorkerRejectsPartialDecode() {
   await sandbox.self.onmessage({ data: {
     id: 2,
     children: decodeFailureChildren,
-    expectedCount: megaTileFixtures.decodeFailure.expectedChildren,
+    originalExpectedCount: megaTileFixtures.decodeFailure.expectedChildren,
+    expectedCells: Array.from({ length: megaTileFixtures.decodeFailure.expectedChildren }, (_, index) =>
+      `${index % 8},${Math.floor(index / 8)}`
+    ),
     startX: 0,
     startY: 0,
     size: 2048,
     sourceTileSize: 256,
     outputPath: 'decode-failure.png'
   }});
-  const readFailureAccepted = posted[0] && posted[0].status === 'success' &&
-    posted[0].expectedCount !== megaTileFixtures.readFailure.plannedChildren;
-  const decodeFailureAccepted = posted[1] && posted[1].status === 'success' &&
-    posted[1].decodedCount !== posted[1].expectedCount;
-  if (readFailureAccepted || decodeFailureAccepted) {
+  const readFailureRejected = posted[0] && posted[0].status === 'error' &&
+    posted[0].code === 'MEGATILE_WORKER_INPUT_INCOMPLETE';
+  const decodeFailureRejected = posted[1] && posted[1].status === 'error' &&
+    posted[1].code === 'MEGATILE_WORKER_DECODE_INCOMPLETE';
+  if (!readFailureRejected || !decodeFailureRejected) {
     fail(
       'WORKER_ACCEPTED_PARTIAL_DECODE',
-      `Worker trusted ${posted[0].expectedCount}/64 readable inputs and returned success for ${posted[1].decodedCount}/${posted[1].expectedCount} decoded cells.`
+      'Worker did not reject incomplete input and decode coverage with typed errors.'
     );
   }
 }
 
 async function fi04CacheRequiresManifestValidation() {
-  const fakeFs = {
-    existsSync: () => true,
-    statSync: () => ({ size: megaTileFixtures.staleCache.fileBytes })
-  };
-  const sandbox = {
-    window: {},
-    require: name => {
-      if (name === 'fs') return fakeFs;
-      throw new Error(`Unexpected dependency: ${name}`);
-    }
-  };
-  const MegaTileStitcher = loadBrowserClass('client/js/engine/MegaTileStitcher.js', 'MegaTileStitcher', sandbox);
-  const stitcher = new MegaTileStitcher('C:/fixture', 'comp', 'signature');
-  let accepted = false;
+  const os = require('os');
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'opengeo-fi04-'));
   try {
-    accepted = (await stitcher._stitchCanvas(
-      Array.from({ length: 64 }, (_, index) => ({ x: index % 8, y: Math.floor(index / 8) })),
-      0, 0, 2048, 256, 'C:/fixture/corrupt.png'
-    )) === 'C:/fixture/corrupt.png';
-  } catch (_error) {}
-  if (accepted) fail('CACHE_SIZE_ONLY_ACCEPTED', 'A stale MegaTile was accepted solely because it exceeded 1000 bytes.');
+    const MegaTileArtifactStore = require(sourcePath('client/js/engine/MegaTileArtifactStore.js'));
+    const store = new MegaTileArtifactStore({
+      artifactKind: 'preview-cache', providerSignature: 'fixture',
+      cacheSignature: 'fixture-cache', operationId: 'fi04'
+    });
+    const children = Array.from({ length: 64 }, (_, index) => ({
+      z: 8, x: index % 8, y: Math.floor(index / 8),
+      downloadKey: `d-${index}`, placementKey: `p-${index}`
+    }));
+    const outputPath = path.join(root, 'corrupt.png');
+    const spec = store.createSpec(children, 0, 0, 2048, 256, outputPath);
+    spec.fingerprinted = true;
+    fs.writeFileSync(outputPath, Buffer.alloc(megaTileFixtures.staleCache.fileBytes));
+    if (store.validateCache(spec)) {
+      fail('CACHE_SIZE_ONLY_ACCEPTED', 'A stale MegaTile was accepted without a manifest solely because it exceeded 1000 bytes.');
+    }
+    fs.writeFileSync(spec.manifestPath, JSON.stringify({
+      schemaVersion: 'megatile-manifest/1.0', artifactKind: 'preview-cache',
+      providerSignature: 'fixture', cacheSignature: 'fixture-cache',
+      expectedCells: spec.expectedCells,
+      decodedCells: spec.expectedCells.slice(0, megaTileFixtures.staleCache.manifestActualChildren),
+      coverageMask: spec.expectedCells.slice(0, megaTileFixtures.staleCache.manifestActualChildren),
+      outputBytes: megaTileFixtures.staleCache.fileBytes,
+      outputSha256: 'invalid'
+    }));
+    if (store.validateCache(spec)) {
+      fail('CACHE_SIZE_ONLY_ACCEPTED', 'A stale MegaTile was accepted with mismatched coverage and hash metadata.');
+    }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
 }
 
 async function fi05PreservesRepeatedWorldPlacements() {

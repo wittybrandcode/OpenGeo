@@ -127,7 +127,12 @@ class SyncManager {
     const stitcher = new MegaTileStitcher(
       outputDir.replace(/\\/g, '/'),
       String(compId || 'global').replace(/[^a-zA-Z0-9_-]/g, '_'),
-      'preview_' + manifestSignature
+      'preview_' + manifestSignature,
+      {
+        artifactKind: 'preview-cache',
+        providerSignature: snapshot.providerSignature,
+        operationId: snapshot.operationId
+      }
     );
     if (this._previewStitcher) this._previewStitcher.destroy();
     this._previewStitcher = stitcher;
@@ -143,7 +148,11 @@ class SyncManager {
       }, snapshot.sourceTileSize);
       const coverage = stitcher.getCoverageReport();
       if (!isCurrent()) throw new Error('Preview packing was superseded.');
-      if (!packed.length || coverage.some(report => report.decodedCount !== report.expectedCount)) {
+      if (!packed.length || coverage.some(report =>
+        report.decodedCount !== report.expectedCount ||
+        JSON.stringify((report.decodedCells || []).slice().sort()) !==
+          JSON.stringify((report.expectedCells || []).slice().sort())
+      )) {
         throw new Error('Preview MegaTile coverage validation failed.');
       }
       return packed;
@@ -161,7 +170,12 @@ class SyncManager {
     const safeScope = String(scope || 'viewport').replace(/[^a-zA-Z0-9_-]/g, '_');
     const outputDir = path.resolve(root, safeDocument, safeScope);
     if (outputDir === root || outputDir.indexOf(root + path.sep) !== 0) return;
-    const keep = new Set((tiles || []).map(tile => path.resolve(tile.filePath || '')));
+    const keep = new Set();
+    for (const tile of (tiles || [])) {
+      const resolved = path.resolve(tile.filePath || '');
+      keep.add(resolved);
+      keep.add(path.resolve(`${tile.filePath || ''}.manifest.json`));
+    }
     let names;
     try {
       names = await new Promise((resolve, reject) => {
