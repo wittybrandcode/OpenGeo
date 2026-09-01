@@ -23,6 +23,7 @@
     "verify:geometry": "node scripts/verify-vector-geometry.js",
     "verify:runtime-data": "node scripts/runtime-data-contract.js",
     "test": "node scripts/test.js",
+    "test:ae-sync-camera": "node scripts/ae-sync-camera-regression.js",
     "baseline:record": "node scripts/baseline-manifest.js",
     "baseline:verify": "node scripts/baseline-manifest.js verify",
     "sync:versions": "node scripts/sync-versions.js",

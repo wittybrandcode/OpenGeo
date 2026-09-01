@@ -1269,7 +1269,9 @@ assertAsync(async () => {
     Map,
     Promise,
     Error,
-    Date,
+    // Force the revision clock beyond half the circular range. Revision zero
+    // must remain a Host sentinel rather than become "newer" by wrap ordering.
+    Date: { now: () => 600000000 },
     Math,
     Object,
     Number,
