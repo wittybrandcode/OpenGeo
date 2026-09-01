@@ -249,6 +249,7 @@ class FinalizeController {
       sourceTileSize: snapshot.sourceTileSize,
       maxSourceZoom: snapshot.maxSourceZoom,
       sourceKey: snapshot.sourceKey,
+      providerSignature: snapshot.providerSignature,
       fetchWidth,
       fetchHeight,
       gutterTiles: 1,
@@ -280,7 +281,8 @@ class FinalizeController {
     });
     
     // Retry Logic for Partial Downloads
-    const failedTiles = plan.filter(t => !syncResult.find(r => r.tile.key === t.key && r.status === 'complete'));
+    const firstMissingKeys = new Set(PlacementExpander.missingDownloadKeys(plan, syncResult));
+    const failedTiles = plan.filter(tile => firstMissingKeys.has(tile.downloadKey));
     if (failedTiles.length > 0) {
       if (!snapshot.isCurrent(this.app)) throw new Error('Map source changed during Finalize download.');
       globalEventBus.emit('ui:download_modal', { show: true, cancelable: true, info: `Retrying ${failedTiles.length} failed tiles...`, pct: 0, done: 0, total: failedTiles.length });
@@ -288,30 +290,15 @@ class FinalizeController {
       syncResult = syncResult.concat(retryResult);
     }
 
-    const finalFailed = plan.filter(t => !syncResult.find(r => r.tile.key === t.key && r.status === 'complete'));
+    const finalFailed = PlacementExpander.missingDownloadKeys(plan, syncResult);
     if (finalFailed.length > 0) {
       globalEventBus.emit('ui:download_modal', { show: false });
       throw new Error(`تعذر تحميل ${finalFailed.length} بلاطات بسبب مشكلة في الاتصال بالانترنت. يرجى التحقق من الشبكة والمحاولة مجدداً.`);
     }
 
-    const completedByKey = new Map();
-    for (const r of syncResult) {
-      if (r.status === 'complete' && r.filePath) {
-        completedByKey.set(r.tile.key, {
-          key: r.tile.key,
-          filePath: r.filePath,
-          z: r.tile.z,
-          x: r.tile.x,
-          y: r.tile.y,
-          pixelX: r.tile.pixelX,
-          pixelY: r.tile.pixelY
-        });
-      }
-    }
-
-    const okTiles = plan.map(tile => completedByKey.get(tile.key)).filter(Boolean);
-    if (okTiles.length !== plan.length) {
-      throw new Error(`Finalize requires complete coverage: ${okTiles.length}/${plan.length} tiles are available.`);
+    const okTiles = PlacementExpander.expandCompleted(plan, syncResult);
+    if (okTiles.length !== plan.placementCount) {
+      throw new Error(`Finalize requires complete placement coverage: ${okTiles.length}/${plan.placementCount} placements are available.`);
     }
     return okTiles;
   }

@@ -8,11 +8,11 @@ class TilePlanner {
    * Optimizes for spatial coverage and incorporates the "Base Zoom + Peak Zoom" coverage strategy.
    * @param {Array} frames - Array of AE camera keyframe objects { lat, lon, zoom }
    * @param {Object} options - { qualityOffset, sourceTileSize, maxSourceZoom, sourceKey, fetchWidth, fetchHeight, gutterTiles, includeBaseCoverage }
-   * @returns {Array} Array of unique tile objects to download
+   * @returns {Array} Unique download requests with placements and coverageSamples metadata
    */
   createPlan(frames, options) {
     const {
-      qualityOffset, sourceTileSize, maxSourceZoom, sourceKey,
+      qualityOffset, sourceTileSize, maxSourceZoom, sourceKey, providerSignature,
       fetchWidth, fetchHeight, gutterTiles, includeBaseCoverage
     } = options;
     
@@ -22,21 +22,18 @@ class TilePlanner {
     }
 
     let minZoom = 99;
-    let maxZoom = -99;
     for (const f of frames) {
       if (f.zoom < minZoom) minZoom = f.zoom;
-      if (f.zoom > maxZoom) maxZoom = f.zoom;
     }
 
     const minDownloadZoom = Math.max(0, Math.min(maxSourceZoom, Math.floor(minZoom + currentQualityOffset)));
-    const maxDownloadZoom = Math.max(0, Math.min(maxSourceZoom, Math.floor(maxZoom + currentQualityOffset)));
-
-    const uniqueTiles = {};
+    const samples = [];
     
     // Spatial Cache to prevent redundant calculations for identical/near-identical frames
     let lastFrameState = { lat: null, lon: null, zoom: null, tiles: [] };
 
-    for (const frame of frames) {
+    for (let frameIndex = 0; frameIndex < frames.length; frameIndex++) {
+      const frame = frames[frameIndex];
       const frameDownloadZoom = Math.max(0, Math.min(maxSourceZoom, Math.floor(frame.zoom + currentQualityOffset)));
       
       // Resolution Coverage Strategy: We don't snap to arbitrary target zooms anymore.
@@ -57,12 +54,11 @@ class TilePlanner {
       // A geographic epsilon changes meaning with latitude and zoom. Reuse is
       // safe only when the projected camera movement is below one source pixel.
       if (hasCachedFrame && movementPixels < 1 && zoomDiff === 0) {
-        // Use cached tiles
-        for (const t of lastFrameState.tiles) {
-          if (!t.url) t.url = this.app._buildTileUrl(sourceKey, t.wrappedX, t.y, t.z);
-          t.source = sourceKey;
-          uniqueTiles[t.key] = t;
-        }
+        samples.push({
+          sampleId: frame.sampleId !== undefined ? frame.sampleId : `frame-${frameIndex}`,
+          camera: frame,
+          tiles: lastFrameState.tiles
+        });
       } else {
         // Calculate new tiles
         const tiles = CoveragePlanner.planComposition(frame, {
@@ -94,8 +90,13 @@ class TilePlanner {
         for (const t of allVisibleTiles) {
           if (!t.url) t.url = this.app._buildTileUrl(sourceKey, t.wrappedX, t.y, t.z);
           t.source = sourceKey;
-          uniqueTiles[t.key] = t;
         }
+
+        samples.push({
+          sampleId: frame.sampleId !== undefined ? frame.sampleId : `frame-${frameIndex}`,
+          camera: frame,
+          tiles: allVisibleTiles
+        });
 
         // Update cache
         lastFrameState = {
@@ -107,7 +108,11 @@ class TilePlanner {
       }
     }
 
-    return Object.values(uniqueTiles);
+    return PlacementExpander.createDownloadPlan(samples, {
+      providerSignature: providerSignature || sourceKey,
+      tileMatrix: options.tileMatrix || 'webMercator',
+      sourceTileSize
+    });
   }
 }
 

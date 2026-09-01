@@ -16,6 +16,7 @@ class DownloadSession {
       cacheDir,
       compWidth: snapshot.composition.width,
       compHeight: snapshot.composition.height,
+      sourceTileSize: snapshot.sourceTileSize,
       maxConcurrent: options.maxConcurrent || 6
     });
     this.engine.setUrlTemplate(snapshot.resolvedTemplate);
@@ -39,6 +40,21 @@ class DownloadSession {
   downloadTiles(plan, onProgress) {
     if (this.cancelled) return Promise.reject(this._cancelledError());
     return this.engine.downloadTiles(plan, onProgress);
+  }
+
+  downloadPlan(plan, onProgress) {
+    if (this.cancelled) return Promise.reject(this._cancelledError());
+    const normalizedPlan = PlacementExpander.normalizeLegacyPlan(plan, {
+      providerSignature: this.snapshot.providerSignature,
+      sourceTileSize: this.snapshot.sourceTileSize,
+      tileMatrix: 'webMercator'
+    });
+    return this.engine.downloadTiles(normalizedPlan, onProgress).then(results => ({
+      plan: normalizedPlan,
+      results,
+      tiles: PlacementExpander.expandCompleted(normalizedPlan, results),
+      missingDownloadKeys: PlacementExpander.missingDownloadKeys(normalizedPlan, results)
+    }));
   }
 
   cancel() {

@@ -188,7 +188,7 @@ var OpenGeo = (function () {
           }, attempt * 1000);
         });
       }
-      console.error('[TileDownloader] ' + tile.key + ' failed after 3 attempts', err);
+      console.error('[TileDownloader] ' + (tile.downloadKey || 'unknown-download') + ' failed after 3 attempts', err);
       return { tile: tile, status: 'error', filePath: null, error: err.message || String(err) };
     });
   };
@@ -311,6 +311,8 @@ var OpenGeo = (function () {
     this._camera = new Camera({ viewportWidth: config.compWidth || 1920, viewportHeight: config.compHeight || 1080 });
     this._tileGrid = new TileGrid(config.urlTemplate);
     this._downloader = new TileDownloader(config.cacheDir, config.maxConcurrent || 6);
+    this._providerSignature = 'default';
+    this._sourceTileSize = config.sourceTileSize || 256;
   }
 
   Engine.prototype.setCamera = function (lat, lon, zoom) {
@@ -321,7 +323,10 @@ var OpenGeo = (function () {
   Engine.prototype.setViewport = function (w, h) { this._camera.setViewport(w, h); };
   Engine.prototype.getCameraState = function () { return this._camera.getState(); };
   Engine.prototype.setUrlTemplate = function (t) { this._tileGrid.setUrlTemplate(t); };
-  Engine.prototype.setCacheNamespace = function (namespace) { this._downloader.setCacheNamespace(namespace); };
+  Engine.prototype.setCacheNamespace = function (namespace) {
+    this._providerSignature = namespace || 'default';
+    this._downloader.setCacheNamespace(namespace);
+  };
 
   Engine.prototype.sync = function (onProgress, qualityOffset) {
     var cam = this._camera.getState();
@@ -340,23 +345,29 @@ var OpenGeo = (function () {
     };
     
     var visible = this._tileGrid.getVisibleTiles(modifiedCam);
+    var plan = PlacementExpander.createDownloadPlan([
+      { sampleId: 'viewport', camera: cam, tiles: visible }
+    ], {
+      providerSignature: this._providerSignature,
+      tileMatrix: 'webMercator',
+      sourceTileSize: this._sourceTileSize
+    });
 
-    return this._downloader.downloadBatch(visible, function (c, t) {
+    return this._downloader.downloadBatch(plan, function (c, t) {
       if (onProgress) onProgress(c, t);
     }).then(function (results) {
-      var ok = [];
       var errors = [];
       for (var i = 0; i < results.length; i++) {
         var r = results[i];
-        if (r.status === 'complete' && r.filePath) {
-          var tObj = { key: r.tile.key, filePath: r.filePath, pixelX: r.tile.pixelX, pixelY: r.tile.pixelY, z: r.tile.z, x: r.tile.x, y: r.tile.y };
-          ok.push(tObj);
-        } else {
-          errors.push(r);
-        }
+        if (r.status !== 'complete' || !r.filePath) errors.push(r);
       }
       if (errors.length) console.warn('[OpenGeo.Engine] ' + errors.length + ' tiles failed');
-      return { tiles: ok, errors: errors, camera: { lat: cam.lat, lon: cam.lon, zoom: cam.zoom, viewportWidth: cam.viewportWidth, viewportHeight: cam.viewportHeight } };
+      return {
+        plan: plan,
+        tiles: PlacementExpander.expandCompleted(plan, results),
+        errors: errors,
+        camera: { lat: cam.lat, lon: cam.lon, zoom: cam.zoom, viewportWidth: cam.viewportWidth, viewportHeight: cam.viewportHeight }
+      };
     });
   };
 

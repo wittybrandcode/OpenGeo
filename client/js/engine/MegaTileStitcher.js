@@ -67,6 +67,30 @@ class MegaTileStitcher {
     return this.coverageReports.slice();
   }
 
+  _baseAsset(tile) {
+    return {
+      placementKey: tile.placementKey || `legacy-placement/${tile.z}/${tile.x}/${tile.y}`,
+      downloadKey: tile.downloadKey || null,
+      sourcePlacementKeys: [tile.placementKey || `legacy-placement/${tile.z}/${tile.x}/${tile.y}`],
+      filePath: tile.filePath,
+      z: tile.z,
+      x: tile.x,
+      y: tile.y
+    };
+  }
+
+  _megaAsset(group, canvasSize, filePath) {
+    return {
+      placementKey: `megatile/${canvasSize}/${group.z}/${group.x}/${group.y}`,
+      downloadKey: null,
+      sourcePlacementKeys: group.children.map(child => child.placementKey || `legacy-placement/${child.z}/${child.x}/${child.y}`),
+      filePath,
+      z: group.z,
+      x: group.x,
+      y: group.y
+    };
+  }
+
   _readFileAsync(filePath) {
     return new Promise((resolve, reject) => {
       const fs = require('fs');
@@ -127,7 +151,7 @@ class MegaTileStitcher {
 
       if (baseZ < 2) {
         for (const t of zTiles) {
-          allOutputTiles.push({ key: `base_${t.z}_${t.x}_${t.y}`, filePath: t.filePath, z: t.z, x: t.x, y: t.y });
+          allOutputTiles.push(this._baseAsset(t));
         }
         continue;
       }
@@ -143,17 +167,11 @@ class MegaTileStitcher {
           const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z3Group.z}_${z3Group.x}_${z3Group.y}.png`;
           const stitchedPath = await this._stitchCanvas(z3Group.children, z3Group.x * 8, z3Group.y * 8, canvasSize, sourceTileSize, megaFilePath);
           if (stitchedPath) {
-            allOutputTiles.push({
-              key: `mega${canvasSize}_${key}`,
-              filePath: stitchedPath,
-              z: z3Group.z,
-              x: z3Group.x,
-              y: z3Group.y
-            });
+            allOutputTiles.push(this._megaAsset(z3Group, canvasSize, stitchedPath));
           } else {
             // Fallback: if stitching failed, return original base tiles
             for (const child of z3Group.children) {
-              allOutputTiles.push({ key: `base_${child.z}_${child.x}_${child.y}`, filePath: child.filePath, z: child.z, x: child.x, y: child.y });
+              allOutputTiles.push(this._baseAsset(child));
             }
           }
         } else {
@@ -176,16 +194,10 @@ class MegaTileStitcher {
               const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z2Group.z}_${z2Group.x}_${z2Group.y}.png`;
               const stitchedPath = await this._stitchCanvas(z2Group.children, z2Group.x * 4, z2Group.y * 4, canvasSize, sourceTileSize, megaFilePath);
               if (stitchedPath) {
-                allOutputTiles.push({
-                  key: `mega${canvasSize}_${z2Key}`,
-                  filePath: stitchedPath,
-                  z: z2Group.z,
-                  x: z2Group.x,
-                  y: z2Group.y
-                });
+                allOutputTiles.push(this._megaAsset(z2Group, canvasSize, stitchedPath));
               } else {
                 for (const child of z2Group.children) {
-                  allOutputTiles.push({ key: `base_${child.z}_${child.x}_${child.y}`, filePath: child.filePath, z: child.z, x: child.x, y: child.y });
+                  allOutputTiles.push(this._baseAsset(child));
                 }
               }
             } else {
@@ -207,28 +219,16 @@ class MegaTileStitcher {
                   const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z1Group.z}_${z1Group.x}_${z1Group.y}.png`;
                   const stitchedPath = await this._stitchCanvas(z1Group.children, z1Group.x * 2, z1Group.y * 2, canvasSize, sourceTileSize, megaFilePath);
                   if (stitchedPath) {
-                    allOutputTiles.push({
-                      key: `mega${canvasSize}_${z1Key}`,
-                      filePath: stitchedPath,
-                      z: z1Group.z,
-                      x: z1Group.x,
-                      y: z1Group.y
-                    });
+                    allOutputTiles.push(this._megaAsset(z1Group, canvasSize, stitchedPath));
                   } else {
                     for (const child of z1Group.children) {
-                      allOutputTiles.push({ key: `base_${child.z}_${child.x}_${child.y}`, filePath: child.filePath, z: child.z, x: child.x, y: child.y });
+                      allOutputTiles.push(this._baseAsset(child));
                     }
                   }
                 } else {
                   // Keep as base 256px tile
                   const t = z1Group.children[0];
-                  allOutputTiles.push({
-                    key: `base_${t.z}_${t.x}_${t.y}`,
-                    filePath: t.filePath,
-                    z: t.z,
-                    x: t.x,
-                    y: t.y
-                  });
+                  allOutputTiles.push(this._baseAsset(t));
                 }
               }
             }

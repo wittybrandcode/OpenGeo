@@ -196,11 +196,13 @@ assertDoesNotThrow(() => {
     CoveragePlanner: {
       planComposition(camera, options) {
         gridCalls++;
-        return [{ key: `${options.downloadZoom}/0/0`, x: 0, y: 0, z: options.downloadZoom }];
+        return [{ x: 0, wrappedX: 0, y: 0, z: options.downloadZoom }];
       }
     }
   };
   loadBrowserClass(path.resolve(__dirname, '../client/js/map/MercatorProjection.js'), 'MercatorProjection', sandbox);
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/TileAddress.js'), 'TileAddress', sandbox);
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/PlacementExpander.js'), 'PlacementExpander', sandbox);
   const TilePlanner = loadBrowserClass(path.resolve(__dirname, '../client/js/engine/TilePlanner.js'), 'TilePlanner', sandbox);
   const planner = new TilePlanner({ _buildTileUrl: () => 'tile://0' });
   const plan = planner.createPlan([{ lat: 0, lon: 0, zoom: 2 }], {
@@ -709,11 +711,13 @@ assertDoesNotThrow(() => {
     CoveragePlanner: {
       planComposition(camera, options) {
         calls.push(options.downloadZoom);
-        return [{ key: `${options.downloadZoom}/${calls.length}/0`, x: calls.length, wrappedX: calls.length, y: 0, z: options.downloadZoom }];
+        return [{ x: calls.length, wrappedX: calls.length, y: 0, z: options.downloadZoom }];
       }
     },
     MercatorProjection: { cameraPixelDistance: () => 10 }
   };
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/TileAddress.js'), 'TileAddress', sandbox);
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/PlacementExpander.js'), 'PlacementExpander', sandbox);
   const TilePlanner = loadBrowserClass(path.resolve(__dirname, '../client/js/engine/TilePlanner.js'), 'TilePlanner', sandbox);
   const app = { _buildTileUrl: () => 'tile://planned' };
   const options = {
@@ -737,6 +741,97 @@ assertDoesNotThrow(() => {
     throw new Error('Explicit base-coverage policy is not preserved');
   }
 }, 'Trajectory coverage does not duplicate a base layer unless explicitly requested');
+
+assertDoesNotThrow(() => {
+  const sandbox = { console, Math, Number, Object, Array, Map, Set, String };
+  const TileAddress = loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/TileAddress.js'), 'TileAddress', sandbox);
+  const west = TileAddress.withIdentity({ z: 2, x: -4, y: 1 }, {
+    providerSignature: 'provider-A', tileMatrix: 'webMercator', sourceTileSize: 256
+  });
+  const center = TileAddress.withIdentity({ z: 2, x: 0, y: 1 }, {
+    providerSignature: 'provider-A', tileMatrix: 'webMercator', sourceTileSize: 256
+  });
+  const otherProvider = TileAddress.withIdentity({ z: 2, x: 0, y: 1 }, {
+    providerSignature: 'provider-B', tileMatrix: 'webMercator', sourceTileSize: 256
+  });
+  if (west.downloadKey !== center.downloadKey || west.placementKey === center.placementKey ||
+      center.downloadKey === otherProvider.downloadKey || center.placementKey !== otherProvider.placementKey) {
+    throw new Error('Download and placement identities do not separate provider resource ownership from unwrapped world position');
+  }
+}, 'Canonical tile identities separate provider download resources from unwrapped placements');
+
+assertDoesNotThrow(() => {
+  const sandbox = { console, Math, Number, Object, Array, Promise, Map, Set, String };
+  loadBrowserClass(path.resolve(__dirname, '../client/js/map/MercatorProjection.js'), 'MercatorProjection', sandbox);
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/TileAddress.js'), 'TileAddress', sandbox);
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/CoveragePlanner.js'), 'CoveragePlanner', sandbox);
+  const PlacementExpander = loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/PlacementExpander.js'), 'PlacementExpander', sandbox);
+  const TilePlanner = loadBrowserClass(path.resolve(__dirname, '../client/js/engine/TilePlanner.js'), 'TilePlanner', sandbox);
+  const planner = new TilePlanner({ _buildTileUrl: (_source, x, y, z) => `https://fixture.test/${z}/${x}/${y}` });
+  const plan = planner.createPlan([{ sampleId: '4k-z2', lat: 0, lon: 0, zoom: 2 }], {
+    qualityOffset: 0, sourceTileSize: 256, maxSourceZoom: 19,
+    sourceKey: 'fixture', providerSignature: 'fixture-signature',
+    fetchWidth: 3840, fetchHeight: 2160, gutterTiles: 1, includeBaseCoverage: false
+  });
+  const placementLinks = plan.reduce((total, download) => total + download.placementKeys.length, 0);
+  if (plan.length !== 16 || plan.placementCount !== 72 || plan.placements.length !== 72 || placementLinks !== 72 ||
+      plan.coverageSamples.length !== 1 || plan.coverageSamples[0].requiredPlacementKeys.length !== 72 ||
+      plan.some(download => Object.prototype.hasOwnProperty.call(download, 'key'))) {
+    throw new Error(`4K z2 plan contract mismatch: downloads=${plan.length}, placements=${plan.placementCount}, links=${placementLinks}`);
+  }
+  const results = plan.map(download => ({ tile: download, status: 'complete', filePath: `${download.wrappedX}_${download.y}.png` }));
+  const expanded = PlacementExpander.expandCompleted(plan, results);
+  if (expanded.length !== 72 || new Set(expanded.map(tile => tile.placementKey)).size !== 72 ||
+      new Set(expanded.map(tile => tile.filePath)).size !== 16) {
+    throw new Error('One downloaded resource was not expanded into every required world placement');
+  }
+  const datelinePlan = planner.createPlan([{ sampleId: 'dateline', lat: 0, lon: 179.8, zoom: 4 }], {
+    qualityOffset: 0, sourceTileSize: 256, maxSourceZoom: 19,
+    sourceKey: 'fixture', providerSignature: 'fixture-signature',
+    fetchWidth: 1080, fetchHeight: 1920, gutterTiles: 1, includeBaseCoverage: false
+  });
+  const datelineX = datelinePlan.placements.map(tile => tile.x);
+  if (!datelineX.some(x => x < 16) || !datelineX.some(x => x >= 16) ||
+      new Set(datelinePlan.map(tile => tile.downloadKey)).size !== datelinePlan.length ||
+      new Set(datelinePlan.placements.map(tile => tile.placementKey)).size !== datelinePlan.placementCount) {
+    throw new Error('Antimeridian planning duplicated a request or folded an unwrapped placement to the wrong world');
+  }
+}, 'A 4K low-zoom plan downloads 16 resources once and expands all 72 world placements');
+
+assertDoesNotThrow(() => {
+  const stitcher = fs.readFileSync(path.resolve(__dirname, '../client/js/engine/MegaTileStitcher.js'), 'utf8');
+  const sync = fs.readFileSync(path.resolve(__dirname, '../client/js/core/SyncManager.js'), 'utf8');
+  const finalize = fs.readFileSync(path.resolve(__dirname, '../client/js/core/FinalizeController.js'), 'utf8');
+  const hostPreview = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTiles.jsx'), 'utf8');
+  const hostFinalize = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTransaction.jsx'), 'utf8');
+  if (!stitcher.includes('Math.floor(t.x / 8)') || !stitcher.includes('(child.x - startX)') ||
+      !stitcher.includes('placementKey:') || !sync.includes('downloadSession.downloadPlan(plan)') ||
+      !finalize.includes('PlacementExpander.expandCompleted(plan, syncResult)') ||
+      !hostPreview.includes('function opengeoTilePlacementIdentity') ||
+      !hostFinalize.includes('opengeoTilePlacementIdentity(tile, tileIndex)')) {
+    throw new Error('Placement identity was lost between planning, stitching, Preview, Finalize, and Host import');
+  }
+}, 'Preview, trajectory, Finalize, MegaTile and Host share the explicit placement contract');
+
+assertDoesNotThrow(() => {
+  const warnings = [];
+  const sandbox = {
+    console: { warn: message => warnings.push(message) },
+    Math, Number, Object, Array, Map, Set, String
+  };
+  loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/TileAddress.js'), 'TileAddress', sandbox);
+  const PlacementExpander = loadBrowserClass(path.resolve(__dirname, '../client/js/tiles/PlacementExpander.js'), 'PlacementExpander', sandbox);
+  const legacy = PlacementExpander.normalizeLegacyPlan([{ key: '2/0/1', z: 2, x: 0, y: 1 }], {
+    providerSignature: 'legacy-provider', sourceTileSize: 256
+  });
+  PlacementExpander.normalizeLegacyPlan([{ key: '2/1/1', z: 2, x: 1, y: 1 }], {
+    providerSignature: 'legacy-provider', sourceTileSize: 256
+  });
+  if (warnings.length !== 1 || warnings[0].indexOf('DEPRECATED_TILE_KEY') === -1 ||
+      !legacy[0].downloadKey || !legacy.placements[0].placementKey) {
+    throw new Error('Legacy tile.key migration is not explicit, bounded, and observable');
+  }
+}, 'Legacy tile.key is adapted once with a deprecation warning and canonical identities');
 
 assertDoesNotThrow(() => {
   const scanner = fs.readFileSync(path.resolve(__dirname, '../host/modules/trajectoryScanner.jsx'), 'utf8');

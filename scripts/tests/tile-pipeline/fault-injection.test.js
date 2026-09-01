@@ -89,6 +89,21 @@ function makeSyncSandbox(downloadBehavior, hostCounter) {
     cancel() {}
     sync() { return Promise.resolve(downloadBehavior.sync); }
     downloadTiles() { return Promise.resolve(downloadBehavior.path); }
+    downloadPlan(plan) {
+      const results = downloadBehavior.path || [];
+      return Promise.resolve({
+        plan,
+        results,
+        tiles: results.filter(result => result.status === 'complete' && result.filePath).map(result => ({
+          downloadKey: result.tile.downloadKey,
+          placementKey: result.tile.placementKey,
+          filePath: result.filePath,
+          z: result.tile.z,
+          x: result.tile.x,
+          y: result.tile.y
+        }))
+      });
+    }
   }
   class FaultTilePlanner {
     createPlan() {
@@ -268,6 +283,7 @@ async function fi05PreservesRepeatedWorldPlacements() {
   loadBrowserClass('client/js/map/MercatorProjection.js', 'MercatorProjection', sandbox);
   loadBrowserClass('client/js/tiles/TileAddress.js', 'TileAddress', sandbox);
   const CoveragePlanner = loadBrowserClass('client/js/tiles/CoveragePlanner.js', 'CoveragePlanner', sandbox);
+  loadBrowserClass('client/js/tiles/PlacementExpander.js', 'PlacementExpander', sandbox);
   const TilePlanner = loadBrowserClass('client/js/engine/TilePlanner.js', 'TilePlanner', sandbox);
   const frame = { lat: 0, lon: 0, zoom: 2 };
   const options = {
@@ -283,7 +299,11 @@ async function fi05PreservesRepeatedWorldPlacements() {
   const repeatedDownload = rawPlacements.some((tile, index) =>
     rawPlacements.findIndex(other => other.key === tile.key) !== index
   );
-  if (!repeatedDownload || plan.length !== rawPlacements.length) {
+  const placementLinks = plan.reduce((total, download) => total + download.placementKeys.length, 0);
+  if (!repeatedDownload || plan.length >= rawPlacements.length ||
+      plan.placementCount !== rawPlacements.length || placementLinks !== rawPlacements.length ||
+      plan.coverageSamples.length !== 1 ||
+      plan.coverageSamples[0].requiredPlacementKeys.length !== rawPlacements.length) {
     fail('PLACEMENT_COLLAPSED_BY_DOWNLOAD_KEY', `Planning collapsed ${rawPlacements.length} placements into ${plan.length} download identities.`);
   }
 }
@@ -391,12 +411,13 @@ const tests = [
 
 async function main() {
   const expectedById = new Map(oracle.expectedFailures.map(entry => [entry.id, entry.code]));
+  const expectedPasses = new Set(oracle.expectedPasses || []);
   const summary = { schemaVersion: '1.0.0', suite: oracle.suite, failed: [], passed: [], harnessErrors: [] };
   for (const [id, test] of tests) {
     try {
       await test();
       summary.passed.push(id);
-      console.log(`[UNEXPECTED GREEN] ${id}`);
+      console.log(`[${expectedPasses.has(id) ? 'EXPECTED GREEN' : 'UNEXPECTED GREEN'}] ${id}`);
     } catch (error) {
       const expectedCode = expectedById.get(id);
       if (error instanceof FaultAssertion && error.code === expectedCode) {

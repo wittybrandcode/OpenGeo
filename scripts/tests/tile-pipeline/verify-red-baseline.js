@@ -25,17 +25,22 @@ const summary = JSON.parse(marker.slice('OPEN_GEO_FAULT_SUMMARY='.length));
 const expected = oracle.expectedFailures.map(entry => `${entry.id}:${entry.code}`).sort();
 const actual = summary.failed.map(entry => `${entry.id}:${entry.code}`).sort();
 const exactOracleMatch = expected.length === actual.length && expected.every((value, index) => value === actual[index]);
+const expectedPasses = (oracle.expectedPasses || []).slice().sort();
+const actualPasses = summary.passed.slice().sort();
+const exactPassMatch = expectedPasses.length === actualPasses.length &&
+  expectedPasses.every((value, index) => value === actualPasses[index]);
 
-if (result.status === 0 || !exactOracleMatch || summary.passed.length || summary.harnessErrors.length) {
+if (result.status === 0 || !exactOracleMatch || !exactPassMatch || summary.harnessErrors.length) {
   console.error(output);
   throw new Error([
     'Red-baseline verification failed.',
     `processExit=${result.status}`,
     `expected=${expected.join(',')}`,
     `actual=${actual.join(',')}`,
-    `unexpectedGreen=${summary.passed.join(',') || 'none'}`,
+    `expectedGreen=${expectedPasses.join(',') || 'none'}`,
+    `actualGreen=${actualPasses.join(',') || 'none'}`,
     `harnessErrors=${summary.harnessErrors.map(item => item.id).join(',') || 'none'}`
   ].join(' '));
 }
 
-console.log(`Tile-pipeline red baseline verified: ${actual.length}/${expected.length} expected failures, 0 harness errors.`);
+console.log(`Tile-pipeline phase ${oracle.phase || 'T0'} verified: ${actual.length}/${expected.length} expected failures, ${actualPasses.length}/${expectedPasses.length} resolved cases, 0 harness errors.`);

@@ -2,6 +2,16 @@
 // OpenGeo ExtendScript Host: Tile footage import and placement
 // ============================================================================
 
+function opengeoTilePlacementIdentity(tile, fallbackIndex) {
+  if (tile && tile.placementKey) return String(tile.placementKey);
+  if (tile && tile.key) {
+    try { $.writeln('[OpenGeo][DEPRECATED_TILE_KEY] Host adapted legacy tile.key to placement identity.'); } catch (ignoreWarning) {}
+    return String(tile.key);
+  }
+  if (tile) return String(tile.z + '/' + tile.x + '/' + tile.y);
+  return String(fallbackIndex);
+}
+
 function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, documentAssetComment) {
   var importedCount = 0;
   var sourcePrefix = data.source ? (data.source + '_') : '';
@@ -25,7 +35,7 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     try {
       footageItem = app.project.importFile(new ImportOptions(tileFile));
       footageItem.parentFolder = data.isPreview === true ? folders.previewTiles : folders.finalTiles;
-      footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'key=' + String(tile.key || tileIndex));
+      footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + opengeoTilePlacementIdentity(tile, tileIndex));
     } catch (importError) {
       hError('Import failed for tile ' + tileName + ': ' + importError.toString());
       continue;
@@ -34,7 +44,7 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
 
     var tileLayer = mapComp.layers.add(footageItem);
     tileLayer.name = tileName;
-    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'key=' + String(tile.key || tileIndex));
+    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + opengeoTilePlacementIdentity(tile, tileIndex));
     if (isPreviewStaging) tileLayer.enabled = false;
     var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
     var tileActualSize = footageItem.width || 256;

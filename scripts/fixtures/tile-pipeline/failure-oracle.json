@@ -1,12 +1,13 @@
 {
   "schemaVersion": "1.0.0",
   "suite": "opengeo-tile-pipeline-red-baseline",
+  "phase": "T1",
+  "expectedPasses": ["FI-05"],
   "expectedFailures": [
     { "id": "FI-01", "code": "LIVE_SYNC_PARTIAL_COMMIT" },
     { "id": "FI-02", "code": "PATH_PREVIEW_PARTIAL_COMMIT" },
     { "id": "FI-03", "code": "WORKER_ACCEPTED_PARTIAL_DECODE" },
     { "id": "FI-04", "code": "CACHE_SIZE_ONLY_ACCEPTED" },
-    { "id": "FI-05", "code": "PLACEMENT_COLLAPSED_BY_DOWNLOAD_KEY" },
     { "id": "FI-06", "code": "VISIBLE_TILE_NOT_RESCHEDULED" },
     { "id": "FI-07", "code": "TRAJECTORY_SAMPLE_COVERAGE_UNVERIFIED" },
     { "id": "FI-08", "code": "EXACT_IDENTITY_SET_UNVERIFIED" },

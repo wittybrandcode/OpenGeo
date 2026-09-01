@@ -120,7 +120,7 @@ class SyncManager {
     // signature so an older partial MegaTile can never be reused as this run.
     const manifestSignature = crypto.createHash('sha256').update(
       [snapshot.providerSignature, scope].concat(tiles.map(tile =>
-        [tile.z, tile.x, tile.y, tile.key || '', tile.filePath || ''].join(':')
+        [tile.z, tile.x, tile.y, tile.placementKey || '', tile.downloadKey || '', tile.filePath || ''].join(':')
       ).sort()).join('|')
     ).digest('hex').slice(0, 20);
 
@@ -218,6 +218,7 @@ class SyncManager {
         sourceTileSize: snapshot.sourceTileSize,
         maxSourceZoom: snapshot.maxSourceZoom,
         sourceKey: snapshot.sourceKey,
+        providerSignature: snapshot.providerSignature,
         fetchWidth: snapshot.composition.width,
         fetchHeight: snapshot.composition.height,
         gutterTiles: 1,
@@ -237,17 +238,9 @@ class SyncManager {
       downloadSession = new DownloadSession(snapshot, { maxConcurrent: 4 });
       this._trajectoryDownloadSession = downloadSession;
       globalEventBus.emit('ui:status', { message: `Preparing path preview (${plan.length} tiles)…`, isError: false });
-      const results = await downloadSession.downloadTiles(plan);
+      const download = await downloadSession.downloadPlan(plan);
       if (!isCurrent()) return;
-      const downloadedTiles = results.filter(result => result.status === 'complete' && result.filePath).map(result => ({
-        key: result.tile.key,
-        filePath: result.filePath,
-        z: result.tile.z,
-        x: result.tile.x,
-        y: result.tile.y,
-        pixelX: result.tile.pixelX,
-        pixelY: result.tile.pixelY
-      }));
+      const downloadedTiles = download.tiles;
       if (!downloadedTiles.length) throw new Error('Path preview downloaded no usable tiles.');
       const tiles = await this._packPreviewTiles(
         downloadedTiles, snapshot, compId, 'path', isCurrent

@@ -93,9 +93,10 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
     var stageLayer = mapComp.layer(layerIndex);
     if (!opengeoOwnershipMatches(stageLayer.comment, documentId, 'preview-staging', revision)) continue;
     var stageOwnership = opengeoReadOwnership(stageLayer.comment);
-    stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stageOwnership.key ? 'key=' + stageOwnership.key : '');
+    var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
+    stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
     try {
-      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stageOwnership.key ? 'key=' + stageOwnership.key : '');
+      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
     } catch (ignoreSourceTag) {}
     stageLayer.enabled = true;
     promoted++;
@@ -180,7 +181,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
     var validationTile = tiles[validationIndex];
     var validationFile = new File(String(validationTile.filePath || '').replace(/\\/g, '/'));
     if (!validationFile.exists || validationFile.length < 500) {
-      result.failed.push({ key: String(validationTile.key || validationIndex), code: 'TILE_FILE_INVALID' });
+      result.failed.push({ placementKey: opengeoTilePlacementIdentity(validationTile, validationIndex), code: 'TILE_FILE_INVALID' });
     }
   }
   if (result.failed.length > 0) return JSON.stringify(result);
@@ -197,19 +198,19 @@ function opengeoPrepareCompositionRevision(jsonData) {
 
     for (var tileIndex = 0; tileIndex < tiles.length; tileIndex++) {
       var tile = tiles[tileIndex];
-      var tileKey = String(tile.key || (tile.z + '/' + tile.x + '/' + tile.y));
+      var tileKey = opengeoTilePlacementIdentity(tile, tileIndex);
       var tileFile = new File(String(tile.filePath).replace(/\\/g, '/'));
       var footageItem = null;
       try {
         footageItem = app.project.importFile(new ImportOptions(tileFile));
         if (!footageItem) throw new Error('Import returned no footage item');
         footageItem.parentFolder = folders.finalTiles;
-        footageItem.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'key=' + tileKey);
+        footageItem.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'placement=' + tileKey);
         createdAssets.push(footageItem);
 
         var tileLayer = resolved.mapComp.layers.add(footageItem);
         tileLayer.name = 'staging_' + operationId + '_' + tile.z + '_' + tile.x + '_' + tile.y;
-        tileLayer.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'key=' + tileKey);
+        tileLayer.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'placement=' + tileKey);
         tileLayer.enabled = false;
         var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
         var tileActualSize = footageItem.width || 256;
@@ -323,10 +324,11 @@ function opengeoCommitCompositionRevision(args) {
         try {
           var stageLayer = stagingLayers[tagIndex];
           var stageOwnership = opengeoReadOwnership(stageLayer.comment);
+          var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
           stageLayer.name = 'final_' + operationId + '_' + tagIndex;
-          stageLayer.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stageOwnership.key ? 'key=' + stageOwnership.key : '');
+          stageLayer.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stagePlacement ? 'placement=' + stagePlacement : '');
           if (stageLayer.source) {
-            stageLayer.source.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stageOwnership.key ? 'key=' + stageOwnership.key : '');
+            stageLayer.source.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stagePlacement ? 'placement=' + stagePlacement : '');
           }
         } catch (tagError) { result.warnings.push('REVISION_TAG_WARNING'); }
       }
