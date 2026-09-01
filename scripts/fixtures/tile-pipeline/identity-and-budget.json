@@ -6,8 +6,8 @@
   },
   "trajectory": {
     "samples": [
-      { "sampleId": "t0", "requiredPlacements": ["p1", "p2"] },
-      { "sampleId": "t1", "requiredPlacements": ["p2", "p3"] }
+      { "sampleId": "t0", "requiredPlacementKeys": ["p1", "p2"] },
+      { "sampleId": "t1", "requiredPlacementKeys": ["p2", "p3"] }
     ],
     "observedPlacements": ["p1", "p2", "unexpected-p4"]
   },

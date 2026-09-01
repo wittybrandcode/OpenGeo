@@ -49,12 +49,15 @@ class DownloadSession {
       sourceTileSize: this.snapshot.sourceTileSize,
       tileMatrix: 'webMercator'
     });
-    return this.engine.downloadTiles(normalizedPlan, onProgress).then(results => ({
-      plan: normalizedPlan,
-      results,
-      tiles: PlacementExpander.expandCompleted(normalizedPlan, results),
-      missingDownloadKeys: PlacementExpander.missingDownloadKeys(normalizedPlan, results)
-    }));
+    return this.engine.downloadTiles(normalizedPlan, onProgress).then(results => {
+      const tiles = PlacementExpander.expandCompleted(normalizedPlan, results);
+      return {
+        plan: normalizedPlan,
+        results,
+        tiles,
+        coverage: CoverageContract.evaluate(normalizedPlan, results, tiles)
+      };
+    });
   }
 
   cancel() {

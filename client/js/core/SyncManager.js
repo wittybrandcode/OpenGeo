@@ -241,7 +241,7 @@ class SyncManager {
       const download = await downloadSession.downloadPlan(plan);
       if (!isCurrent()) return;
       const downloadedTiles = download.tiles;
-      if (!downloadedTiles.length) throw new Error('Path preview downloaded no usable tiles.');
+      CoverageContract.assertCompleteCoverage(download.plan, download.results, downloadedTiles);
       const tiles = await this._packPreviewTiles(
         downloadedTiles, snapshot, compId, 'path', isCurrent
       );
@@ -270,6 +270,12 @@ class SyncManager {
         if (snapshot) this.app.session.failOperation('preview', snapshot.generation, error && error.code ? error.code : 'PREVIEW_FAILED');
         this._trajectoryOperationGeneration = null;
         console.warn('[SyncManager] Path preview skipped:', error.message);
+        if (error && error.code === 'OPEN_GEO_INCOMPLETE_COVERAGE') {
+          globalEventBus.emit('ui:status', {
+            message: 'Path preview is incomplete; the previous complete preview was preserved.',
+            isError: true
+          });
+        }
       }
     } finally {
       if (downloadSession && this._trajectoryDownloadSession === downloadSession) {
@@ -329,12 +335,7 @@ class SyncManager {
       // The composition manifest is the immutable result of this sync request,
       // never a history of tiles from previous navigation or providers.
       const accumulatedTiles = syncResult.tiles || [];
-
-      if (accumulatedTiles.length === 0) {
-        this.app.session.failOperation('sync', currentGeneration, 'SYNC_NO_TILES');
-        globalEventBus.emit('toast:show', { message: 'No tiles downloaded — check connection', type: 'error' });
-        return;
-      }
+      CoverageContract.assertCompleteCoverage(syncResult.plan, syncResult.results, accumulatedTiles);
 
       const previewTiles = await this._packPreviewTiles(
         accumulatedTiles,
@@ -390,7 +391,18 @@ class SyncManager {
       if (createIfNeeded && this.app.syncEngine) this.app.syncEngine.cancelNewDocument();
       this.app.session.failOperation('sync', currentGeneration, error && error.code ? error.code : 'SYNC_FAILED');
       console.error('[SyncManager] Auto-export error:', error);
-      if (!quiet) globalEventBus.emit('ui:status', { message: 'Export failed: ' + error.message, isError: true });
+      if (error && error.code === 'OPEN_GEO_INCOMPLETE_COVERAGE') {
+        globalEventBus.emit('ui:status', {
+          message: 'Map coverage is incomplete; the previous complete AE revision was preserved.',
+          isError: true
+        });
+        if (!quiet) globalEventBus.emit('toast:show', {
+          message: 'Incomplete map download. Nothing was changed in After Effects.',
+          type: 'warning'
+        });
+      } else if (!quiet) {
+        globalEventBus.emit('ui:status', { message: 'Export failed: ' + error.message, isError: true });
+      }
     } finally {
       if (currentGeneration === this.app.session.generations.sync) {
         globalEventBus.emit('ui:download_modal', { show: false });

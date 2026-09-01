@@ -272,17 +272,19 @@ class FinalizeController {
     this._downloadSession = downloadSession;
     globalEventBus.emit('ui:download_modal', { show: true, cancelable: true, info: `Initializing download...`, pct: 0, done: 0, total: plan.length });
     
-    // First Pass
-    let syncResult = await downloadSession.downloadTiles(plan, (done, total) => {
+    // First pass returns the same canonical result contract used by Preview.
+    const firstPass = await downloadSession.downloadPlan(plan, (done, total) => {
       if (!snapshot.isCurrent(this.app)) return;
       const pct = Math.round((done / total) * 100);
       globalEventBus.emit('ui:status', { message: `Downloading high quality tiles… ${pct}% (${done}/${total})`, isError: false });
       globalEventBus.emit('ui:download_modal', { show: true, cancelable: true, info: `Downloading tiles for final render...`, pct, done, total });
     });
+    const normalizedPlan = firstPass.plan;
+    let syncResult = firstPass.results;
     
     // Retry Logic for Partial Downloads
-    const firstMissingKeys = new Set(PlacementExpander.missingDownloadKeys(plan, syncResult));
-    const failedTiles = plan.filter(tile => firstMissingKeys.has(tile.downloadKey));
+    const firstMissingKeys = new Set(firstPass.coverage.missingDownloadKeys);
+    const failedTiles = normalizedPlan.filter(tile => firstMissingKeys.has(tile.downloadKey));
     if (failedTiles.length > 0) {
       if (!snapshot.isCurrent(this.app)) throw new Error('Map source changed during Finalize download.');
       globalEventBus.emit('ui:download_modal', { show: true, cancelable: true, info: `Retrying ${failedTiles.length} failed tiles...`, pct: 0, done: 0, total: failedTiles.length });
@@ -290,16 +292,8 @@ class FinalizeController {
       syncResult = syncResult.concat(retryResult);
     }
 
-    const finalFailed = PlacementExpander.missingDownloadKeys(plan, syncResult);
-    if (finalFailed.length > 0) {
-      globalEventBus.emit('ui:download_modal', { show: false });
-      throw new Error(`تعذر تحميل ${finalFailed.length} بلاطات بسبب مشكلة في الاتصال بالانترنت. يرجى التحقق من الشبكة والمحاولة مجدداً.`);
-    }
-
-    const okTiles = PlacementExpander.expandCompleted(plan, syncResult);
-    if (okTiles.length !== plan.placementCount) {
-      throw new Error(`Finalize requires complete placement coverage: ${okTiles.length}/${plan.placementCount} placements are available.`);
-    }
+    const okTiles = PlacementExpander.expandCompleted(normalizedPlan, syncResult);
+    CoverageContract.assertCompleteCoverage(normalizedPlan, syncResult, okTiles);
     return okTiles;
   }
 

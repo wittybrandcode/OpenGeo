@@ -362,9 +362,12 @@ var OpenGeo = (function () {
         if (r.status !== 'complete' || !r.filePath) errors.push(r);
       }
       if (errors.length) console.warn('[OpenGeo.Engine] ' + errors.length + ' tiles failed');
+      var expandedTiles = PlacementExpander.expandCompleted(plan, results);
       return {
         plan: plan,
-        tiles: PlacementExpander.expandCompleted(plan, results),
+        results: results,
+        tiles: expandedTiles,
+        coverage: CoverageContract.evaluate(plan, results, expandedTiles),
         errors: errors,
         camera: { lat: cam.lat, lon: cam.lon, zoom: cam.zoom, viewportWidth: cam.viewportWidth, viewportHeight: cam.viewportHeight }
       };

@@ -806,7 +806,9 @@ assertDoesNotThrow(() => {
   const hostFinalize = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTransaction.jsx'), 'utf8');
   if (!stitcher.includes('Math.floor(t.x / 8)') || !stitcher.includes('(child.x - startX)') ||
       !stitcher.includes('placementKey:') || !sync.includes('downloadSession.downloadPlan(plan)') ||
-      !finalize.includes('PlacementExpander.expandCompleted(plan, syncResult)') ||
+      !sync.includes('CoverageContract.assertCompleteCoverage(syncResult.plan, syncResult.results, accumulatedTiles)') ||
+      !finalize.includes('PlacementExpander.expandCompleted(normalizedPlan, syncResult)') ||
+      !finalize.includes('CoverageContract.assertCompleteCoverage(normalizedPlan, syncResult, okTiles)') ||
       !hostPreview.includes('function opengeoTilePlacementIdentity') ||
       !hostFinalize.includes('opengeoTilePlacementIdentity(tile, tileIndex)')) {
     throw new Error('Placement identity was lost between planning, stitching, Preview, Finalize, and Host import');
@@ -832,6 +834,102 @@ assertDoesNotThrow(() => {
     throw new Error('Legacy tile.key migration is not explicit, bounded, and observable');
   }
 }, 'Legacy tile.key is adapted once with a deprecation warning and canonical identities');
+
+assertDoesNotThrow(() => {
+  const CoverageContract = require(path.resolve(__dirname, '../client/js/tiles/CoverageContract.js'));
+  const downloads = [0, 1, 2].map(index => ({
+    downloadKey: `provider/matrix/256/6/${index}/20`,
+    placementKeys: [`matrix/256/6/${index}/20`]
+  }));
+  downloads.contractVersion = 'tile-plan/1.0';
+  downloads.placements = downloads.map((download, index) => ({
+    downloadKey: download.downloadKey,
+    placementKey: download.placementKeys[0],
+    z: 6, x: index, wrappedX: index, y: 20
+  }));
+  downloads.placementCount = downloads.placements.length;
+  downloads.coverageSamples = [{
+    sampleId: 'viewport',
+    requiredPlacementKeys: downloads.placements.map(placement => placement.placementKey)
+  }];
+  const results = downloads.map((download, index) => ({
+    tile: download,
+    downloadKey: download.downloadKey,
+    status: index === 1 ? 'cached' : 'complete',
+    filePath: `${index}.png`
+  }));
+  const expanded = downloads.placements.map((placement, index) => Object.assign({}, placement, { filePath: `${index}.png` }));
+  const coverage = CoverageContract.assertCompleteCoverage(downloads, results, expanded);
+  if (!coverage.ok || coverage.completedDownloads !== 2 || coverage.cachedDownloads !== 1 ||
+      coverage.expandedPlacements !== 3 || coverage.uncoveredSampleIds.length !== 0) {
+    throw new Error('A complete mixed download/cache result did not satisfy the canonical coverage contract');
+  }
+}, 'CoverageResult accepts only a complete download, placement and per-sample identity set');
+
+assertDoesNotThrow(() => {
+  const CoverageContract = require(path.resolve(__dirname, '../client/js/tiles/CoverageContract.js'));
+  const downloads = ['a', 'b', 'c'].map(key => ({ downloadKey: key, placementKeys: [`p-${key}`] }));
+  downloads.contractVersion = 'tile-plan/1.0';
+  downloads.placements = downloads.map(download => ({ downloadKey: download.downloadKey, placementKey: download.placementKeys[0] }));
+  downloads.placementCount = 3;
+  downloads.coverageSamples = [{ sampleId: 'sample', requiredPlacementKeys: ['p-a', 'p-b', 'p-c'] }];
+  const wrongResults = [
+    { tile: downloads[0], status: 'complete', filePath: 'a.png' },
+    { tile: downloads[1], status: 'complete', filePath: 'b.png' },
+    { tile: downloads[1], status: 'complete', filePath: 'b-again.png' },
+    { tile: { downloadKey: 'x' }, status: 'complete', filePath: 'x.png' }
+  ];
+  const wrongPlacements = [
+    { downloadKey: 'a', placementKey: 'p-a', filePath: 'a.png' },
+    { downloadKey: 'b', placementKey: 'p-b', filePath: 'b.png' },
+    { downloadKey: 'x', placementKey: 'p-x', filePath: 'x.png' }
+  ];
+  let rejected = null;
+  try { CoverageContract.assertCompleteCoverage(downloads, wrongResults, wrongPlacements); }
+  catch (error) { rejected = error; }
+  const serialized = JSON.stringify(rejected && rejected.details || {});
+  if (!rejected || rejected.code !== 'OPEN_GEO_INCOMPLETE_COVERAGE' ||
+      !rejected.details.missingDownloadKeys.includes('c') ||
+      !rejected.details.unexpectedDownloadKeys.includes('x') ||
+      !rejected.details.duplicateCompletedDownloadKeys.includes('b') ||
+      serialized.includes('https://') || serialized.toLowerCase().includes('token')) {
+    throw new Error('Equal counts, duplicate identities, or unsafe diagnostics escaped the coverage gate');
+  }
+}, 'Coverage gate rejects equal-count identity mismatches and exposes only safe typed diagnostics');
+
+assertDoesNotThrow(() => {
+  const CoverageContract = require(path.resolve(__dirname, '../client/js/tiles/CoverageContract.js'));
+  let seed = 0x4f50454e;
+  const random = () => {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    return seed / 0x100000000;
+  };
+  for (let iteration = 0; iteration < 100; iteration++) {
+    const count = 2 + Math.floor(random() * 18);
+    const expected = Array.from({ length: count }, (_, index) => `placement-${iteration}-${index}`);
+    const shuffled = expected.slice();
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const swap = Math.floor(random() * (index + 1));
+      [shuffled[index], shuffled[swap]] = [shuffled[swap], shuffled[index]];
+    }
+    if (!CoverageContract.compareExactSets(expected, shuffled).ok) {
+      throw new Error(`Permutation ${iteration} was not accepted as the same identity set`);
+    }
+    const replaced = shuffled.slice();
+    const removed = replaced[0];
+    replaced[0] = `unexpected-${iteration}`;
+    const mismatch = CoverageContract.compareExactSets(expected, replaced);
+    if (mismatch.ok || !mismatch.missing.includes(removed) || !mismatch.unexpected.includes(`unexpected-${iteration}`)) {
+      throw new Error(`Identity mutation ${iteration} escaped exact-set comparison`);
+    }
+    const trajectory = CoverageContract.evaluateTrajectory([
+      { sampleId: `sample-${iteration}`, requiredPlacementKeys: expected }
+    ], replaced);
+    if (trajectory.ok || !trajectory.uncoveredSampleIds.includes(`sample-${iteration}`)) {
+      throw new Error(`Trajectory mutation ${iteration} escaped per-sample coverage`);
+    }
+  }
+}, 'Deterministic property tests preserve permutations and reject every missing trajectory identity');
 
 assertDoesNotThrow(() => {
   const scanner = fs.readFileSync(path.resolve(__dirname, '../host/modules/trajectoryScanner.jsx'), 'utf8');

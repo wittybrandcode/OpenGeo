@@ -70,7 +70,7 @@ class PlacementExpander {
     const normalizedPlan = PlacementExpander.normalizeLegacyPlan(plan);
     const completedByDownloadKey = new Map();
     for (const result of (Array.isArray(results) ? results : [])) {
-      if (!result || result.status !== 'complete' || !result.filePath || !result.tile) continue;
+      if (!result || (result.status !== 'complete' && result.status !== 'cached') || !result.filePath || !result.tile) continue;
       const tile = PlacementExpander._normalizeTile(result.tile, {
         providerSignature: result.tile.providerSignature,
         tileMatrix: result.tile.tileMatrix,
@@ -101,7 +101,7 @@ class PlacementExpander {
     const normalizedPlan = PlacementExpander.normalizeLegacyPlan(plan);
     const complete = new Set();
     for (const result of (Array.isArray(results) ? results : [])) {
-      if (!result || result.status !== 'complete' || !result.filePath || !result.tile) continue;
+      if (!result || (result.status !== 'complete' && result.status !== 'cached') || !result.filePath || !result.tile) continue;
       const tile = PlacementExpander._normalizeTile(result.tile, {
         providerSignature: result.tile.providerSignature,
         tileMatrix: result.tile.tileMatrix,

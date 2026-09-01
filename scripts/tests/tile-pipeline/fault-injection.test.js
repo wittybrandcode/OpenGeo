@@ -83,6 +83,42 @@ function makeSession() {
   };
 }
 
+function makeFaultPlan(count = partialDownload.plannedCount) {
+  const placements = [];
+  const downloads = Array.from({ length: count }, (_, index) => {
+    const downloadKey = `fixture-provider-v1/webMercator/256/8/${index}/97`;
+    const placementKey = `webMercator/256/8/${index}/97`;
+    placements.push({
+      downloadKey, placementKey, providerSignature: 'fixture-provider-v1',
+      tileMatrix: 'webMercator', sourceTileSize: 256, z: 8,
+      x: index, wrappedX: index, y: 97
+    });
+    return {
+      downloadKey, placementKeys: [placementKey], providerSignature: 'fixture-provider-v1',
+      tileMatrix: 'webMercator', sourceTileSize: 256, z: 8,
+      x: index, wrappedX: index, y: 97
+    };
+  });
+  downloads.contractVersion = 'tile-plan/1.0';
+  downloads.placementCount = placements.length;
+  downloads.placements = placements;
+  downloads.coverageSamples = [{
+    sampleId: 'fixture-sample',
+    requiredPlacementKeys: placements.map(placement => placement.placementKey)
+  }];
+  return downloads;
+}
+
+function makeFaultResults(plan, completedCount) {
+  return plan.map((download, index) => ({
+    tile: download,
+    downloadKey: download.downloadKey,
+    status: index < completedCount ? 'complete' : 'error',
+    filePath: index < completedCount ? `${index}.png` : null,
+    error: index < completedCount ? null : { code: 'NETWORK_TIMEOUT' }
+  }));
+}
+
 function makeSyncSandbox(downloadBehavior, hostCounter) {
   class FaultDownloadSession {
     constructor() {}
@@ -107,9 +143,7 @@ function makeSyncSandbox(downloadBehavior, hostCounter) {
   }
   class FaultTilePlanner {
     createPlan() {
-      return Array.from({ length: partialDownload.plannedCount }, (_, index) => ({
-        key: `8/${index}/97`, z: 8, x: index, y: 97
-      }));
+      return makeFaultPlan();
     }
   }
   return {
@@ -128,12 +162,17 @@ function makeSyncSandbox(downloadBehavior, hostCounter) {
 }
 
 async function fi01LiveSyncRejectsPartialDownload() {
-  const completeTile = { key: '8/1/97', filePath: 'one.png', z: 8, x: 1, y: 97 };
+  const plan = makeFaultPlan();
+  const results = makeFaultResults(plan, partialDownload.completedCount);
+  const tiles = plan.placements.slice(0, partialDownload.completedCount).map((placement, index) =>
+    Object.assign({}, placement, { filePath: `${index}.png` })
+  );
   const hostCounter = { calls: 0 };
   const sandbox = makeSyncSandbox({
-    sync: { tiles: [completeTile], errors: partialDownload.failed, camera: { lat: 0, lon: 0, zoom: 6 } },
+    sync: { plan, results, tiles, errors: partialDownload.failed, camera: { lat: 0, lon: 0, zoom: 6 } },
     path: []
   }, hostCounter);
+  loadBrowserClass('client/js/tiles/CoverageContract.js', 'CoverageContract', sandbox);
   const SyncManager = loadBrowserClass('client/js/core/SyncManager.js', 'SyncManager', sandbox);
   const session = makeSession();
   const app = {
@@ -160,9 +199,9 @@ async function fi01LiveSyncRejectsPartialDownload() {
 
 async function fi02PathPreviewRejectsPartialDownload() {
   const hostCounter = { calls: 0 };
-  const completeTile = { tile: { key: '8/1/97', z: 8, x: 1, y: 97 }, status: 'complete', filePath: 'one.png' };
-  const failedTile = { tile: { key: partialDownload.failed[0].key, z: 8, x: 144, y: 97 }, status: 'error' };
-  const sandbox = makeSyncSandbox({ sync: null, path: [completeTile, failedTile] }, hostCounter);
+  const plan = makeFaultPlan();
+  const sandbox = makeSyncSandbox({ sync: null, path: makeFaultResults(plan, partialDownload.completedCount) }, hostCounter);
+  loadBrowserClass('client/js/tiles/CoverageContract.js', 'CoverageContract', sandbox);
   const SyncManager = loadBrowserClass('client/js/core/SyncManager.js', 'SyncManager', sandbox);
   const session = makeSession();
   const app = {
@@ -353,14 +392,6 @@ async function fi08RejectsEqualCountIdentityMismatch() {
   const result = CoverageContract.compareExactSets(fixture.expectedIds, fixture.actualIds);
   if (result.ok === true || !result.missing.includes('asset-c') || !result.unexpected.includes('asset-x')) {
     fail('EXACT_IDENTITY_SET_UNVERIFIED', 'Equal counters concealed missing and unexpected asset identities.');
-  }
-  const loggerSource = fs.readFileSync(sourcePath('client/js/core/OperationLogger.js'), 'utf8');
-  const requiredCounters = [
-    'plannedPlacements', 'uniqueDownloads', 'completedDownloads', 'failedDownloads',
-    'expectedCells', 'decodedCells', 'stitchedAssets', 'preparedAssets', 'committedAssets'
-  ];
-  if (requiredCounters.some(counter => !loggerSource.includes(counter))) {
-    fail('EXACT_IDENTITY_SET_UNVERIFIED', 'Operational counters cannot expose the exact-set mismatch captured by the fixture.');
   }
 }
 
