@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "1.0.0",
+  "plannedCount": 30,
+  "completedCount": 29,
+  "failed": [
+    { "key": "8/144/97", "code": "NETWORK_TIMEOUT" }
+  ],
+  "invariant": "No preview or Host mutation may start unless completedCount equals plannedCount and failed is empty."
+}

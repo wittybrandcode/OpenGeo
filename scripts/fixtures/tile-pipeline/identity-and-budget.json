@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0.0",
+  "wrappedWorldPlacement": {
+    "downloadId": "2/0/1",
+    "placements": ["2/-4/1", "2/0/1", "2/4/1"]
+  },
+  "trajectory": {
+    "samples": [
+      { "sampleId": "t0", "requiredPlacements": ["p1", "p2"] },
+      { "sampleId": "t1", "requiredPlacements": ["p2", "p3"] }
+    ],
+    "observedPlacements": ["p1", "p2", "unexpected-p4"]
+  },
+  "equalCountIdentityMismatch": {
+    "expectedIds": ["asset-a", "asset-b", "asset-c"],
+    "actualIds": ["asset-a", "asset-b", "asset-x"],
+    "counters": { "planned": 3, "completed": 3, "failed": 0 }
+  },
+  "fourKUltra": {
+    "width": 3840,
+    "height": 2160,
+    "quality": "ultra",
+    "estimatedDownloads": 5200,
+    "softLimit": 2500,
+    "hardLimit": 10000,
+    "userConfirmed": false
+  }
+}

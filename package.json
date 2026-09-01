@@ -24,6 +24,8 @@
     "verify:runtime-data": "node scripts/runtime-data-contract.js",
     "test": "node scripts/test.js",
     "test:ae-sync-camera": "node scripts/ae-sync-camera-regression.js",
+    "test:tile-pipeline:red": "node scripts/tests/tile-pipeline/fault-injection.test.js",
+    "verify:tile-pipeline:red-baseline": "node scripts/tests/tile-pipeline/verify-red-baseline.js",
     "baseline:record": "node scripts/baseline-manifest.js",
     "baseline:verify": "node scripts/baseline-manifest.js verify",
     "sync:versions": "node scripts/sync-versions.js",
