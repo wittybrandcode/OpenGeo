@@ -96,8 +96,8 @@ class OperationSnapshot {
         zoom: mapState.compZoom
       },
       composition: {
-        width: mapState.compWidth || 1920,
-        height: mapState.compHeight || 1080,
+        width: (app.session.composition && app.session.composition.width) || mapState.compWidth || 1920,
+        height: (app.session.composition && app.session.composition.height) || mapState.compHeight || 1080,
         displayName: String(app.session.composition && app.session.composition.displayName || options.compSettings && options.compSettings.displayName || 'OpenGeo Map').slice(0, 80)
       },
       features: app.session.featureRegistry ? app.session.featureRegistry.serialize() : [],

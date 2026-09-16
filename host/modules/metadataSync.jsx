@@ -2,6 +2,16 @@
 // OpenGeo ExtendScript Host: Metadata & Sync Modules
 // ==========================================
 
+function opengeoIsValidObject(obj) {
+  if (!obj) return false;
+  try {
+    var test = obj.name;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 var OPEN_GEO_ACTIVE_STATE_CACHE = {
   activeItemId: null,
   comp: null,
@@ -9,20 +19,62 @@ var OPEN_GEO_ACTIVE_STATE_CACHE = {
 };
 
 function opengeoGetCachedActiveMapState() {
-  var activeItem = app.project ? app.project.activeItem : null;
-  if (!activeItem) return null;
-  var activeItemId = activeItem.id;
+  var activeItem = null;
+  try {
+    activeItem = app.project ? app.project.activeItem : null;
+  } catch (e) {
+    return null;
+  }
   var cache = OPEN_GEO_ACTIVE_STATE_CACHE;
+
+  if (!activeItem || !opengeoIsValidObject(activeItem)) {
+    // When focus leaves AE to the CEP panel, app.project.activeItem is null.
+    // Preserve the cached active composition if it is still valid in AE.
+    if (cache.comp && opengeoIsValidObject(cache.comp) && cache.controller && opengeoIsValidObject(cache.controller)) {
+      try {
+        var cachedLayer = cache.comp.layer(cache.controller.index);
+        if (cachedLayer === cache.controller) return cache;
+      } catch (ignoreCachedState) {}
+    }
+    // If cache is not populated (e.g. extension restarted/reloaded), look for
+    // any existing OpenGeo map composition in the project.
+    if (app.project && app.project.items) {
+      for (var itemIndex = 1; itemIndex <= app.project.items.length; itemIndex++) {
+        try {
+          var item = app.project.items[itemIndex];
+          if (item && opengeoIsValidObject(item) && (item instanceof CompItem)) {
+            var ctrl = findLayerByComment(item, 'opengeo:controller');
+            if (ctrl && opengeoIsValidObject(ctrl)) {
+              cache.activeItemId = item.id;
+              cache.comp = item;
+              cache.controller = ctrl;
+              return cache;
+            }
+          }
+        } catch (ignoreItem) {}
+      }
+    }
+    return null;
+  }
+
+  var activeItemId = null;
+  try {
+    activeItemId = activeItem.id;
+  } catch (e) {
+    return null;
+  }
 
   if (cache.activeItemId === activeItemId && cache.comp && cache.controller) {
     try {
-      var cachedLayer = cache.comp.layer(cache.controller.index);
-      if (cachedLayer === cache.controller) return cache;
+      if (opengeoIsValidObject(cache.comp) && opengeoIsValidObject(cache.controller)) {
+        var cachedLayer = cache.comp.layer(cache.controller.index);
+        if (cachedLayer === cache.controller) return cache;
+      }
     } catch (ignoreCachedState) {}
   }
 
   var comp = resolveOpenGeoMapComp(activeItem);
-  if (!comp || !(comp instanceof CompItem)) return null;
+  if (!comp || !opengeoIsValidObject(comp) || !(comp instanceof CompItem)) return null;
   cache.activeItemId = activeItemId;
   cache.comp = comp;
   cache.controller = findLayerByComment(comp, 'opengeo:controller');
@@ -91,6 +143,28 @@ function opengeoGetCompMetadata(compId) {
     }
     if (!metadata || typeof metadata !== 'object') metadata = {};
     if (!metadata.opengeo || typeof metadata.opengeo !== 'object') metadata.opengeo = {};
+    // Ground-truth fallback: if camera or provider values are missing in comp comment,
+    // recover them directly from the controller layer effects parade and precomp comment.
+    var controller = findLayerByComment(comp, 'opengeo:controller');
+    if (controller && opengeoIsValidObject(controller)) {
+      try {
+        var effects = controller.property("ADBE Effect Parade");
+        if (effects && opengeoIsValidObject(effects)) {
+          var latProp = effects.property('Latitude');
+          var lngProp = effects.property('Longitude');
+          var zoomProp = effects.property('Zoom');
+          if (latProp && lngProp && zoomProp) {
+            if (metadata.opengeo.centerLat === undefined) metadata.opengeo.centerLat = latProp.property(1).valueAtTime(comp.time, false);
+            if (metadata.opengeo.centerLng === undefined) metadata.opengeo.centerLng = lngProp.property(1).valueAtTime(comp.time, false);
+            if (metadata.opengeo.zoom === undefined) metadata.opengeo.zoom = zoomProp.property(1).valueAtTime(comp.time, false);
+          }
+        }
+      } catch (cameraErr) {}
+      if (metadata.opengeo.source === undefined && controller.source && controller.source.comment) {
+        var ownership = opengeoReadOwnership(controller.source.comment);
+        if (ownership && ownership.source) metadata.opengeo.source = ownership.source;
+      }
+    }
     // The CompItem is authoritative for format. Persisted dimensions may be
     // stale after a rapid composition switch or a manual AE resize.
     metadata.opengeo.compWidth = comp.width;
@@ -111,14 +185,19 @@ function opengeoGetActiveState() {
     // A regular AE composition is not an OpenGeo target. Returning its compId
     // without a controller leaves the panel pointing at a composition that can
     // never accept vector imports.
-    if (!controller) return '{}';
+    if (!comp || !opengeoIsValidObject(comp) || !controller || !opengeoIsValidObject(controller)) return '{}';
 
     var stateStr = '{"compId":' + comp.id;
     try {
       var effects = controller.property("ADBE Effect Parade");
-      var lat = effects.property('Latitude').property(1).value;
-      var lng = effects.property('Longitude').property(1).value;
-      var zoom = effects.property('Zoom').property(1).value;
+      if (!effects || !opengeoIsValidObject(effects)) return '{}';
+      var latProp = effects.property('Latitude');
+      var lngProp = effects.property('Longitude');
+      var zoomProp = effects.property('Zoom');
+      if (!latProp || !lngProp || !zoomProp) return '{}';
+      var lat = latProp.property(1).value;
+      var lng = lngProp.property(1).value;
+      var zoom = zoomProp.property(1).value;
       stateStr += ', "controllerId":' + controller.index;
       stateStr += ', "appliedRevision":' + opengeoGetSyncRevision(effects);
       stateStr += ', "camera":{"lat":' + lat + ', "lng":' + lng + ', "zoom":' + zoom + '}';
@@ -135,44 +214,92 @@ function opengeoGetActiveState() {
 function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
   try {
     var comp = ensureComp(compId);
-    if (!comp) return 'error: comp not found';
-    
-    var controller = findLayerByComment(comp, 'opengeo:controller');
-    if (controller) {
-      var effects = controller.property("ADBE Effect Parade");
-      var latitudeProperty = effects.property('Latitude').property(1);
-      var longitudeProperty = effects.property('Longitude').property(1);
-      var zoomProperty = effects.property('Zoom').property(1);
-      var canApplyCamera = opengeoCanSetCameraControlValue(latitudeProperty, comp.time, recordKeyframe === true) &&
-        opengeoCanSetCameraControlValue(longitudeProperty, comp.time, recordKeyframe === true) &&
-        opengeoCanSetCameraControlValue(zoomProperty, comp.time, recordKeyframe === true);
-
-      // Keyframed properties are evaluated from their timeline values. In
-      // normal navigation we therefore leave an existing animation intact;
-      // Record mode is the explicit opt-in that writes at the current CTI.
-      if (canApplyCamera) {
-        opengeoSetCameraControlValue(latitudeProperty, comp.time, lat, recordKeyframe === true);
-        opengeoSetCameraControlValue(longitudeProperty, comp.time, lng, recordKeyframe === true);
-        opengeoSetCameraControlValue(zoomProperty, comp.time, zoom, recordKeyframe === true);
-      }
-      var appliedRevision = canApplyCamera
-        ? opengeoSetSyncRevision(effects, revision)
-        : opengeoGetSyncRevision(effects);
-      var actualCamera = {
-        lat: latitudeProperty.valueAtTime(comp.time, false),
-        lng: longitudeProperty.valueAtTime(comp.time, false),
-        zoom: zoomProperty.valueAtTime(comp.time, false)
-      };
-      OPEN_GEO_ACTIVE_STATE_CACHE.activeItemId = null;
+    if (!comp) {
       return JSON.stringify({
-        applied: canApplyCamera,
-        appliedRevision: appliedRevision,
-        disposition: canApplyCamera ? (recordKeyframe === true ? 'recorded' : 'updated') : 'skipped-keyframed-outside-cti',
-        camera: actualCamera
+        applied: false,
+        disposition: 'comp-not-found',
+        reason: 'Composition not found'
       });
     }
-    return 'error: controller not found';
+    
+    var controller = findLayerByComment(comp, 'opengeo:controller');
+    if (!controller || !opengeoIsValidObject(controller)) {
+      return JSON.stringify({
+        applied: false,
+        disposition: 'controller-not-found',
+        reason: 'Map controller not found'
+      });
+    }
+
+    var effects = controller.property("ADBE Effect Parade");
+    if (!effects || !opengeoIsValidObject(effects)) {
+      return JSON.stringify({
+        applied: false,
+        disposition: 'effects-not-found',
+        reason: 'Controller effects parade not found'
+      });
+    }
+
+    var latEffect = effects.property('Latitude');
+    var lngEffect = effects.property('Longitude');
+    var zoomEffect = effects.property('Zoom');
+    if (!latEffect || !lngEffect || !zoomEffect) {
+      return JSON.stringify({
+        applied: false,
+        disposition: 'properties-not-found',
+        reason: 'Camera control effects not found'
+      });
+    }
+
+    var latitudeProperty = latEffect.property(1);
+    var longitudeProperty = lngEffect.property(1);
+    var zoomProperty = zoomEffect.property(1);
+    if (!latitudeProperty || !longitudeProperty || !zoomProperty) {
+      return JSON.stringify({
+        applied: false,
+        disposition: 'properties-not-found',
+        reason: 'Camera property values not found'
+      });
+    }
+
+    var canApplyCamera = opengeoCanSetCameraControlValue(latitudeProperty, comp.time, recordKeyframe === true) &&
+      opengeoCanSetCameraControlValue(longitudeProperty, comp.time, recordKeyframe === true) &&
+      opengeoCanSetCameraControlValue(zoomProperty, comp.time, recordKeyframe === true);
+
+    // Keyframed properties are evaluated from their timeline values. In
+    // normal navigation we therefore leave an existing animation intact;
+    // Record mode is the explicit opt-in that writes at the current CTI.
+    if (canApplyCamera) {
+      opengeoSetCameraControlValue(latitudeProperty, comp.time, lat, recordKeyframe === true);
+      opengeoSetCameraControlValue(longitudeProperty, comp.time, lng, recordKeyframe === true);
+      opengeoSetCameraControlValue(zoomProperty, comp.time, zoom, recordKeyframe === true);
+    }
+    var appliedRevision = canApplyCamera
+      ? opengeoSetSyncRevision(effects, revision)
+      : opengeoGetSyncRevision(effects);
+    var actualCamera = {
+      lat: latitudeProperty.valueAtTime(comp.time, false),
+      lng: longitudeProperty.valueAtTime(comp.time, false),
+      zoom: zoomProperty.valueAtTime(comp.time, false)
+    };
+    OPEN_GEO_ACTIVE_STATE_CACHE.activeItemId = null;
+    return JSON.stringify({
+      applied: canApplyCamera,
+      appliedRevision: appliedRevision,
+      disposition: canApplyCamera ? (recordKeyframe === true ? 'recorded' : 'updated') : 'skipped-keyframed-outside-cti',
+      camera: actualCamera
+    });
   } catch (e) {
+    if (String(e).indexOf('Object is invalid') !== -1) {
+      OPEN_GEO_ACTIVE_STATE_CACHE.activeItemId = null;
+      OPEN_GEO_ACTIVE_STATE_CACHE.comp = null;
+      OPEN_GEO_ACTIVE_STATE_CACHE.controller = null;
+      return JSON.stringify({
+        applied: false,
+        disposition: 'target-invalidated',
+        reason: 'AE object invalidated during sync'
+      });
+    }
     return 'error: ' + e.toString();
   }
 }

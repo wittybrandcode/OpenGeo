@@ -1,0 +1,52 @@
+/* Theme-native confirm/prompt dialog */
+.opengeo-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog, 2200);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(5, 8, 12, 0.58);
+  backdrop-filter: blur(4px);
+}
+.opengeo-dialog-overlay.visible { display: flex; animation: dialogFadeIn 0.16s ease-out; }
+.opengeo-dialog-panel {
+  position: relative;
+  width: min(390px, 100%);
+  overflow: hidden;
+  color: var(--text-primary);
+  background: linear-gradient(145deg, rgba(42,42,42,0.99), rgba(25,25,25,0.99));
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 9px;
+  box-shadow: 0 22px 60px rgba(0,0,0,0.58);
+  animation: dialogPanelIn 0.18s ease-out;
+}
+.opengeo-dialog-accent { height: 2px; background: linear-gradient(90deg, #1473e6, #52a8ff 55%, transparent); }
+.opengeo-dialog-header { display: flex; align-items: center; gap: 10px; padding: 14px 15px 10px; }
+.opengeo-dialog-symbol { width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; color: #63adff; background: rgba(20,115,230,0.14); border: 1px solid rgba(82,168,255,0.25); border-radius: 7px; }
+.opengeo-dialog-symbol svg { width: 16px; height: 16px; }
+.opengeo-dialog-heading { min-width: 0; flex: 1; }
+.opengeo-dialog-heading strong { display: block; font-size: 13px; font-weight: 600; }
+.opengeo-dialog-heading span { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 9px; letter-spacing: .07em; text-transform: uppercase; }
+.opengeo-dialog-icon-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); background: transparent; border: 0; border-radius: 4px; cursor: pointer; }
+.opengeo-dialog-icon-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.07); }
+.opengeo-dialog-icon-btn svg { width: 14px; height: 14px; }
+.opengeo-dialog-content { padding: 6px 15px 16px; }
+.opengeo-dialog-content p { margin: 0; color: var(--text-secondary); font-size: 11px; line-height: 1.55; white-space: pre-wrap; }
+.opengeo-dialog-input { width: 100%; height: 32px; margin-top: 12px; padding: 0 9px; color: var(--text-primary); background: rgba(0,0,0,0.24); border: 1px solid var(--border-color); border-radius: 4px; outline: none; }
+.opengeo-dialog-input:focus { border-color: #388de8; box-shadow: 0 0 0 2px rgba(20,115,230,0.16); }
+.opengeo-dialog-actions { display: flex; justify-content: flex-end; gap: 7px; padding: 10px 15px 13px; background: rgba(0,0,0,0.15); border-top: 1px solid rgba(255,255,255,0.07); }
+.opengeo-dialog-btn { min-width: 76px; height: 29px; padding: 0 13px; color: var(--text-primary); border: 1px solid transparent; border-radius: 4px; font-size: 10px; cursor: pointer; }
+.opengeo-dialog-btn.secondary { background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1); }
+.opengeo-dialog-btn.secondary:hover { background: rgba(255,255,255,0.09); }
+.opengeo-dialog-btn.primary { color: #fff; background: #1473e6; border-color: #2785ee; }
+.opengeo-dialog-btn.primary:hover { background: #2785ee; }
+.opengeo-dialog-btn.primary.danger { background: #c63f48; border-color: #dc525b; }
+.opengeo-dialog-btn.primary.danger:hover { background: #dc525b; }
+.opengeo-dialog-btn.primary.success { background: #27ae60; border-color: #2ecc71; }
+.opengeo-dialog-btn.primary.success:hover { background: #2ecc71; }
+.opengeo-dialog-symbol.success { color: #2ecc71; background: rgba(46, 204, 113, 0.16); border-color: rgba(46, 204, 113, 0.3); }
+.opengeo-dialog-overlay.success .opengeo-dialog-accent { background: linear-gradient(90deg, #27ae60, #2ecc71 55%, transparent); }
+@keyframes dialogFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialogPanelIn { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: translateY(0) scale(1); } }

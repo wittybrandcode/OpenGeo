@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; connect-src https:; worker-src 'self' blob:; font-src 'self' data:; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <title>OpenGeo</title>
-  <link rel="stylesheet" href="css/style.css?v=13">
+  <link rel="stylesheet" href="css/style.css?v=14">
 </head>
 <body>
   <div id="splash-screen" class="splash-screen">
@@ -19,6 +19,14 @@
 
   <div id="app">
     <div class="toolbar">
+      <!-- Dedicated Header Brand / Logo Container (Ready for SVG) -->
+      <div class="header-brand" id="header-brand" title="OpenGeo Map Engine">
+        <span class="header-brand-logo" id="header-brand-logo" aria-hidden="true"></span>
+        <span class="header-brand-title" id="header-brand-title">OpenGeo</span>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
       <button class="toolbar-btn" id="zoom-in" title="Zoom In">
         <i data-lucide="zoom-in"></i>
       </button>
@@ -28,18 +36,21 @@
       
       <div class="toolbar-divider"></div>
       
-      <select class="toolbar-select" id="tile-source" title="Map Source / Style">
-        <option value="esri">Satellite — ESRI World Imagery</option>
-        <option value="mapboxSatellite">Satellite — Mapbox @2x</option>
-        <option value="maptiler">Satellite — MapTiler</option>
-        <option value="cartoDark">Vector Dark — CartoDB Dark Matter</option>
-        <option value="cartoLight">Vector Light — CartoDB Positron</option>
-        <option value="stamenTerrain">Topographic — Stamen Terrain</option>
-        <option value="satellite2025">Satellite — Sentinel-2 2025</option>
-        <option value="satellite2024">Satellite — Sentinel-2 2024</option>
-        <option value="osm">Street — OpenStreetMap</option>
-        <option value="customXYZ">Custom XYZ Server</option>
-      </select>
+      <div class="provider-wrapper">
+        <span class="provider-status-dot" id="provider-status-dot" title="Provider status: Online"></span>
+        <select class="toolbar-select" id="tile-source" title="Map Source / Style">
+          <option value="esri">Satellite — ESRI World Imagery</option>
+          <option value="mapboxSatellite">Satellite — Mapbox @2x</option>
+          <option value="maptiler">Satellite — MapTiler</option>
+          <option value="cartoDark">Vector Dark — CartoDB Dark Matter</option>
+          <option value="cartoLight">Vector Light — CartoDB Positron</option>
+          <option value="stamenTerrain">Topographic — Stamen Terrain</option>
+          <option value="satellite2025">Satellite — Sentinel-2 2025</option>
+          <option value="satellite2024">Satellite — Sentinel-2 2024</option>
+          <option value="osm">Street — OpenStreetMap</option>
+          <option value="customXYZ">Custom XYZ Server</option>
+        </select>
+      </div>
       
       <button class="toolbar-btn" id="provider-settings-btn" title="OpenGeo Settings">
         <i data-lucide="settings"></i>
@@ -48,21 +59,95 @@
         <i data-lucide="map"></i>
       </button>
       
-      <select class="toolbar-select" id="tile-size-select" title="Tile Size">
+      <select class="toolbar-select toolbar-select-hidden" id="tile-size-select" title="Tile Size" style="display:none;">
         <option value="256">256px</option>
         <option value="512">512px</option>
       </select>
       
-      <select class="toolbar-select" id="theme-select" title="Panel Theme">
+      <select class="toolbar-select toolbar-select-hidden" id="theme-select" title="Panel Theme" style="display:none;">
         <option value="dark">Dark Theme</option>
         <option value="light">Light Theme</option>
       </select>
 
-      <div class="coords-display">
-        <span class="lat" id="coord-lat">--°</span>
-        <span class="lng" id="coord-lng">--°</span>
+      <!-- Group: Sovereign Production Finalize (Elevated to Header Toolbar) -->
+      <div class="bottom-group finalize-group toolbar-finalize-group" id="group-finalize">
+        <div class="finalize-split-group" id="finalize-split-group">
+          <!-- 3 Radio Buttons for Quality -->
+          <div class="quality-radio-group" role="radiogroup" aria-label="Finalize Quality Target">
+            <label class="quality-radio-btn" title="Normal: Standard 1x resolution">
+              <input type="radio" name="finalize-quality-radio" value="normal" checked>
+              <span class="radio-indicator"></span>
+              <span class="radio-label">Normal</span>
+            </label>
+            <label class="quality-radio-btn" title="High: 2x super-sampled high resolution">
+              <input type="radio" name="finalize-quality-radio" value="high">
+              <span class="radio-indicator"></span>
+              <span class="radio-label">High</span>
+            </label>
+            <label class="quality-radio-btn" title="Ultra: 4K UHD ultra-crisp production render">
+              <input type="radio" name="finalize-quality-radio" value="ultra">
+              <span class="radio-indicator"></span>
+              <span class="radio-label">Ultra</span>
+            </label>
+          </div>
+          <select id="finalize-quality" class="quality-select" style="display: none;" aria-label="Finalize Quality Target">
+            <option value="normal" selected>Normal</option>
+            <option value="high">High</option>
+            <option value="ultra">Ultra</option>
+          </select>
+
+          <!-- Sovereign Finalize Button -->
+          <button class="bottom-btn finalize-btn sovereign-finalize-btn" id="finalize-btn" data-estimate-badge="true" aria-label="Finalize: Download high quality tiles for render">
+            <svg class="finalize-icon" viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true">
+              <path d="M8 1.5L14 4.5L8 7.5L2 4.5L8 1.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M2 8L8 11L14 8" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M2 11.5L8 14.5L14 11.5" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+              <path d="M12.5 1.5V4.5M11 3H14" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <span>Finalize</span>
+          </button>
+
+          <div class="finalize-estimate-badge" id="finalize-estimate-badge" aria-label="Estimated tiles for current view">
+            <span class="est-action">Finalize:</span>
+            <span class="est-tiles">~320 tiles</span>
+            <span class="est-dot">•</span>
+            <span class="est-size">~7.8 MB</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Geo Info Strip: Place • Coordinates • Zoom -->
+    <div class="sub-header-bar geo-location-hud" id="geo-location-hud">
+      <div class="sub-header-left">
+        <i data-lucide="map-pin" class="location-hud-icon"></i>
+        <span class="location-hud-name" id="location-hud-name">Real Earth</span>
+        <span class="location-hud-sep">•</span>
+        <div class="coords-display">
+          <span class="lat" id="coord-lat">--°</span>
+          <span class="coord-sep">,</span>
+          <span class="lng" id="coord-lng">--°</span>
+        </div>
+        <span class="location-hud-sep">•</span>
         <span class="zoom" id="coord-zoom">Z: --</span>
-        <button class="center-btn" id="center-btn" title="Center">
+        <span class="location-hud-coords" id="location-hud-coords" style="display:none;"></span>
+      </div>
+      <div class="sub-header-right">
+        <!-- Dynamic Real-World Scale Bar -->
+        <div class="map-scale-bar" id="map-scale-bar" title="Geodesic real-world distance scale">
+          <div class="scale-bar-line-container">
+            <div class="scale-bar-line" id="scale-bar-line"></div>
+          </div>
+          <span class="scale-bar-text" id="scale-bar-text">-- km</span>
+        </div>
+
+        <!-- North Compass Indicator -->
+        <div class="map-compass" id="map-compass" title="North orientation (Click to reset)">
+          <div class="compass-needle"></div>
+          <span class="compass-label">N</span>
+        </div>
+
+        <button class="center-btn" id="center-btn" title="Center map on current view">
           <i data-lucide="locate-fixed"></i>
         </button>
       </div>
@@ -72,19 +157,49 @@
       <canvas id="map-canvas"></canvas>
       <div class="framing-box" id="framing-box">
         <div class="framing-box-inner"></div>
+        <div class="framing-badge" id="framing-badge">16:9 • 1920×1080</div>
       </div>
+
       <div class="map-attribution" id="map-attribution"></div>
     </div>
 
     <div class="search-bar">
       <div class="search-input-wrapper">
         <i data-lucide="search" class="search-icon"></i>
-        <input class="search-input" type="text" id="search-input" placeholder="Search city or coordinates..." />
+        <input class="search-input" type="text" id="search-input" placeholder="Search place, coordinates, or paste any map link..." autocomplete="off" spellcheck="false" />
+        <button class="search-action-btn search-clear-btn" id="search-clear-btn" title="Clear search input" type="button" style="display:none;">
+          <i data-lucide="x"></i>
+        </button>
+        <button class="search-action-btn search-paste-btn" id="search-paste-btn" title="Paste location link or coordinates from clipboard" type="button">
+          <i data-lucide="clipboard-paste"></i>
+        </button>
       </div>
+
+      <!-- Detected Universal Geo Target Chip/Badge -->
+      <div class="search-detected-badge" id="search-detected-badge" style="display:none;">
+        <div class="detected-badge-left">
+          <span class="detected-service-tag" id="detected-service-tag">
+            <i data-lucide="map-pin" class="tag-icon"></i>
+            <span id="detected-service-name">Google Maps</span>
+          </span>
+          <span class="detected-coords-text" id="detected-coords-text">--°, --°</span>
+        </div>
+        <div class="detected-badge-actions">
+          <button class="detected-btn jump-btn" id="detected-jump-btn" type="button" title="Jump to location view">
+            <i data-lucide="navigation"></i>
+            <span>Jump</span>
+          </button>
+          <button class="detected-btn pin-btn" id="detected-pin-btn" type="button" title="Create 3D Spatial Pin at this location">
+            <i data-lucide="plus"></i>
+            <span>Pin</span>
+          </button>
+        </div>
+      </div>
+
       <div class="search-results" id="search-results">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 10;">
+        <div class="search-results-header">
           <span style="font-size: 11px; color: var(--text-secondary);">Search Results</span>
-          <button class="settings-close" id="search-close-btn" style="position: static; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
+          <button class="settings-close" id="search-close-btn" title="Close search results" aria-label="Close search results" style="position: static; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;">
             <i data-lucide="x" style="width: 14px; height: 14px;"></i>
           </button>
         </div>
@@ -93,48 +208,54 @@
     </div>
 
     <div class="bottom-bar">
-      <button class="bottom-btn create-map-btn" id="create-comp-btn" title="Create a new OpenGeo map" aria-label="Create a new OpenGeo map">
-        <i data-lucide="plus"></i>
-      </button>
-      <button class="bottom-btn" id="project-maps-btn" title="Browse OpenGeo maps in this AE project">
-        <i data-lucide="layout-grid"></i>
-        Maps
-      </button>
+      <!-- Group 1: Project -->
+      <div class="bottom-group" id="group-project">
+        <button class="bottom-btn create-map-btn" id="create-comp-btn" title="Create a new OpenGeo map" aria-label="Create a new OpenGeo map">
+          <i data-lucide="plus"></i>
+        </button>
+        <button class="bottom-btn" id="project-maps-btn" title="Browse OpenGeo maps in this AE project">
+          <i data-lucide="layout-grid"></i>
+          <span>Maps</span>
+        </button>
+      </div>
+
       <div class="bottom-divider"></div>
-      <select id="finalize-quality" class="quality-select" title="Finalize Quality">
-        <option value="normal">Normal</option>
-        <option value="high">High</option>
-        <option value="ultra" selected>Ultra</option>
-      </select>
-      <button class="bottom-btn finalize-btn" id="finalize-btn" title="Finalize: Download high quality tiles for render">
-        <i data-lucide="download"></i>
-        Finalize
-      </button>
-      <button class="bottom-btn" id="keyframe-add-btn" title="Add or update one keyframe at the current AE time">
-        <i data-lucide="diamond"></i>
-        Add Key
-      </button>
-      <button class="bottom-btn keyframe-record-btn" id="keyframe-record-btn" title="Record map moves as keyframes at the current AE time" aria-pressed="false">
-        <i data-lucide="circle"></i>
-        <span id="keyframe-record-label">Record</span>
-      </button>
-      <button class="bottom-btn" id="pin-btn" title="Add Spatial Pin (Null Tracker) at current map position in AE">
-        <i data-lucide="map-pin"></i>
-        Add Pin
-      </button>
-      <button class="bottom-btn" id="load-geojson-btn">
-        <i data-lucide="file-json"></i>
-        GeoJSON
-      </button>
-      <input type="file" id="geojson-file-input" accept=".geojson,.json" style="display:none">
-      <button class="bottom-btn" id="feature-layers-btn" title="Manage vector maps drawn in this composition">
-        <i data-lucide="list-tree"></i>
-        Layers
-      </button>
-      <button class="bottom-btn" id="clear-markers-btn">
-        <i data-lucide="trash-2"></i>
-        Clear
-      </button>
+
+      <!-- Group 2: Motion & Animation -->
+      <div class="bottom-group" id="group-motion">
+        <button class="bottom-btn" id="keyframe-add-btn" title="Add or update one keyframe at the current AE time">
+          <i data-lucide="diamond"></i>
+          <span>Add Key</span>
+        </button>
+        <button class="bottom-btn keyframe-record-btn" id="keyframe-record-btn" title="Record map moves as keyframes at the current AE time" aria-pressed="false">
+          <i data-lucide="circle"></i>
+          <span id="keyframe-record-label">Record</span>
+        </button>
+        <button class="bottom-btn" id="pin-btn" title="Add Spatial Pin (Null Tracker) at current map position in AE">
+          <i data-lucide="map-pin"></i>
+          <span>Add Pin</span>
+        </button>
+      </div>
+
+      <div class="bottom-divider"></div>
+
+      <!-- Group 3: Data & Layers -->
+      <div class="bottom-group" id="group-data">
+        <button class="bottom-btn" id="load-geojson-btn" title="Import GeoJSON file">
+          <i data-lucide="file-json"></i>
+          <span>GeoJSON</span>
+        </button>
+        <input type="file" id="geojson-file-input" accept=".geojson,.json" style="display:none">
+        <button class="bottom-btn" id="feature-layers-btn" title="Manage vector maps drawn in this composition">
+          <i data-lucide="list-tree"></i>
+          <span>Layers</span>
+        </button>
+        <button class="bottom-btn" id="clear-markers-btn" title="Clear temporary markers">
+          <i data-lucide="trash-2"></i>
+          <span>Clear</span>
+        </button>
+      </div>
+
       <span class="status-text" id="status-text"></span>
     </div>
 
@@ -150,24 +271,52 @@
   <div class="download-overlay" id="download-modal" style="display: none;">
     <div class="download-panel">
       <div class="download-header">
-        <i data-lucide="cloud-download" class="download-icon"></i>
-        <span class="download-title">Downloading Tiles</span>
+        <div class="download-header-left">
+          <i data-lucide="cloud-download" class="download-icon" id="dl-icon"></i>
+          <div>
+            <div class="download-title" id="dl-title">Downloading Tiles</div>
+            <div class="download-subtitle" id="dl-subtitle">High-Resolution Map Finalize</div>
+          </div>
+        </div>
+        <span class="download-phase-badge" id="dl-phase-badge">Stage 1 of 2</span>
       </div>
       
       <div class="download-body">
-        <div class="download-stats">
+        <div class="download-stats-grid">
           <div class="stat-box">
             <span class="stat-label">Progress</span>
             <span class="stat-value" id="dl-percent">0%</span>
+            <span class="stat-sublabel" id="dl-percent-sub">Overall</span>
           </div>
+
+          <div class="stat-box highlight-box">
+            <span class="stat-label">Remaining Size</span>
+            <span class="stat-value text-cyan" id="dl-remaining-size">-- MB</span>
+            <span class="stat-sublabel" id="dl-total-size">Total: ~-- MB</span>
+          </div>
+
           <div class="stat-box">
             <span class="stat-label">Tiles</span>
             <span class="stat-value"><span id="dl-done" class="text-accent">0</span> / <span id="dl-total">0</span></span>
+            <span class="stat-sublabel" id="dl-remaining-tiles">-- left</span>
           </div>
+
           <div class="stat-box">
-            <span class="stat-label">Speed</span>
+            <span class="stat-label">Speed & ETA</span>
             <span class="stat-value" id="dl-speed">--</span>
+            <span class="stat-sublabel text-eta" id="dl-eta">ETA: --</span>
           </div>
+        </div>
+
+        <div class="download-spec-strip" id="dl-spec-strip">
+          <span class="spec-chip" id="dl-resolution-chip">
+            <i data-lucide="monitor" class="chip-mini-icon"></i>
+            <span id="dl-resolution-text">1920×1080</span>
+          </span>
+          <span class="spec-chip" id="dl-transferred-chip">
+            <i data-lucide="arrow-down-circle" class="chip-mini-icon"></i>
+            <span id="dl-transferred-text">0.0 MB downloaded</span>
+          </span>
         </div>
 
         <div class="progress-container">
@@ -176,7 +325,7 @@
           </div>
         </div>
         <div class="download-info" id="dl-info">Initializing connection...</div>
-        <button class="bottom-btn" id="dl-cancel" type="button" style="display: none; width: 100%; margin-top: 10px;">Cancel Finalize</button>
+        <button class="bottom-btn cancel-btn" id="dl-cancel" type="button" title="Cancel download and assembly" aria-label="Cancel download and assembly" style="display: none; width: 100%; margin-top: 14px;">Cancel Finalize</button>
       </div>
     </div>
   </div>
@@ -212,8 +361,8 @@
         <input id="opengeo-dialog-input" class="opengeo-dialog-input" type="text" autocomplete="off">
       </div>
       <div class="opengeo-dialog-actions">
-        <button id="opengeo-dialog-cancel" class="opengeo-dialog-btn secondary" type="button">Cancel</button>
-        <button id="opengeo-dialog-confirm" class="opengeo-dialog-btn primary" type="button">Confirm</button>
+        <button id="opengeo-dialog-cancel" class="opengeo-dialog-btn secondary" type="button" title="Cancel action" aria-label="Cancel action">Cancel</button>
+        <button id="opengeo-dialog-confirm" class="opengeo-dialog-btn primary" type="button" title="Confirm action" aria-label="Confirm action">Confirm</button>
       </div>
     </div>
   </div>
@@ -221,69 +370,119 @@
 
 
   <div class="settings-overlay" id="comp-settings-modal" style="display: none;">
-    <div class="settings-panel" style="width: 320px; display: flex; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); height: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-      <div class="settings-header">
-        New Composition
-        <button class="settings-close" id="comp-settings-close">
-          <svg viewBox="0 0 14 14"><line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <div class="settings-panel comp-settings-panel">
+      <!-- Modal Header -->
+      <div class="comp-modal-header">
+        <div class="comp-modal-title-group">
+          <div class="comp-modal-icon-badge">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="comp-header-icon">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="comp-modal-title">New Composition</h3>
+            <span class="comp-modal-subtitle">After Effects Map Configuration</span>
+          </div>
+        </div>
+        <button class="settings-close comp-modal-close" id="comp-settings-close" title="Close composition settings" aria-label="Close composition settings">
+          <i data-lucide="x"></i>
         </button>
       </div>
-      <div class="settings-body">
-        <div class="settings-group">
+
+      <!-- Modal Body -->
+      <div class="comp-modal-body">
+        <!-- Map Name Field -->
+        <div class="comp-form-group">
           <div class="comp-name-label-row">
-            <label class="settings-label" for="comp-name">Map name</label>
-            <span id="comp-name-mode-label">Default name</span>
+            <label class="comp-label" for="comp-name">Map Name</label>
+            <span id="comp-name-mode-label" class="comp-badge">Default name</span>
           </div>
-          <div class="comp-name-control">
-            <input type="text" class="search-input" id="comp-name" maxlength="80" placeholder="OpenGeo Map">
-            <button id="comp-name-mode" class="comp-name-mode-btn" type="button" aria-pressed="false" title="Use After Effects project name">
+          <div class="comp-input-wrapper">
+            <i data-lucide="map-pin" class="comp-input-icon"></i>
+            <input type="text" class="comp-text-input" id="comp-name" maxlength="80" placeholder="OpenGeo Map" title="Enter composition map name">
+            <button id="comp-name-mode" class="comp-mode-toggle-btn" type="button" aria-pressed="false" title="Use After Effects project name" aria-label="Use After Effects project name">
               <i data-lucide="map"></i>
             </button>
           </div>
         </div>
-        <div class="settings-group">
-          <label class="settings-label">Preset</label>
-          <select class="settings-select" id="comp-preset">
-            <option value="hd">1920×1080 (HD)</option>
-            <option value="4k">3840×2160 (4K UHD)</option>
-            <option value="vertical">1080×1920 (Vertical / Reels)</option>
-            <option value="square">1080×1080 (Square / Instagram)</option>
-          </select>
-        </div>
-        
-        <div class="settings-group" style="display: flex; gap: 10px;">
-          <div style="flex: 1;">
-            <label class="settings-label">Width (px)</label>
-            <input type="number" class="search-input" id="comp-width" value="1920" readonly style="padding: 2px 6px; opacity: 0.7; cursor: not-allowed;">
+
+        <!-- Preset Selector -->
+        <div class="comp-form-group">
+          <div class="comp-name-label-row">
+            <label class="comp-label" for="comp-preset">Resolution Preset</label>
+            <span class="comp-badge preset-hint">Aspect Ratio Locked</span>
           </div>
-          <div style="flex: 1;">
-            <label class="settings-label">Height (px)</label>
-            <input type="number" class="search-input" id="comp-height" value="1080" readonly style="padding: 2px 6px; opacity: 0.7; cursor: not-allowed;">
+          <div class="comp-select-wrapper">
+            <select class="comp-select" id="comp-preset" title="Select composition resolution preset">
+              <option value="hd">1920 × 1080 (Full HD Landscape • 16:9)</option>
+              <option value="4k">3840 × 2160 (4K UHD Cinema • 16:9)</option>
+              <option value="vertical">1080 × 1920 (Vertical Reel / Story • 9:16)</option>
+              <option value="square">1080 × 1080 (Square Post • 1:1)</option>
+            </select>
+            <i data-lucide="chevron-down" class="comp-select-arrow"></i>
           </div>
         </div>
-        
-        <div class="settings-group">
-          <label class="settings-label">Frame Rate (fps)</label>
-          <select class="settings-select" id="comp-fps">
-            <option value="23.976">23.976</option>
-            <option value="24">24</option>
-            <option value="25">25</option>
-            <option value="29.97">29.97</option>
-            <option value="30" selected>30</option>
-            <option value="50">50</option>
-            <option value="60">60</option>
-          </select>
+
+        <!-- Custom Dimensions Preview -->
+        <div class="comp-dimensions-card">
+          <div class="comp-dim-col">
+            <label class="comp-dim-label" for="comp-width">Width</label>
+            <div class="comp-dim-input-group">
+              <input type="number" class="comp-dim-input" id="comp-width" value="1920" readonly title="Composition pixel width">
+              <span class="comp-unit">px</span>
+            </div>
+          </div>
+          <div class="comp-dim-separator">
+            <i data-lucide="link" class="comp-dim-link-icon"></i>
+          </div>
+          <div class="comp-dim-col">
+            <label class="comp-dim-label" for="comp-height">Height</label>
+            <div class="comp-dim-input-group">
+              <input type="number" class="comp-dim-input" id="comp-height" value="1080" readonly title="Composition pixel height">
+              <span class="comp-unit">px</span>
+            </div>
+          </div>
         </div>
-        
-        <div class="settings-group">
-          <label class="settings-label">Duration (seconds)</label>
-          <input type="number" class="search-input" id="comp-duration" value="30" min="1" max="3600" style="padding: 2px 6px;">
+
+        <!-- FPS & Duration Grid -->
+        <div class="comp-form-row">
+          <div class="comp-form-col">
+            <label class="comp-label" for="comp-fps">Frame Rate</label>
+            <div class="comp-select-wrapper">
+              <select class="comp-select" id="comp-fps" title="Select composition frame rate">
+                <option value="23.976">23.976 fps</option>
+                <option value="24">24 fps</option>
+                <option value="25">25 fps</option>
+                <option value="29.97">29.97 fps</option>
+                <option value="30" selected>30 fps</option>
+                <option value="50">50 fps</option>
+                <option value="60">60 fps</option>
+              </select>
+              <i data-lucide="chevron-down" class="comp-select-arrow"></i>
+            </div>
+          </div>
+
+          <div class="comp-form-col">
+            <label class="comp-label" for="comp-duration">Duration</label>
+            <div class="comp-dim-input-group">
+              <input type="number" class="comp-dim-input editable" id="comp-duration" value="30" min="1" max="3600" title="Composition duration in seconds">
+              <span class="comp-unit">sec</span>
+            </div>
+          </div>
         </div>
-        
-        <div style="display: flex; gap: 8px; margin-top: 15px; justify-content: flex-end;">
-          <button class="bottom-btn" id="comp-settings-cancel">Cancel</button>
-          <button class="bottom-btn finalize-btn" id="comp-settings-create">Create</button>
-        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="comp-modal-footer">
+        <button class="comp-btn-secondary" id="comp-settings-cancel" title="Cancel composition creation" aria-label="Cancel composition creation">
+          Cancel
+        </button>
+        <button class="comp-btn-primary" id="comp-settings-create" title="Create new After Effects map composition" aria-label="Create new After Effects map composition">
+          <i data-lucide="plus" class="comp-btn-icon"></i>
+          <span>Create Composition</span>
+        </button>
       </div>
     </div>
   </div>
@@ -292,7 +491,7 @@
     <div class="settings-panel" style="width: 380px; display: flex; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); height: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
       <div class="settings-header">
         OpenGeo Settings
-        <button class="settings-close" id="provider-settings-close" style="display: flex; align-items: center; justify-content: center;">
+        <button class="settings-close" id="provider-settings-close" title="Close provider settings" aria-label="Close provider settings" style="display: flex; align-items: center; justify-content: center;">
           <i data-lucide="x" style="width: 14px; height: 14px;"></i>
         </button>
       </div>
@@ -310,12 +509,113 @@
 
         <div class="settings-group" style="margin-bottom: 12px;">
           <label class="settings-label" style="margin-bottom: 4px;">Custom XYZ URL</label>
-          <input type="text" class="search-input" id="provider-custom-url" placeholder="https://server.com/{z}/{x}/{y}.jpg" style="width: 100%; padding: 4px 8px;">
+          <input type="text" class="search-input" id="provider-custom-url" placeholder="https://server.com/{z}/{x}/{y}.jpg" title="Custom XYZ tile server URL template" style="width: 100%; padding: 4px 8px;">
         </div>
         
         <div style="display: flex; gap: 8px; margin-top: 15px; justify-content: flex-end;">
-          <button class="bottom-btn" id="provider-settings-cancel">Cancel</button>
-          <button class="bottom-btn finalize-btn" id="provider-settings-save">Save Settings</button>
+          <button class="bottom-btn" id="provider-settings-cancel" title="Cancel and discard changes" aria-label="Cancel and discard changes">Cancel</button>
+          <button class="bottom-btn finalize-btn" id="provider-settings-save" title="Save provider API keys and settings" aria-label="Save provider API keys and settings">Save Settings</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-overlay" id="spatial-pin-modal" style="display: none;">
+    <div class="settings-panel spatial-pin-panel" style="width: 360px; display: flex; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); height: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); box-shadow: 0 4px 24px rgba(0,0,0,0.6);">
+      <div class="settings-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="map-pin" style="width: 16px; height: 16px; color: var(--text-accent);"></i>
+          <strong>Add Spatial Pin</strong>
+        </div>
+        <button class="settings-close" id="pin-modal-close" type="button" title="Close spatial pin dialog" aria-label="Close spatial pin dialog" style="display: flex; align-items: center; justify-content: center;">
+          <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+      <div class="settings-body" style="padding: 14px 16px;">
+        <div class="settings-group" style="margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px;">
+            <label class="settings-label" for="pin-name-input" style="margin: 0;">Pin Name / Label</label>
+            <span id="pin-coords-badge" style="font-size: 10px; color: var(--text-dim);">0.0000°, 0.0000°</span>
+          </div>
+          <input type="text" class="search-input" id="pin-name-input" value="Spatial Pin" maxlength="80" placeholder="e.g. Landmark, Capital, Point of Interest" title="Spatial pin layer name" style="width: 100%; padding: 5px 8px;">
+        </div>
+
+        <div class="settings-group" style="margin-bottom: 12px;">
+          <label class="settings-label" style="margin-bottom: 6px;">Attach Components</label>
+          <div class="pin-options-grid">
+            <label class="pin-check-row">
+              <input type="checkbox" id="pin-opt-graphic" checked>
+              <span class="pin-check-text">
+                <strong>Vector Marker</strong>
+                <small>3D geometric marker with center core dot</small>
+              </span>
+            </label>
+            <label class="pin-check-row">
+              <input type="checkbox" id="pin-opt-label" checked>
+              <span class="pin-check-text">
+                <strong>Text Label</strong>
+                <small>3D editable text layer offset above pin</small>
+              </span>
+            </label>
+            <label class="pin-check-row">
+              <input type="checkbox" id="pin-opt-selected">
+              <span class="pin-check-text">
+                <strong>Attach Selected AE Layers</strong>
+                <small>Parent active AE layer selection to this geo coordinate</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group" style="margin-bottom: 12px;">
+          <label class="settings-label" style="margin-bottom: 6px;">Zoom Scaling Behavior</label>
+          <div class="pin-radio-grid">
+            <label class="pin-radio-row">
+              <input type="radio" name="pin-scale-mode" value="maintain" checked>
+              <span class="pin-radio-text">
+                <strong>Maintain Screen Size</strong>
+                <small>Always legible & constant on screen at any zoom</small>
+              </span>
+            </label>
+            <label class="pin-radio-row">
+              <input type="radio" name="pin-scale-mode" value="world">
+              <span class="pin-radio-text">
+                <strong>Scale with Map Zoom</strong>
+                <small>Expands and shrinks proportionally with map</small>
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <div class="settings-group" style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <label class="settings-label" style="margin: 0;">3D Camera Billboarding</label>
+            <small style="display: block; font-size: 10px; color: var(--text-dim); margin-top: 2px;">Face active 3D camera dynamically</small>
+          </div>
+          <label class="pin-toggle-switch">
+            <input type="checkbox" id="pin-opt-orient">
+            <span class="pin-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-group" style="margin-bottom: 12px;">
+          <label class="settings-label" style="margin-bottom: 6px;">Marker Color</label>
+          <div class="pin-color-palette" id="pin-color-palette">
+            <button type="button" class="pin-color-pill active" data-color="#1473e6" style="background: #1473e6;" title="Blue pin marker" aria-label="Blue pin marker"></button>
+            <button type="button" class="pin-color-pill" data-color="#e74c3c" style="background: #e74c3c;" title="Red pin marker" aria-label="Red pin marker"></button>
+            <button type="button" class="pin-color-pill" data-color="#2ecc71" style="background: #2ecc71;" title="Emerald green pin marker" aria-label="Emerald green pin marker"></button>
+            <button type="button" class="pin-color-pill" data-color="#f39c12" style="background: #f39c12;" title="Gold pin marker" aria-label="Gold pin marker"></button>
+            <button type="button" class="pin-color-pill" data-color="#9b59b6" style="background: #9b59b6;" title="Purple pin marker" aria-label="Purple pin marker"></button>
+            <button type="button" class="pin-color-pill" data-color="#ffffff" style="background: #ffffff;" title="White pin marker" aria-label="White pin marker"></button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 16px; justify-content: flex-end;">
+          <button class="bottom-btn" id="pin-modal-cancel" type="button" title="Cancel spatial pin creation" aria-label="Cancel spatial pin creation">Cancel</button>
+          <button class="bottom-btn finalize-btn" id="pin-modal-create" type="button" title="Create 3D Spatial Pin in After Effects" aria-label="Create 3D Spatial Pin in After Effects" style="display: flex; align-items: center; gap: 5px;">
+            <i data-lucide="plus" style="width: 13px; height: 13px;"></i>
+            Create Pin
+          </button>
         </div>
       </div>
     </div>
@@ -340,7 +640,7 @@
   <script src="js/core/ApplicationLifecycle.js?v=1"></script>
   <script src="js/core/ApplicationCoordinator.js?v=2"></script>
   <script src="js/core/PreviewController.js?v=1"></script>
-  <script src="js/core/CompositionController.js?v=4"></script>
+  <script src="js/core/CompositionController.js?v=5"></script>
   <script src="js/map/MercatorProjection.js?v=2"></script>
   <script src="js/tiles/TileAddress.js?v=2"></script>
   <script src="js/tiles/PlacementExpander.js?v=2"></script>
@@ -361,23 +661,26 @@
   <script src="js/tiles/TileManager.js"></script>
   <script src="js/ui/InputHandler.js?v=2"></script>
   <script src="js/core/GeographyIdentityResolver.js?v=1"></script>
-  <script src="js/ui/SearchPanel.js?v=8"></script>
+  <script src="js/map/UniversalGeoParser.js?v=1"></script>
+  <script src="js/ui/SearchPanel.js?v=9"></script>
   <script src="js/ui/SettingsPanel.js?v=2"></script>
   <script src="js/ui/Toast.js?v=3"></script>
+  <script src="js/ui/TooltipManager.js?v=1"></script>
   <script src="js/ui/OperationPresenter.js?v=1"></script>
-  <script src="js/ui/DialogManager.js?v=2"></script>
+  <script src="js/ui/DialogManager.js?v=3"></script>
   <script src="js/ui/LayersPanel.js?v=2"></script>
   <script src="js/core/ThumbnailProcessor.js?v=5"></script>
   <script src="js/ui/ProjectMapsPanel.js?v=10"></script>
-  <script src="js/ui/ToolbarController.js?v=8"></script>
+  <script src="js/ui/ToolbarController.js?v=9"></script>
+  <script src="js/ui/LocationHudController.js?v=1"></script>
   <script src="js/core/AEBridge.js?v=2"></script>
   <script src="js/core/GeoDataRepository.js?v=7"></script>
   <script src="js/core/CartographyPolicy.js?v=1"></script>
   <script src="js/core/JobManager.js?v=1"></script>
   <script src="js/core/ProviderManager.js?v=2"></script>
   <script src="js/ae/MetadataManager.js?v=6"></script>
-  <script src="js/ae/AESyncEngine.js?v=6"></script>
-  <script src="js/ae/SpatialPin.js"></script>
+  <script src="js/ae/AESyncEngine.js?v=7"></script>
+  <script src="js/ae/SpatialPin.js?v=2"></script>
   <!-- OpenGeo Engine v2 (IIFE bundle) -->
     <script src="js/engine/OpenGeoEngine.js?v=9"></script>
   <script src="js/core/OperationSnapshot.js?v=6"></script>
@@ -386,9 +689,9 @@
     <script src="js/engine/MegaTileStitcher.js?v=7"></script>
     <script src="js/engine/TilePlanner.js?v=8"></script>
     <script src="js/core/SyncManager.js?v=9"></script>
-    <script src="js/core/FinalizeController.js?v=11"></script>
+    <script src="js/core/FinalizeController.js?v=14"></script>
   <script src="js/core/VectorMapManager.js?v=12"></script>
   <script src="js/core/FeatureManager.js?v=5"></script>
-  <script src="js/app.js?v=19"></script>
+  <script src="js/app.js?v=20"></script>
 </body>
 </html>

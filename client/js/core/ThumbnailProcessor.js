@@ -183,6 +183,193 @@ class ThumbnailProcessor {
     }
   }
 
+  /**
+   * Samples a bounded set of evenly distributed indices along the trajectory.
+   * Gives 4-5 samples per animated segment, capped at maxSamples (default 12).
+   */
+  sampleTrajectoryIndices(trajectory, maxSamples = 12) {
+    if (!Array.isArray(trajectory) || trajectory.length === 0) return [];
+    if (trajectory.length === 1) return [0];
+    const total = trajectory.length;
+    const targetCount = Math.max(2, Math.min(maxSamples, total));
+    const indices = [];
+    const step = (total - 1) / (targetCount - 1);
+    for (let i = 0; i < targetCount; i++) {
+      const idx = Math.min(total - 1, Math.round(i * step));
+      if (!indices.includes(idx)) {
+        indices.push(idx);
+      }
+    }
+    return indices;
+  }
+
+  /**
+   * Assembles an array of frame canvases or images into a single horizontal filmstrip sprite sheet.
+   */
+  async createFilmstrip(frames, filePath, options = {}) {
+    const fs = require('fs');
+    const path = require('path');
+    const resolved = this._validatePath(filePath, path);
+    if (!Array.isArray(frames) || frames.length === 0) {
+      throw this._error('FILMSTRIP_FRAMES_EMPTY', 'No frames provided for filmstrip assembly.');
+    }
+
+    const frameWidth = Math.max(80, Math.min(640, Number(options.frameWidth) || 240));
+    const frameHeight = Math.max(45, Math.min(480, Number(options.frameHeight) || 135));
+    const totalWidth = frameWidth * frames.length;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = totalWidth;
+    canvas.height = frameHeight;
+    const context = canvas.getContext('2d', { alpha: false });
+    if (!context) throw this._error('THUMBNAIL_CANVAS_UNAVAILABLE', 'Filmstrip canvas unavailable.');
+
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = 'high';
+
+    for (let i = 0; i < frames.length; i++) {
+      const frame = frames[i];
+      context.drawImage(frame, i * frameWidth, 0, frameWidth, frameHeight);
+    }
+
+    let dataUrl = '';
+    try {
+      dataUrl = canvas.toDataURL('image/png');
+    } catch (error) {
+      throw this._error('FILMSTRIP_EXPORT_FAILED', 'Filmstrip could not be encoded: ' + error.message);
+    }
+
+    const output = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
+    if (!output.length || output.length > 16777216) {
+      throw this._error('THUMBNAIL_OUTPUT_INVALID', 'Filmstrip is invalid or exceeds 16 MB.');
+    }
+
+    this.inspectPng(output);
+    await this._replaceAtomically(fs, resolved, output);
+    const stat = await fs.promises.stat(resolved);
+
+    return {
+      path: resolved,
+      frameCount: frames.length,
+      frameWidth,
+      frameHeight,
+      totalWidth,
+      bytes: stat.size,
+      revision: Number(stat.mtimeMs)
+    };
+  }
+
+  /**
+   * Renders a real map frame for a given camera position using downloaded tile assets.
+   */
+  async renderFrameFromTiles(camera, assets, width, height, options = {}) {
+    const fs = require('fs');
+    const tileSize = Number(options.tileSize) || 256;
+    const zoom = Number(camera && camera.zoom) || 2;
+    const lat = Number(camera && camera.lat) || 0;
+    const lng = Number(camera && (camera.lon !== undefined ? camera.lon : camera.lng)) || 0;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(80, Math.round(width) || 480);
+    canvas.height = Math.max(45, Math.round(height) || 270);
+    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return canvas;
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // Draw base fallback from sourceCanvas if available
+    if (options.sourceCanvas && options.sourceCanvas.width) {
+      ctx.drawImage(options.sourceCanvas, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = '#10171e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    if (!Array.isArray(assets) || assets.length === 0) return canvas;
+
+    const planner = typeof CoveragePlanner !== 'undefined' ? CoveragePlanner :
+      (typeof window !== 'undefined' ? window.CoveragePlanner : null);
+    if (!planner || typeof planner.planViewport !== 'function') return canvas;
+
+    // Fast lookup for tile files
+    const tileMap = new Map();
+    for (const a of assets) {
+      if (a && a.filePath) {
+        tileMap.set(`${a.z}_${a.x}_${a.y}`, a.filePath);
+      }
+    }
+
+    try {
+      const planned = planner.planViewport({
+        centerLat: lat,
+        centerLng: lng,
+        zoom: zoom,
+        width: canvas.width,
+        height: canvas.height,
+        tileSize
+      });
+
+      const loadedImages = options.imageCache || new Map();
+      for (const t of planned) {
+        let filePath = tileMap.get(`${t.z}_${t.x}_${t.y}`);
+        if (!filePath && t.z > 0) {
+          filePath = tileMap.get(`${t.z - 1}_${Math.floor(t.x / 2)}_${Math.floor(t.y / 2)}`);
+        }
+        if (filePath) {
+          try {
+            let img = loadedImages.get(filePath);
+            if (!img) {
+              const buf = await fs.promises.readFile(filePath);
+              const dataUrl = 'data:image/png;base64,' + buf.toString('base64');
+              img = await this._loadImage(dataUrl);
+              loadedImages.set(filePath, img);
+            }
+            ctx.drawImage(img, t.screenX, t.screenY, t.drawSize, t.drawSize);
+          } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    return canvas;
+  }
+
+  /**
+   * Saves an array of frame canvases as a sequence of distinct, high-quality PNG images.
+   * e.g. thumb_[docId]_0.png, thumb_[docId]_1.png, ..., thumb_[docId]_[N-1].png
+   */
+  async savePngSequence(frames, basePathPattern) {
+    const fs = require('fs');
+    const path = require('path');
+    if (!Array.isArray(frames) || frames.length === 0) return [];
+    const saved = [];
+    for (let i = 0; i < frames.length; i++) {
+      const targetPath = basePathPattern.replace('%d', String(i));
+      const resolved = this._validatePath(targetPath, path);
+      const canvas = frames[i];
+      let dataUrl = '';
+      try {
+        dataUrl = canvas.toDataURL('image/png');
+      } catch (err) {
+        continue;
+      }
+      const output = Buffer.from(dataUrl.replace(/^data:image\/png;base64,/, ''), 'base64');
+      if (!output.length) continue;
+      this.inspectPng(output);
+      await this._replaceAtomically(fs, resolved, output);
+      const stat = await fs.promises.stat(resolved);
+      saved.push({
+        index: i,
+        path: resolved,
+        width: canvas.width,
+        height: canvas.height,
+        bytes: stat.size,
+        revision: Number(stat.mtimeMs)
+      });
+    }
+    return saved;
+  }
+
   _error(code, message) {
     const error = new Error(message);
     error.code = code;

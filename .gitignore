@@ -15,4 +15,5 @@ OpenGeo_Assets/
 .DS_Store
 Thumbs.db
 *.log
+*.zip
 .debug

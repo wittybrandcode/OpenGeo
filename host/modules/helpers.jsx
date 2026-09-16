@@ -45,24 +45,44 @@ function opengeoIsManagedPayloadFile(file) {
   }
 }
 
+function opengeoIsValidObject(obj) {
+  if (!obj) return false;
+  try {
+    var test = obj.name;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function ensureComp(compId) {
   if (!app.project) return null;
   if (!compId) return null;
-  var item = app.project.itemByID(parseInt(compId));
-  return item && item instanceof CompItem ? item : null;
+  try {
+    var item = app.project.itemByID(parseInt(compId, 10));
+    if (!item || !opengeoIsValidObject(item)) return null;
+    return item instanceof CompItem ? item : null;
+  } catch (e) {
+    return null;
+  }
 }
 
 function findLayerByName(comp, name) {
-  if (!comp) return null;
-  for (var i = 1; i <= comp.numLayers; i++) {
-    if (comp.layer(i).name === name) return comp.layer(i);
-  }
+  if (!comp || !opengeoIsValidObject(comp)) return null;
+  try {
+    for (var i = 1; i <= comp.numLayers; i++) {
+      try {
+        var layer = comp.layer(i);
+        if (layer && opengeoIsValidObject(layer) && layer.name === name) return layer;
+      } catch (e) {}
+    }
+  } catch (compError) {}
   return null;
 }
 
 
 function hasEffect(layer, effectName) {
-  if (!layer) return false;
+  if (!layer || !opengeoIsValidObject(layer)) return false;
   try {
     var effects = layer.property("ADBE Effect Parade");
     if (!effects) return false;
@@ -74,33 +94,41 @@ function hasEffect(layer, effectName) {
 }
 
 function findLayerByComment(comp, comment) {
-  if (!comp) return null;
-  for (var i = 1; i <= comp.numLayers; i++) {
-    var layer = comp.layer(i);
-    try {
-      var layerComment = String(layer.comment || '');
-      if (layerComment === comment || layerComment.indexOf(comment + ';') === 0) return layer;
-      if (comment === 'opengeo:controller' && layerComment.indexOf('opengeo:v2;') === 0 && layerComment.indexOf(';role=controller') !== -1) return layer;
-    } catch (e) {}
-  }
+  if (!comp || !opengeoIsValidObject(comp)) return null;
+  try {
+    for (var i = 1; i <= comp.numLayers; i++) {
+      try {
+        var layer = comp.layer(i);
+        if (!layer || !opengeoIsValidObject(layer)) continue;
+        var layerComment = String(layer.comment || '');
+        if (layerComment === comment || layerComment.indexOf(comment + ';') === 0) return layer;
+        if (comment === 'opengeo:controller' && layerComment.indexOf('opengeo:v2;') === 0 && layerComment.indexOf(';role=controller') !== -1) return layer;
+      } catch (e) {}
+    }
+  } catch (compError) {}
   return null;
 }
 
 // AE users may open the generated inner pre-composition. Resolve that view back
 // to the owning outer OpenGeo composition so commands never mutate a sibling map.
 function resolveOpenGeoMapComp(candidate) {
-  if (!candidate || !app.project) return candidate;
-  if (findLayerByComment(candidate, 'opengeo:controller')) return candidate;
-  for (var itemIndex = 1; itemIndex <= app.project.items.length; itemIndex++) {
-    var outer = app.project.items[itemIndex];
-    if (!(outer instanceof CompItem)) continue;
-    for (var layerIndex = 1; layerIndex <= outer.numLayers; layerIndex++) {
-      var layer = outer.layer(layerIndex);
+  if (!candidate || !opengeoIsValidObject(candidate) || !app.project) return candidate;
+  try {
+    if (findLayerByComment(candidate, 'opengeo:controller')) return candidate;
+    for (var itemIndex = 1; itemIndex <= app.project.items.length; itemIndex++) {
       try {
-        if ((layer.comment === 'opengeo:controller' || String(layer.comment || '').indexOf('opengeo:controller;') === 0 || String(layer.comment || '').indexOf('opengeo:v2;') === 0 && String(layer.comment || '').indexOf(';role=controller') !== -1) && layer.source && layer.source.id === candidate.id) return outer;
-      } catch (ignoreLayer) {}
+        var outer = app.project.items[itemIndex];
+        if (!outer || !opengeoIsValidObject(outer) || !(outer instanceof CompItem)) continue;
+        for (var layerIndex = 1; layerIndex <= outer.numLayers; layerIndex++) {
+          try {
+            var layer = outer.layer(layerIndex);
+            if (!layer || !opengeoIsValidObject(layer)) continue;
+            if ((layer.comment === 'opengeo:controller' || String(layer.comment || '').indexOf('opengeo:controller;') === 0 || String(layer.comment || '').indexOf('opengeo:v2;') === 0 && String(layer.comment || '').indexOf(';role=controller') !== -1) && layer.source && layer.source.id === candidate.id) return outer;
+          } catch (ignoreLayer) {}
+        }
+      } catch (ignoreOuter) {}
     }
-  }
+  } catch (ignoreCandidate) {}
   return candidate;
 }
 

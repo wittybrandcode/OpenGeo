@@ -9,16 +9,17 @@ class SpatialPin {
   }
 
   /**
-   * Adds a spatial pin (Null layer) at the given GPS coordinates in AE.
+   * Adds a spatial pin (Null layer) at the given GPS coordinates in AE with attached components and styling.
    * 
-   * @param {string} compId 
+   * @param {string|number} compId 
    * @param {number} lat 
    * @param {number} lng 
    * @param {string} name 
+   * @param {Object} [options] 
    */
-  async addPin(compId, lat, lng, name = "Map Pin") {
+  async addPin(compId, lat, lng, name = "Map Pin", options = {}) {
     try {
-      return await this.aeBridge.invoke('pin.add', { compId, lat, lng, name });
+      return await this.aeBridge.invoke('pin.add', { compId, lat, lng, name, ...options });
     } catch (e) {
       console.error('Failed to add spatial pin', e);
       throw e;

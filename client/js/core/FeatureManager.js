@@ -281,12 +281,15 @@ class FeatureManager {
   _buildCountryPayload(item, resolved) {
     const point = resolved.country.label || null;
     const latLng = point ? MercatorProjection.worldPointToLatLng(point[0], point[1], 10, 256) : null;
+    const currentZoom = (this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 6;
     return {
       dataset: 'vectors/country-outlines-10m.json',
       selectionRule: 'country exterior rings only (international land borders + coastline; no EEZ)',
       featureId: item.id, featureSignature: item.featureSignature,
       layerName: item.layerName, displayName: item.name, sourceId: item.sourceId,
       strokeWidth: 3, strokeColor: [1, 0.8, 0.2, 1], fillOpacity: 0,
+      referenceZoom: currentZoom,
       anchor: latLng ? { lat: latLng.lat, lng: latLng.lng, point } : null,
       features: resolved.features,
       layers: [{ id: 'country-outline', title: 'COUNTRY OUTLINE', isClosed: true, features: resolved.features, fillOpacity: 0, strokeOpacity: 100 }],

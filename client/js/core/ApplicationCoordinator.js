@@ -126,6 +126,9 @@ class ApplicationCoordinator {
       const info = app.tileManager.getStats();
       stats.textContent = `Tiles: ${info.loadedTiles}/${info.visibleTiles} | Cache: ${info.cache.size}/${info.cache.max} | Errors: ${info.download.errors}`;
     }
+    if (app.locationHudController) {
+      app.locationHudController.update();
+    }
   }
 
   savePrefs() { this.app.preferencesStore.saveSession(this.app.session); }

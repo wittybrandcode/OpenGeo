@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "1.0.0",
+  "schemaVersion": "1.1.0",
   "previewVector": {
     "parseP95Ms": 50,
     "maxChunkBytes": 2097152,
@@ -17,5 +17,58 @@
     "cameraWriteRevisions": 32,
     "operationLogBytes": 1048576,
     "operationLogFiles": 3
+  },
+  "preflight": {
+    "uniqueDownloadCacheMisses": {
+      "soft": 2500,
+      "hard": 20000
+    },
+    "stitchedAeAssets": {
+      "soft": 1000,
+      "hard": 5000
+    },
+    "estimatedNetworkBytes": {
+      "soft": 536870912,
+      "hard": 2147483648
+    },
+    "liveDecodedRgbaBytes": {
+      "soft": 201326592,
+      "hard": 268435456
+    },
+    "stitchJob4096px": {
+      "soft": 1,
+      "hard": 1
+    }
+  },
+  "megatile": {
+    "max2048pxStitchMemoryBytes": 524288000,
+    "max4096pxStitchMemoryBytes": 2097152000,
+    "maxConcurrentStitchJobs": 1,
+    "maxArrayBufferLiveBytes": 1073741824
+  },
+  "fourK": {
+    "defaultQuality": "normal",
+    "recommendedQuality": {
+      "hd": "normal",
+      "4k": "normal",
+      "vertical": "normal",
+      "square": "normal"
+    },
+    "tileBudgetByQuality": {
+      "normal": 2500,
+      "high": 9000,
+      "ultra": 25000
+    },
+    "warningThresholds": {
+      "networkBytes": 536870912,
+      "tiles": 9000,
+      "durationMs": 300000
+    }
+  },
+  "retry": {
+    "maxAttempts": 3,
+    "backoffMs": [300, 900, 2200],
+    "jitterFraction": 0.2,
+    "backoffPolicy": "exponential-with-jitter"
   }
 }

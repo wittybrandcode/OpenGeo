@@ -26,7 +26,8 @@ const OpenGeoEvents = Object.freeze({
   STITCH_COMPLETE: 'stitch:complete',
   OPERATION_PROGRESS: 'operation:progress',
   OPERATION_RESULT: 'operation:result',
-  ERROR_REPORT: 'error:report'
+  ERROR_REPORT: 'error:report',
+  PROJECT_MAPS_THUMBNAIL_UPDATED: 'project-maps:thumbnail-updated'
 });
 
 const isObject = value => !!value && typeof value === 'object';
@@ -61,7 +62,8 @@ const OpenGeoEventCatalog = Object.freeze({
   'stitch:complete': { owner: 'MegaTileStitcher', mode: 'sync', publishers: ['MegaTileStitcher'], subscribers: ['App'], validate: isObject },
   'operation:progress': { owner: 'OperationManager', mode: 'sync', publishers: ['LongRunningOperation'], subscribers: ['OperationPresenter', 'OperationLogger'], validate: value => isObject(value) && typeof value.operationId === 'string' && typeof value.phase === 'string' },
   'operation:result': { owner: 'OperationManager', mode: 'sync', publishers: ['LongRunningOperation'], subscribers: ['OperationPresenter', 'OperationLogger'], validate: value => isObject(value) && typeof value.operationId === 'string' && typeof value.ok === 'boolean' },
-  'error:report': { owner: 'ErrorBoundary', mode: 'sync', publishers: ['Application'], subscribers: ['OperationLogger'], validate: value => isObject(value) && typeof value.code === 'string' }
+  'error:report': { owner: 'ErrorBoundary', mode: 'sync', publishers: ['Application'], subscribers: ['OperationLogger'], validate: value => isObject(value) && typeof value.code === 'string' },
+  'project-maps:thumbnail-updated': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: ['ProjectMapsPanel'], validate: value => isObject(value) && typeof value.documentId === 'string' }
 });
 
 const OpenGeoEventContracts = {

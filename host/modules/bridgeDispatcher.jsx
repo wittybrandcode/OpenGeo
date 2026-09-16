@@ -44,7 +44,7 @@ var opengeoBridgeHandlers = {
   'feature.normalizeControls': { kind: 'json', run: function(args) { return opengeoNormalizeVectorFeatureControls(args.compId); } },
   'feature.visibility': { kind: 'json', run: function(args) { return opengeoFeatureSetVisibility(args.compId, args.featureId, args.visible === true); } },
   'feature.delete': { kind: 'json', run: function(args) { return opengeoFeatureDelete(args.compId, args.featureId); } },
-  'pin.add': { kind: 'scalar', run: function(args) { return opengeoAddSpatialPin(args.compId, args.lat, args.lng, args.name); } },
+  'pin.add': { kind: 'scalar', run: function(args) { return opengeoAddSpatialPin(args.compId, args.lat, args.lng, args.name, args); } },
   'keyframe.add': { kind: 'empty', run: function(args) { return opengeoAddKeyframe(args.compId, args.lat, args.lng, args.zoom); } },
   'keyframe.clear': { kind: 'json', run: function(args) { return opengeoClearCameraKeyframes(args.compId); } }
 };

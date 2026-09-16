@@ -12,6 +12,7 @@ class MapSession {
     this.documentId = preferences.documentId || this._createDocumentId();
     this.providerId = config.defaults.tileSource;
     this.isFinalized = false;
+    this.finalizedCamera = null;
     this.generations = { preview: 0, sync: 0, finalize: 0 };
     this.operations = { preview: 'idle', sync: 'idle', finalize: 'idle' };
     this.operationIds = { preview: null, sync: null, finalize: null };
@@ -82,6 +83,7 @@ class MapSession {
     this.documentId = this._createDocumentId();
     this.composition = null;
     this.isFinalized = false;
+    this.finalizedCamera = null;
     this.operationIds = { preview: null, sync: null, finalize: null };
     if (this.featureRegistry) this.featureRegistry.replaceAll(previewDrafts);
     this._notify({ type: 'document', origin: 'ui' });
@@ -100,6 +102,20 @@ class MapSession {
 
   setFinalized(isFinalized, options = {}) {
     this.isFinalized = !!isFinalized;
+    if (this.isFinalized) {
+      const cam = options.camera || {
+        lat: this.mapState.latitude,
+        lng: this.mapState.longitude,
+        zoom: this.mapState.compZoom
+      };
+      this.finalizedCamera = {
+        lat: cam.lat,
+        lng: cam.lng,
+        zoom: cam.zoom !== undefined ? cam.zoom : (cam.compZoom !== undefined ? cam.compZoom : this.mapState.compZoom)
+      };
+    } else {
+      this.finalizedCamera = null;
+    }
     this._notify({ type: 'finalization', origin: options.origin || 'system' });
   }
 
@@ -135,6 +151,15 @@ class MapSession {
       if (documentState.isFinalized !== undefined) {
         if (typeof documentState.isFinalized !== 'boolean') throw new Error('Finalization state is invalid.');
         this.isFinalized = documentState.isFinalized;
+        if (this.isFinalized && documentState.camera) {
+          this.finalizedCamera = {
+            lat: documentState.camera.lat,
+            lng: documentState.camera.lng,
+            zoom: documentState.camera.compZoom
+          };
+        } else if (!this.isFinalized) {
+          this.finalizedCamera = null;
+        }
       }
       if (documentState.features !== undefined && this.featureRegistry) {
         if (!Array.isArray(documentState.features) || documentState.features.length > 500) throw new Error('Feature registry is invalid.');
@@ -204,6 +229,7 @@ class MapSession {
       documentId: this.documentId,
       providerId: this.providerId,
       isFinalized: this.isFinalized,
+      finalizedCamera: this.finalizedCamera ? Object.assign({}, this.finalizedCamera) : null,
       generations: Object.assign({}, this.generations),
       operations: Object.assign({}, this.operations),
       operationIds: Object.assign({}, this.operationIds),
@@ -242,6 +268,7 @@ class MapSession {
     this.documentId = snapshot.documentId;
     this.providerId = snapshot.providerId;
     this.isFinalized = snapshot.isFinalized;
+    this.finalizedCamera = snapshot.finalizedCamera ? Object.assign({}, snapshot.finalizedCamera) : null;
     this.composition = snapshot.composition ? Object.assign({}, snapshot.composition) : null;
     this.generations = Object.assign({}, snapshot.generations);
     this.operations = Object.assign({}, snapshot.operations);

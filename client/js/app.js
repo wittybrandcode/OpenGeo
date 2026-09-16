@@ -69,6 +69,7 @@ class App {
     this.previewController = new PreviewController(this, this.previewMode);
     this.operationPresenter = new OperationPresenter(globalEventBus, this.lifecycle);
     this.toolbarController = new ToolbarController(this);
+    this.locationHudController = typeof LocationHudController !== 'undefined' ? new LocationHudController(this) : null;
     this.coordinator = new ApplicationCoordinator(this);
     
     this._setupUI();
@@ -95,6 +96,8 @@ class App {
     this.dialog = new DialogManager();
     this.layersPanel = new LayersPanel(this);
     this.projectMapsPanel = new ProjectMapsPanel(this);
+    this.tooltipManager = typeof TooltipManager !== 'undefined' ? (window.globalTooltipManager || new TooltipManager()) : null;
+    if (this.tooltipManager) this.tooltipManager.init();
     
     this.settingsPanel.updateState(this.tileManager.source, this.viewport.tileSize, localStorage.getItem('opengeo_theme') || 'dark');
     
@@ -108,10 +111,14 @@ class App {
     }
     
     this._triggerTileUpdate();
+    if (this.locationHudController) this.locationHudController.bind();
     this._updateUIInfo();
     // Live Sync is a core interaction, not an optional mode. Starting it here
     // also restores synchronization for an already-open OpenGeo composition.
     this.syncEngine.start();
+    if (this.compositionController && typeof this.compositionController.resolveActiveMapTarget === 'function') {
+      this.compositionController.resolveActiveMapTarget().catch(() => {});
+    }
     
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
@@ -184,6 +191,7 @@ class App {
     if (this.previewController) this.previewController.dispose();
     if (this.compositionController) this.compositionController.dispose();
     if (this.toolbarController) this.toolbarController.dispose();
+    if (this.locationHudController) this.locationHudController.dispose();
     if (this.coordinator) this.coordinator.dispose();
     if (this.operationLogger) this.operationLogger.dispose();
     if (this.lifecycle) this.lifecycle.dispose();

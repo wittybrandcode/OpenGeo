@@ -14,6 +14,28 @@ class SyncManager {
   queueAutoExport() {
     if (!this.app.activeCompId) return;
     if (this.app.finalizeController && this.app.finalizeController.isFinalizing) return;
+
+    if (this.app.session && this.app.session.isFinalized) {
+      const finalizedCam = this.app.session.finalizedCamera;
+      if (finalizedCam) {
+        const currentCam = {
+          lat: this.app.session.mapState.latitude,
+          lng: this.app.session.mapState.longitude,
+          zoom: this.app.session.mapState.compZoom
+        };
+        const isEquivalent = typeof MercatorProjection !== 'undefined' && MercatorProjection.camerasEquivalent
+          ? MercatorProjection.camerasEquivalent(currentCam, finalizedCam, { tileSize: this.app.session.mapState.tileSize })
+          : (Math.abs(currentCam.lat - finalizedCam.lat) < 1e-6 && Math.abs(currentCam.lng - finalizedCam.lng) < 1e-6 && Math.abs(currentCam.zoom - finalizedCam.zoom) < 0.001);
+        if (isEquivalent) {
+          return;
+        }
+        if (this.app.isKeyframeRecording || (this.app.toolbarController && this.app.toolbarController.hasPendingKeyframeMutation(this.app.activeCompId))) {
+          return;
+        }
+        this.app.session.setFinalized(false);
+      }
+    }
+
     clearTimeout(this.exportTimer);
     this.exportTimer = setTimeout(() => this.exportToAE(false, true), 700);
   }
@@ -21,6 +43,7 @@ class SyncManager {
   queueTrajectoryPreview() {
     if (!this.app.activeCompId) return;
     if (this.app.finalizeController && this.app.finalizeController.isFinalizing) return;
+    if (this.app.session && this.app.session.isFinalized && !this.app.isKeyframeRecording) return;
     this._trajectoryRunId += 1;
     const runId = this._trajectoryRunId;
     if (this._trajectoryDownloadSession) this._trajectoryDownloadSession.cancel();
@@ -265,6 +288,10 @@ class SyncManager {
         operationId: snapshot.operationId,
         tiles,
         camera: Object.assign({}, snapshot.camera),
+        compSettings: {
+          width: snapshot.composition.width,
+          height: snapshot.composition.height
+        },
         isPreview: true,
         previewGeneration: `trajectory_${runId}`,
         previewScope: 'trajectory',
@@ -311,6 +338,19 @@ class SyncManager {
   }
 
   async exportToAE(createIfNeeded, quiet = false, useAeState = false, compSettings = null) {
+    if (!createIfNeeded && this.app.session && this.app.session.isFinalized && this.app.session.finalizedCamera) {
+      const currentCam = {
+        lat: this.app.session.mapState.latitude,
+        lng: this.app.session.mapState.longitude,
+        zoom: this.app.session.mapState.compZoom
+      };
+      const isEquivalent = typeof MercatorProjection !== 'undefined' && MercatorProjection.camerasEquivalent
+        ? MercatorProjection.camerasEquivalent(currentCam, this.app.session.finalizedCamera, { tileSize: this.app.session.mapState.tileSize })
+        : (Math.abs(currentCam.lat - this.app.session.finalizedCamera.lat) < 1e-6 && Math.abs(currentCam.lng - this.app.session.finalizedCamera.lng) < 1e-6 && Math.abs(currentCam.zoom - this.app.session.finalizedCamera.zoom) < 0.001);
+      if (isEquivalent) {
+        return;
+      }
+    }
     const currentGeneration = this.app.session.beginOperation('sync');
     if (this._syncDownloadSession) this._syncDownloadSession.cancel();
     let snapshot = null;
@@ -366,14 +406,18 @@ class SyncManager {
         operationId: snapshot.operationId,
         tiles: previewTiles,
         camera: syncResult.camera,
-        compSettings: snapshot.compSettings,
+        compSettings: snapshot.compSettings || (snapshot.composition ? {
+          width: snapshot.composition.width,
+          height: snapshot.composition.height
+        } : null),
         isPreview: true,
         previewGeneration: currentGeneration,
         // Every navigation preview is an overlay. An explicit Finalize is the
         // only operation that replaces a completed final render.
         replaceFinal: !snapshot.isFinalized,
         source: snapshot.sourceKey,
-        documentId: snapshot.documentId
+        documentId: snapshot.documentId,
+        displayName: snapshot.composition && snapshot.composition.displayName
       };
 
       // 4. Removed redundant index.jsx loading, relying on AEBridge central lifecycle

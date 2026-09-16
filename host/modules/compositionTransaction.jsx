@@ -3,6 +3,16 @@
 // revision, or roll the prepared revision back without touching the active one.
 // ============================================================================
 
+function opengeoIsValidObject(obj) {
+  if (!obj) return false;
+  try {
+    var test = obj.name;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function opengeoSanitizeIdentity(value) {
   return String(value || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
 }
@@ -56,20 +66,62 @@ function opengeoDiscardPreviewRevision(mapComp, folders, documentId, revision) {
  * preview (and, only when requested, previous final) stays visible until every
  * new layer exists, preventing AE's viewer from revealing tiles one by one.
  */
-function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, replaceFinal) {
+function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, replaceFinal, expectedCount) {
   var expectedDocument = opengeoSanitizeIdentity(documentId);
   var expectedRevision = opengeoSanitizeIdentity(revision);
+  var stagingLayers = [];
+  var oldLayers = [];
   var layerIndex;
-  for (layerIndex = mapComp.numLayers; layerIndex >= 1; layerIndex--) {
+  for (layerIndex = 1; layerIndex <= mapComp.numLayers; layerIndex++) {
     var layer = mapComp.layer(layerIndex);
     var ownership = opengeoReadOwnership(layer.comment);
     if (ownership.document !== expectedDocument) continue;
     var isCurrentStage = ownership.role === 'preview-staging' && ownership.revision === expectedRevision;
     var isOldPreview = ownership.role === 'preview' || (ownership.role === 'preview-staging' && !isCurrentStage);
     var isReplaceableFinal = replaceFinal === true && ownership.role === 'final-active';
-    if (isOldPreview || isReplaceableFinal) {
-      try { layer.remove(); } catch (ignoreOldLayer) {}
+    if (isCurrentStage) stagingLayers.push(layer);
+    else if (isOldPreview || isReplaceableFinal) oldLayers.push(layer);
+  }
+
+  // Validate the complete hidden revision before touching the visible one.
+  var requiredCount = parseInt(expectedCount, 10) || 0;
+  if (requiredCount > 0 && stagingLayers.length !== requiredCount) return 0;
+
+  var promoted = 0;
+  try {
+    for (var stageIndex = 0; stageIndex < stagingLayers.length; stageIndex++) {
+      var stageLayer = stagingLayers[stageIndex];
+      var stageOwnership = opengeoReadOwnership(stageLayer.comment);
+      var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
+      stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
+      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
+      stageLayer.enabled = true;
+      if (replaceFinal !== true && typeof stageLayer.moveToEnd === 'function') {
+        try { stageLayer.moveToEnd(); } catch (ignoreMove) {}
+      }
+      promoted++;
     }
+  } catch (promotionError) {
+    // Roll the new revision back to an invisible staging state. The previous
+    // preview/final was not modified, so AE never exposes a blank map.
+    for (var rollbackIndex = 0; rollbackIndex < stagingLayers.length; rollbackIndex++) {
+      try {
+        var rollbackLayer = stagingLayers[rollbackIndex];
+        var rollbackOwnership = opengeoReadOwnership(rollbackLayer.comment);
+        var rollbackPlacement = rollbackOwnership.placement || rollbackOwnership.key || '';
+        rollbackLayer.comment = opengeoOwnershipComment(documentId, 'preview-staging', revision, rollbackPlacement ? 'placement=' + rollbackPlacement : '');
+        if (rollbackLayer.source) rollbackLayer.source.comment = opengeoOwnershipComment(documentId, 'preview-staging', revision, rollbackPlacement ? 'placement=' + rollbackPlacement : '');
+        rollbackLayer.enabled = false;
+      } catch (ignoreRollback) {}
+    }
+    return 0;
+  }
+
+  if (requiredCount > 0 && promoted !== requiredCount) return 0;
+
+  // Remove the prior visible revision only after the new one is complete.
+  for (var oldLayerIndex = oldLayers.length - 1; oldLayerIndex >= 0; oldLayerIndex--) {
+    try { oldLayers[oldLayerIndex].remove(); } catch (ignoreOldLayer) {}
   }
 
   var foldersToClean = [folders && folders.previewTiles];
@@ -81,25 +133,13 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
       var asset = folder.item(assetIndex);
       var assetOwnership = opengeoReadOwnership(asset.comment);
       if (assetOwnership.document !== expectedDocument) continue;
-      var keepCurrentStage = assetOwnership.role === 'preview-staging' && assetOwnership.revision === expectedRevision;
-      if (!keepCurrentStage) {
+      var keepCurrentRevision = assetOwnership.revision === expectedRevision &&
+        (assetOwnership.role === 'preview' || assetOwnership.role === 'preview-staging');
+      var keepFinal = replaceFinal !== true && assetOwnership.role === 'final-active';
+      if (!keepCurrentRevision && !keepFinal) {
         try { asset.remove(); } catch (ignoreOldAsset) {}
       }
     }
-  }
-
-  var promoted = 0;
-  for (layerIndex = 1; layerIndex <= mapComp.numLayers; layerIndex++) {
-    var stageLayer = mapComp.layer(layerIndex);
-    if (!opengeoOwnershipMatches(stageLayer.comment, documentId, 'preview-staging', revision)) continue;
-    var stageOwnership = opengeoReadOwnership(stageLayer.comment);
-    var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
-    stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
-    try {
-      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
-    } catch (ignoreSourceTag) {}
-    stageLayer.enabled = true;
-    promoted++;
   }
   return promoted;
 }
@@ -118,20 +158,21 @@ function opengeoResolveTransactionComps(compId, documentId) {
 function opengeoRemovePreparedRevision(mapComp, folders, documentId, revision) {
   var removedLayers = 0;
   var removedAssets = 0;
+  if (!mapComp || !opengeoIsValidObject(mapComp)) return { layers: 0, assets: 0 };
   for (var layerIndex = mapComp.numLayers; layerIndex >= 1; layerIndex--) {
-    var layer = mapComp.layer(layerIndex);
     try {
-      if (opengeoOwnershipMatches(layer.comment, documentId, 'final-staging', revision)) {
+      var layer = mapComp.layer(layerIndex);
+      if (layer && opengeoIsValidObject(layer) && opengeoOwnershipMatches(layer.comment, documentId, 'final-staging', revision)) {
         layer.remove();
         removedLayers++;
       }
     } catch (ignoreLayer) {}
   }
-  if (folders && folders.finalTiles) {
+  if (folders && folders.finalTiles && opengeoIsValidObject(folders.finalTiles)) {
     for (var assetIndex = folders.finalTiles.numItems; assetIndex >= 1; assetIndex--) {
-      var asset = folders.finalTiles.item(assetIndex);
       try {
-        if (opengeoOwnershipMatches(asset.comment, documentId, 'final-staging', revision)) {
+        var asset = folders.finalTiles.item(assetIndex);
+        if (asset && opengeoIsValidObject(asset) && opengeoOwnershipMatches(asset.comment, documentId, 'final-staging', revision)) {
           asset.remove();
           removedAssets++;
         }
@@ -153,6 +194,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
     expected: tiles instanceof Array ? tiles.length : 0,
     imported: 0,
     reused: 0,
+    assetIds: [],
     failed: [],
     warnings: [],
     phase: 'prepare'
@@ -162,7 +204,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
     result.failed.push({ key: '', code: 'INVALID_PREPARE_PAYLOAD' });
     return JSON.stringify(result);
   }
-  if (tiles.length > 5000) {
+  if (tiles.length > 10000) {
     result.failed.push({ key: '', code: 'TILE_LIMIT_EXCEEDED' });
     return JSON.stringify(result);
   }
@@ -224,6 +266,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
         } catch (qualityError) {}
         createdLayers.push(tileLayer);
         result.imported++;
+        result.assetIds.push(tileKey);
       } catch (importError) {
         result.failed.push({ key: tileKey, code: 'IMPORT_FAILED', message: importError.toString() });
         break;
@@ -238,6 +281,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
         try { createdAssets[cleanupAsset].remove(); } catch (ignoreCreatedAsset) {}
       }
       result.imported = 0;
+      result.assetIds = [];
       if (result.failed.length === 0) result.failed.push({ key: '', code: 'IMPORTED_COUNT_MISMATCH' });
       return JSON.stringify(result);
     }
@@ -261,6 +305,7 @@ function opengeoCommitCompositionRevision(args) {
     expected: expected,
     imported: 0,
     reused: 0,
+    assetIds: [],
     failed: [],
     warnings: [],
     phase: 'commit',
@@ -325,6 +370,11 @@ function opengeoCommitCompositionRevision(args) {
           var stageLayer = stagingLayers[tagIndex];
           var stageOwnership = opengeoReadOwnership(stageLayer.comment);
           var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
+          if (stagePlacement) {
+            result.assetIds.push(stagePlacement);
+          } else {
+            result.assetIds.push(opengeoTilePlacementIdentity(null, tagIndex));
+          }
           stageLayer.name = 'final_' + operationId + '_' + tagIndex;
           stageLayer.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stagePlacement ? 'placement=' + stagePlacement : '');
           if (stageLayer.source) {
@@ -341,7 +391,7 @@ function opengeoCommitCompositionRevision(args) {
         try {
           mapPivot.comment = opengeoOwnershipComment(documentId, 'pivot', operationId);
           opengeoInstallMapPivotExpressions(
-            mapPivot, resolved.containingComp.name, resolved.mapComp.name,
+            mapPivot, resolved.containingComp.name, resolved.controller.name,
             resolved.containingComp.width, resolved.containingComp.height
           );
         } catch (rigError) { result.warnings.push('RIG_UPDATE_WARNING'); }

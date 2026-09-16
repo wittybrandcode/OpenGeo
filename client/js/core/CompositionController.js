@@ -32,6 +32,12 @@ class CompositionController {
         this.app.tileManager.setSource(restored.providerId, this.app.providerManager.getSignature(restored.providerId));
         this.app.settingsPanel.updateAttribution(restored.providerId);
       }
+      if (restored && restored.camera && this.app.viewport && typeof this.app.viewport.setCenter === 'function') {
+        this.app.viewport.setCenter(restored.camera.lat, restored.camera.lng);
+        if (typeof this.app.viewport.setZoom === 'function' && typeof this.app.viewport.clampZoom === 'function') {
+          this.app.viewport.setZoom(this.app.viewport.clampZoom(this.app.mapState.compZoom));
+        }
+      }
       return result;
     } finally {
       this.app.syncEngine.isApplyingAeState = false;

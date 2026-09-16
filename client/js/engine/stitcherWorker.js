@@ -26,34 +26,39 @@ self.onmessage = async function(e) {
     }
 
     // Initialize OffscreenCanvas
-    const canvas = new OffscreenCanvas(size, size);
+    let canvas = new OffscreenCanvas(size, size);
     const ctx = canvas.getContext('2d');
     
-    // Load and draw all child tiles
-    const drawPromises = children.map(async (child) => {
-      try {
-        if (!child.buffer) return { ok: false };
-        
-        // Create a Blob from the raw image memory (ArrayBuffer)
-        // Omit the strict 'image/jpeg' type so the browser can sniff the actual format (PNG/JPG)
-        const blob = new Blob([child.buffer]);
-        const bitmap = await createImageBitmap(blob);
-        
-        const dx = (child.x - startX) * sourceTileSize;
-        const dy = (child.y - startY) * sourceTileSize;
-        
-        ctx.drawImage(bitmap, dx, dy, sourceTileSize, sourceTileSize);
-        
-        // Explicitly close the bitmap to free memory immediately
-        bitmap.close();
-        return { ok: true, x: child.x - startX, y: child.y - startY };
-      } catch (err) {
-        console.warn(`[Worker] Failed to decode tile: ${err}`);
-        return { ok: false };
-      }
-    });
-
-    const drawResults = await Promise.all(drawPromises);
+    // Load and draw all child tiles in batches to manage memory under 4K loads
+    const drawResults = [];
+    const batchSize = 16;
+    for (let i = 0; i < children.length; i += batchSize) {
+      const batch = children.slice(i, i + batchSize);
+      const batchPromises = batch.map(async (child) => {
+        try {
+          if (!child.buffer) return { ok: false };
+          
+          // Create a Blob from the raw image memory (ArrayBuffer)
+          // Omit the strict 'image/jpeg' type so the browser can sniff the actual format (PNG/JPG)
+          const blob = new Blob([child.buffer]);
+          const bitmap = await createImageBitmap(blob);
+          
+          const dx = (child.x - startX) * sourceTileSize;
+          const dy = (child.y - startY) * sourceTileSize;
+          
+          ctx.drawImage(bitmap, dx, dy, sourceTileSize, sourceTileSize);
+          
+          // Explicitly close the bitmap to free memory immediately
+          bitmap.close();
+          return { ok: true, x: child.x - startX, y: child.y - startY };
+        } catch (err) {
+          console.warn(`[Worker] Failed to decode tile: ${err}`);
+          return { ok: false };
+        }
+      });
+      const batchResults = await Promise.all(batchPromises);
+      drawResults.push(...batchResults);
+    }
     const decoded = drawResults.filter(result => result && result.ok);
     const decodedCells = decoded.map(result => `${result.x},${result.y}`).sort();
     if (decoded.length !== originalExpectedCount ||
@@ -68,6 +73,11 @@ self.onmessage = async function(e) {
     
     // Extract raw memory (ArrayBuffer)
     const arrayBuffer = await finalBlob.arrayBuffer();
+
+    // Explicitly release the GPU backing store for this MegaTile in Chromium/CEP
+    canvas.width = 0;
+    canvas.height = 0;
+    canvas = null;
 
     // Send the memory back to the main thread (Transferable Object)
     // The second argument [arrayBuffer] transfers ownership, making it O(1) speed and preventing leaks
@@ -84,6 +94,13 @@ self.onmessage = async function(e) {
     }, [arrayBuffer]);
 
   } catch (error) {
+    if (typeof canvas !== 'undefined' && canvas) {
+      try {
+        canvas.width = 0;
+        canvas.height = 0;
+      } catch (_e) {}
+      canvas = null;
+    }
     self.postMessage({
       id: id,
       status: 'error',

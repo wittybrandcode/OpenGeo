@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Responsive Rules for Ultra-Narrow CEP Docking (280px - 480px)
+   ========================================================================== */
+
+@media (max-width: 540px) {
+  /* Collapse button text to icons only, keeping tooltips intact */
+  .bottom-btn:not(.finalize-btn) span {
+    display: none;
+  }
+  .bottom-btn {
+    padding: 2px 5px;
+    gap: 0;
+  }
+  .bottom-group {
+    gap: 2px;
+  }
+  .bottom-divider {
+    margin: 0 1px;
+  }
+}
+
+@media (max-width: 420px) {
+  .bottom-bar {
+    gap: 3px;
+    padding: 0 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .bottom-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .bottom-group {
+    padding: 1px 1px;
+  }
+  .bottom-btn {
+    padding: 2px 4px;
+  }
+  .finalize-split-group .finalize-btn {
+    padding: 0 6px 0 6px;
+  }
+  .quality-radio-btn {
+    padding: 1px 4px;
+    font-size: 9px;
+  }
+  .toolbar-select {
+    max-width: 110px;
+  }
+  .coords-display {
+    gap: 6px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 340px) {
+  /* Ultra-narrow sidebar docking (280px - 340px) */
+  .header-brand-title {
+    font-size: 11px;
+    letter-spacing: 0.2px;
+  }
+  .finalize-split-group .finalize-btn span {
+    display: none; /* Icon only for finalize button */
+  }
+  .finalize-split-group .finalize-btn {
+    padding: 0 6px;
+  }
+  .quality-radio-btn .radio-indicator {
+    display: none; /* Text only on ultra-narrow */
+  }
+  .quality-radio-btn {
+    padding: 1px 3px;
+    font-size: 8.5px;
+  }
+  .toolbar-select {
+    max-width: 85px;
+    font-size: 10px;
+  }
+  .coords-display .lat,
+  .coords-display .lng {
+    display: none; /* Keep zoom level and center button in top bar */
+  }
+  .geo-location-hud {
+    padding: 0 4px;
+    font-size: 10px;
+  }
+  .geo-location-hud .location-hud-coords,
+  .geo-location-hud .location-hud-sep {
+    display: none;
+  }
+  .geo-location-hud .location-hud-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 130px;
+  }
+  .map-scale-bar {
+    padding: 1px 4px;
+    max-width: 75px;
+  }
+}

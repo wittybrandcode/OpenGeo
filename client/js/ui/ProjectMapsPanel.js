@@ -30,6 +30,14 @@ class ProjectMapsPanel {
     if (this.closeButton) this.closeButton.addEventListener('click', this._onClose);
     if (this.refreshButton) this.refreshButton.addEventListener('click', this._onRefresh);
     document.addEventListener('keydown', this._onKeyDown);
+    this._onThumbnailUpdated = () => {
+      if (this.modal && this.modal.classList.contains('visible')) {
+        this.refresh();
+      }
+    };
+    if (typeof globalEventBus !== 'undefined') {
+      globalEventBus.on('project-maps:thumbnail-updated', this._onThumbnailUpdated);
+    }
   }
 
   open() {
@@ -121,6 +129,113 @@ class ProjectMapsPanel {
       image.src = url;
       thumbnail.appendChild(backdrop);
       thumbnail.appendChild(image);
+
+      const sequenceUrls = loadThumbnail ? this._getSequenceUrls(map) : [];
+      const stripUrl = loadThumbnail ? this._getThumbnailStripUrl(map) : '';
+      const hasMotion = sequenceUrls.length > 1 || !!stripUrl;
+      if (hasMotion) {
+        const isSequence = sequenceUrls.length > 1;
+        const frameCount = isSequence ? sequenceUrls.length : 12;
+
+        const stripContainer = document.createElement('div');
+        stripContainer.className = 'project-map-filmstrip-container';
+
+        const stripImg = document.createElement('img');
+        stripImg.className = 'project-map-filmstrip-image';
+        stripImg.src = stripUrl || (sequenceUrls.length > 0 ? sequenceUrls[0] : '');
+        stripImg.alt = '';
+        stripImg.referrerPolicy = 'no-referrer';
+
+        const scrubBar = document.createElement('div');
+        scrubBar.className = 'project-map-scrub-bar';
+        const scrubHandle = document.createElement('div');
+        scrubHandle.className = 'project-map-scrub-handle';
+        scrubBar.appendChild(scrubHandle);
+
+        stripContainer.appendChild(stripImg);
+        stripContainer.appendChild(scrubBar);
+        thumbnail.appendChild(stripContainer);
+
+        const videoBadge = document.createElement('span');
+        videoBadge.className = 'project-map-video-badge';
+        const playSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        playSvg.setAttribute('viewBox', '0 0 24 24');
+        playSvg.setAttribute('width', '8');
+        playSvg.setAttribute('height', '8');
+        playSvg.setAttribute('fill', 'currentColor');
+        const playPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        playPoly.setAttribute('points', '5 3 19 12 5 21 5 3');
+        playSvg.appendChild(playPoly);
+        videoBadge.appendChild(playSvg);
+        videoBadge.appendChild(document.createTextNode(' Preview'));
+        thumbnail.appendChild(videoBadge);
+
+        if (!isSequence) {
+          stripImg.style.width = `${frameCount * 100}%`;
+        } else {
+          // Preload sequence frames in browser cache for instant 60fps frame swapping
+          for (let sIdx = 0; sIdx < sequenceUrls.length; sIdx++) {
+            const pre = new Image();
+            pre.src = sequenceUrls[sIdx];
+          }
+        }
+
+        let autoPlayTimer = null;
+        let currentFrame = 0;
+
+        const setFrame = (idx) => {
+          const clamped = Math.max(0, Math.min(frameCount - 1, idx));
+          if (isSequence) {
+            image.src = sequenceUrls[clamped];
+          } else {
+            const offsetPct = (clamped / frameCount) * 100;
+            stripImg.style.transform = `translateX(-${offsetPct}%)`;
+          }
+          scrubHandle.style.left = `${(clamped / (frameCount - 1)) * 100}%`;
+        };
+
+        const startAutoPlay = () => {
+          if (autoPlayTimer) clearInterval(autoPlayTimer);
+          autoPlayTimer = setInterval(() => {
+            currentFrame = (currentFrame + 1) % frameCount;
+            setFrame(currentFrame);
+          }, 120);
+        };
+
+        const stopAutoPlay = () => {
+          if (autoPlayTimer) {
+            clearInterval(autoPlayTimer);
+            autoPlayTimer = null;
+          }
+        };
+
+        card.addEventListener('mouseenter', () => {
+          scrubBar.classList.add('active');
+          if (!isSequence) stripContainer.classList.add('active');
+          currentFrame = 0;
+          setFrame(0);
+          startAutoPlay();
+        });
+
+        card.addEventListener('mousemove', (e) => {
+          stopAutoPlay();
+          const rect = thumbnail.getBoundingClientRect();
+          if (rect.width > 0) {
+            const relX = Math.max(0, Math.min(rect.width - 1, e.clientX - rect.left));
+            const progress = relX / rect.width;
+            const targetFrame = Math.floor(progress * frameCount);
+            setFrame(targetFrame);
+          }
+        });
+
+        card.addEventListener('mouseleave', () => {
+          stopAutoPlay();
+          scrubBar.classList.remove('active');
+          if (!isSequence) stripContainer.classList.remove('active');
+          image.src = url;
+          setFrame(0);
+        });
+      }
     }
 
     const captureButton = document.createElement('button');
@@ -188,8 +303,30 @@ class ProjectMapsPanel {
     return encoded + '?v=' + encodeURIComponent(String(map.thumbnailRevision || map.thumbnailBytes || 0));
   }
 
+  _getThumbnailStripUrl(map) {
+    if (!map || !map.stripPath) return '';
+    const normalized = String(map.stripPath).replace(/\\/g, '/');
+    const fileUrl = (/^[a-zA-Z]:\//.test(normalized) ? 'file:///' : 'file://') + normalized;
+    const encoded = encodeURI(fileUrl).replace(/#/g, '%23').replace(/\?/g, '%3F');
+    return encoded + '?v=' + encodeURIComponent(String(map.stripRevision || map.thumbnailRevision || map.thumbnailBytes || 0));
+  }
+
+  _getSequenceUrls(map) {
+    if (!map || !map.hasSequence || !Array.isArray(map.sequenceFrames) || map.sequenceFrames.length <= 1) return [];
+    return map.sequenceFrames.map(p => {
+      const normalized = String(p).replace(/\\/g, '/');
+      const fileUrl = (/^[a-zA-Z]:\//.test(normalized) ? 'file:///' : 'file://') + normalized;
+      const encoded = encodeURI(fileUrl).replace(/#/g, '%23').replace(/\?/g, '%3F');
+      return encoded + '?v=' + encodeURIComponent(String(map.sequenceRevision || map.thumbnailRevision || 0));
+    });
+  }
+
   async _captureThumbnail(map, button, statusElement) {
     if (!map || !map.compId || !map.documentId || button.disabled) return;
+    if (map.thumbnailCaptureSupported === false) {
+      globalEventBus.emit('toast:show', { message: 'Save your After Effects project (Ctrl+S) before capturing thumbnails.', type: 'info', duration: 3500 });
+      return;
+    }
     if (!map.active || String(this.app.activeCompId || '') !== String(map.compId)) {
       globalEventBus.emit('toast:show', { message: 'Open this map before capturing its preview.', type: 'info', duration: 3200 });
       return;
@@ -304,6 +441,9 @@ class ProjectMapsPanel {
     if (this.closeButton) this.closeButton.removeEventListener('click', this._onClose);
     if (this.refreshButton) this.refreshButton.removeEventListener('click', this._onRefresh);
     document.removeEventListener('keydown', this._onKeyDown);
+    if (typeof globalEventBus !== 'undefined' && this._onThumbnailUpdated) {
+      globalEventBus.off('project-maps:thumbnail-updated', this._onThumbnailUpdated);
+    }
   }
 }
 

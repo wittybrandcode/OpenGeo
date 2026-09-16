@@ -41,6 +41,8 @@ class VectorMapManager {
     const featureSignature = this._getFeatureSignature(resolved.country, resolved.features);
     const labelPoint = resolved.country.label || null;
     const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
+    const currentZoom = (this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 6;
     const payload = {
       dataset: 'vectors/country-outlines-10m.json',
       selectionRule: 'country exterior rings only (international land borders + coastline; no EEZ)',
@@ -49,6 +51,7 @@ class VectorMapManager {
       featureId: `country-${resolved.country.iso3}`,
       sourceId: resolved.country.iso3,
       featureSignature: featureSignature,
+      referenceZoom: currentZoom,
       anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
       strokeWidth: 3,
       strokeColor: [1.0, 0.8, 0.2, 1.0],
@@ -76,8 +79,6 @@ class VectorMapManager {
     }
 
     try {
-      globalEventBus.emit('ui:status', { message: `Preparing local 10m country outline for ${layerName}...`, isError: false });
-      await new Promise(resolve => setTimeout(resolve, 0));
       globalEventBus.emit('ui:status', { message: `Drawing local 10m country outline for ${layerName}...`, isError: false });
       if (!this.app.featureManager) throw new Error('FeatureManager is missing.');
       const result = await this.app.featureManager.drawPayloadInAE(payload, 'country');
@@ -85,6 +86,7 @@ class VectorMapManager {
         globalEventBus.emit('toast:show', { message: `${layerName} was drawn in the original composition. Reopen it to refresh Layers.`, type: 'info', duration: 6000 });
         return result;
       }
+
       globalEventBus.emit('toast:show', { message: `${layerName}: ${resolved.features.length} local country-outline paths created.`, type: 'success' });
       globalEventBus.emit('ui:status', { message: 'Local country outline complete.', isError: false });
       return result;

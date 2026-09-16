@@ -90,6 +90,16 @@ function opengeoAddKeyframe(compId, lat, lon, zoom) {
     
     var t = comp.time;
     
+    // Atomic keyframe seeding: If the camera was static (no keyframes) and the
+    // new keyframe is being added at t > 0, preserve the initial framing by
+    // setting an anchor keyframe at t = 0 first.
+    var isStatic = latProp.numKeys === 0 && lonProp.numKeys === 0 && zoomProp.numKeys === 0;
+    if (isStatic && t > 0.001) {
+      latProp.setValueAtTime(0, latProp.valueAtTime(0, false));
+      lonProp.setValueAtTime(0, lonProp.valueAtTime(0, false));
+      zoomProp.setValueAtTime(0, zoomProp.valueAtTime(0, false));
+    }
+    
     latProp.setValueAtTime(t, lat);
     lonProp.setValueAtTime(t, lon);
     zoomProp.setValueAtTime(t, zoom);

@@ -25,17 +25,19 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     var tileFile = new File(String(tile.filePath).replace(/\\/g, '/'));
     if (!tileFile.exists) continue;
 
-    var tileName = tileTypePrefix + sourcePrefix + tile.z + '_' + tile.x + '_' + tile.y;
-    if (findLayerByName(mapComp, tileName)) {
-      importedCount++;
-      continue;
-    }
+    // z/x/y is not a unique identity after hierarchical MegaTile packing:
+    // assets originating at different source zooms may collapse to the same
+    // output coordinate while retaining different extents/resolutions. Keep
+    // the request index in the AE layer name and the canonical placement in
+    // ownership metadata. Never report a name collision as an imported tile.
+    var placementIdentity = opengeoTilePlacementIdentity(tile, tileIndex);
+    var tileName = tileTypePrefix + sourcePrefix + tileIndex + '_' + tile.z + '_' + tile.x + '_' + tile.y;
 
     var footageItem = null;
     try {
       footageItem = app.project.importFile(new ImportOptions(tileFile));
       footageItem.parentFolder = data.isPreview === true ? folders.previewTiles : folders.finalTiles;
-      footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + opengeoTilePlacementIdentity(tile, tileIndex));
+      footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + placementIdentity);
     } catch (importError) {
       hError('Import failed for tile ' + tileName + ': ' + importError.toString());
       continue;
@@ -44,7 +46,7 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
 
     var tileLayer = mapComp.layers.add(footageItem);
     tileLayer.name = tileName;
-    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + opengeoTilePlacementIdentity(tile, tileIndex));
+    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + placementIdentity);
     if (isPreviewStaging) tileLayer.enabled = false;
     var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
     var tileActualSize = footageItem.width || 256;

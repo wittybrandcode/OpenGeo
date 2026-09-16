@@ -417,6 +417,8 @@ class MegaTileStitcher {
           this.artifactStore._assertReport(spec, report);
           const dataUrl = canvas.toDataURL('image/png');
           const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
+          canvas.width = 0;
+          canvas.height = 0;
           this.artifactStore.publish(
             Buffer.from(base64Data, 'base64'), spec, report, () => this._destroyed
           ).then(publication => {
@@ -424,6 +426,7 @@ class MegaTileStitcher {
             resolve(outputPath);
           }, reject);
         } catch (e) {
+          try { canvas.width = 0; canvas.height = 0; } catch (_ce) {}
           reject(e);
         }
       });

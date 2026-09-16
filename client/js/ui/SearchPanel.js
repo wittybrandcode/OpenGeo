@@ -8,8 +8,86 @@ class SearchPanel {
     this._activeRequest = null;
     this._requestGeneration = 0;
     this._domUnsubscribers = [];
+    this._detectedTarget = null;
+
+    this.clearBtn = document.getElementById('search-clear-btn');
+    this.pasteBtn = document.getElementById('search-paste-btn');
+    this.detectedBadge = document.getElementById('search-detected-badge');
+    this.detectedServiceName = document.getElementById('detected-service-name');
+    this.detectedCoordsText = document.getElementById('detected-coords-text');
+    this.detectedJumpBtn = document.getElementById('detected-jump-btn');
+    this.detectedPinBtn = document.getElementById('detected-pin-btn');
     
     this._setupEvents();
+  }
+
+  showResults() {
+    if (!this.results) return;
+    if (this.results.classList && typeof this.results.classList.add === 'function') {
+      this.results.classList.add('visible');
+    }
+    const searchBar = this.input && typeof this.input.closest === 'function' ? this.input.closest('.search-bar') : null;
+    if (searchBar && searchBar.classList && typeof searchBar.classList.add === 'function') {
+      searchBar.classList.add('search-active');
+    }
+  }
+
+  hideResults() {
+    if (!this.results) return;
+    if (this.results.classList && typeof this.results.classList.remove === 'function') {
+      this.results.classList.remove('visible');
+    }
+    const searchBar = this.input && typeof this.input.closest === 'function' ? this.input.closest('.search-bar') : null;
+    if (searchBar && searchBar.classList && typeof searchBar.classList.remove === 'function') {
+      searchBar.classList.remove('search-active');
+    }
+  }
+
+  showDetectedBadge(target) {
+    if (!this.detectedBadge) return;
+    this._detectedTarget = target;
+    if (this.detectedServiceName) {
+      this.detectedServiceName.textContent = target.source || 'Map Target';
+    }
+    if (this.detectedCoordsText) {
+      if (typeof target.lat === 'number' && typeof target.lng === 'number') {
+        const zStr = target.zoom ? ` • Z:${target.zoom}` : '';
+        this.detectedCoordsText.textContent = `${target.lat.toFixed(4)}°, ${target.lng.toFixed(4)}${zStr}`;
+      } else {
+        this.detectedCoordsText.textContent = 'Resolving location...';
+      }
+    }
+    this.detectedBadge.style.display = 'flex';
+    this.hideResults();
+    if (window.lucide && typeof window.lucide.createIcons === 'function') {
+      window.lucide.createIcons({ root: this.detectedBadge });
+    }
+  }
+
+  hideDetectedBadge() {
+    this._detectedTarget = null;
+    if (this.detectedBadge) {
+      this.detectedBadge.style.display = 'none';
+    }
+  }
+
+  jumpToDetectedTarget() {
+    if (!this._detectedTarget || !this.viewport) return;
+    const { lat, lng, zoom, source } = this._detectedTarget;
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      this.viewport.setCenter(lat, lng);
+      if (typeof zoom === 'number') {
+        this.viewport.setZoom(zoom);
+      }
+      this.hideDetectedBadge();
+      this.hideResults();
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('ui:status', {
+          message: `Jumped to ${source || 'Location'} (${lat.toFixed(4)}°, ${lng.toFixed(4)}°)`,
+          isError: false
+        });
+      }
+    }
   }
 
   _setupEvents() {
@@ -19,30 +97,166 @@ class SearchPanel {
     const closeBtn = document.getElementById('search-close-btn');
     if (closeBtn) {
       this._listen(closeBtn, 'click', () => {
-        this.results.classList.remove('visible');
+        this.hideResults();
       });
     }
     
     this.resultsList = document.getElementById('search-results-list');
+
+    // Paste from Clipboard Action
+    if (this.pasteBtn) {
+      this._listen(this.pasteBtn, 'click', async () => {
+        try {
+          let text = '';
+          if (navigator.clipboard && typeof navigator.clipboard.readText === 'function') {
+            text = await navigator.clipboard.readText();
+          }
+          if (text && text.trim()) {
+            this.input.value = text.trim();
+            this._processInput(text.trim(), true);
+          } else {
+            if (typeof globalEventBus !== 'undefined') {
+              globalEventBus.emit('ui:status', { message: 'Clipboard is empty or contains non-text content', isError: false });
+            }
+          }
+        } catch (err) {
+          console.warn('[SearchPanel] Clipboard read error:', err);
+          this.input.focus();
+        }
+      });
+    }
+
+    // Clear Input Action
+    if (this.clearBtn) {
+      this._listen(this.clearBtn, 'click', () => {
+        this.input.value = '';
+        this.clearBtn.style.display = 'none';
+        this.hideDetectedBadge();
+        this.hideResults();
+        this.input.focus();
+      });
+    }
+
+    // Detected Badge Jump Action
+    if (this.detectedJumpBtn) {
+      this._listen(this.detectedJumpBtn, 'click', () => {
+        this.jumpToDetectedTarget();
+      });
+    }
+
+    // Detected Badge Create Spatial Pin Action
+    if (this.detectedPinBtn) {
+      this._listen(this.detectedPinBtn, 'click', () => {
+        if (!this._detectedTarget) return;
+        const target = this._detectedTarget;
+        this.jumpToDetectedTarget();
+        const pinModal = document.getElementById('spatial-pin-modal');
+        if (pinModal) {
+          const nameInput = document.getElementById('pin-name-input');
+          if (nameInput) nameInput.value = target.placeName || `${target.source || 'Pin'}`;
+          const coordsBadge = document.getElementById('pin-coords-badge');
+          if (coordsBadge) coordsBadge.textContent = `${target.lat.toFixed(4)}°, ${target.lng.toFixed(4)}°`;
+          pinModal.style.display = 'block';
+          pinModal.classList.add('visible');
+          if (window.lucide && typeof window.lucide.createIcons === 'function') {
+            window.lucide.createIcons({ root: pinModal });
+          }
+          if (nameInput && typeof nameInput.focus === 'function') {
+            setTimeout(() => { nameInput.focus(); nameInput.select(); }, 50);
+          }
+        }
+      });
+    }
     
+    // Live Input Event
     this._listen(this.input, 'input', () => {
-      clearTimeout(this.timer);
       const query = this.input.value.trim();
-      
-      if (query.length < 3) {
-        this.results.classList.remove('visible');
-        if (this.resultsList) this.resultsList.textContent = '';
-        return;
+      this._processInput(query, false);
+    });
+
+    this._listen(this.input, 'focus', () => {
+      if (this.resultsList && this.resultsList.children && this.resultsList.children.length > 0 && this.input.value && this.input.value.trim().length >= 3) {
+        this.showResults();
       }
-      
-      this.timer = setTimeout(() => this._geocode(query), 450);
     });
     
     this._listen(this.input, 'keydown', (event) => {
       if (event.key === 'Escape') {
-        this.results.classList.remove('visible');
+        this.hideResults();
+        this.hideDetectedBadge();
+      } else if (event.key === 'Enter') {
+        if (this._detectedTarget) {
+          this.jumpToDetectedTarget();
+        } else if (this.input.value && this.input.value.trim().length >= 2) {
+          this._geocode(this.input.value.trim());
+        }
       }
     });
+
+    // Auto-dismiss search results on outside pointer interactions
+    this._listen(document, 'pointerdown', (event) => {
+      const searchBar = this.input && typeof this.input.closest === 'function' ? this.input.closest('.search-bar') : null;
+      if (searchBar && typeof searchBar.contains === 'function' && searchBar.contains(event.target)) return;
+      if (this.results && this.results.classList && typeof this.results.classList.contains === 'function' && this.results.classList.contains('visible')) {
+        this.hideResults();
+      }
+      if (this.detectedBadge && this.detectedBadge.style.display !== 'none') {
+        this.hideDetectedBadge();
+      }
+    });
+  }
+
+  _processInput(query, autoJump = false) {
+    if (this.clearBtn) {
+      this.clearBtn.style.display = query && query.length > 0 ? 'flex' : 'none';
+    }
+
+    if (!query) {
+      this.hideDetectedBadge();
+      this.hideResults();
+      return;
+    }
+
+    const directLoc = this._parseUniversalLocation(query);
+    if (directLoc) {
+      if (directLoc.isShortlink) {
+        this.showDetectedBadge({
+          source: 'Resolving Link...',
+          lat: null,
+          lng: null,
+          zoom: 15
+        });
+        if (typeof UniversalGeoParser !== 'undefined' && UniversalGeoParser.resolveShortlink) {
+          UniversalGeoParser.resolveShortlink(directLoc.url).then(resolved => {
+            if (resolved && resolved.valid) {
+              this.showDetectedBadge(resolved);
+              if (autoJump) this.jumpToDetectedTarget();
+            } else {
+              this.hideDetectedBadge();
+            }
+          }).catch(() => {
+            this.hideDetectedBadge();
+          });
+        }
+        return;
+      }
+
+      this.showDetectedBadge(directLoc);
+      if (autoJump) {
+        this.jumpToDetectedTarget();
+      }
+      return;
+    }
+
+    this.hideDetectedBadge();
+    if (query.length < 3) {
+      this.hideResults();
+      if (this.resultsList) this.resultsList.textContent = '';
+      return;
+    }
+
+    clearTimeout(this.timer);
+    this.timer = setTimeout(() => this._geocode(query), 450);
   }
 
   _listen(target, eventName, callback, options) {
@@ -58,15 +272,113 @@ class SearchPanel {
     return unsubscribe;
   }
 
+  _parseUniversalLocation(query) {
+    if (!query || typeof query !== 'string') return null;
+    const str = query.trim();
+
+    if (typeof UniversalGeoParser !== 'undefined' && typeof UniversalGeoParser.parse === 'function') {
+      const parsed = UniversalGeoParser.parse(str);
+      if (parsed) return parsed;
+    }
+
+    // 1. Google Maps @lat,lng,zoom or @lat,lng,meters
+    const gmapsMatch = str.match(/google\.[a-z.]+\/maps\/.*@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,([0-9.]+)(?:m|z))?/i);
+    if (gmapsMatch) {
+      return {
+        lat: parseFloat(gmapsMatch[1]),
+        lng: parseFloat(gmapsMatch[2]),
+        zoom: gmapsMatch[3] ? Math.min(19, Math.max(2, Math.round(parseFloat(gmapsMatch[3])))) : 14,
+        source: 'Google Maps'
+      };
+    }
+
+    // 2. Google Maps query or destination param (?q=lat,lng or ?query=lat,lng)
+    const gmapsQueryMatch = str.match(/google\.[a-z.]+\/maps\/.*[?&](?:q|query|destination|ll)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i);
+    if (gmapsQueryMatch) {
+      return {
+        lat: parseFloat(gmapsQueryMatch[1]),
+        lng: parseFloat(gmapsQueryMatch[2]),
+        zoom: 14,
+        source: 'Google Maps'
+      };
+    }
+
+    // 3. Apple Maps ?ll=lat,lng&z=zoom
+    const appleMatch = str.match(/maps\.apple\.com\/.*[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:.*[?&]z=(\d+))?/i);
+    if (appleMatch) {
+      return {
+        lat: parseFloat(appleMatch[1]),
+        lng: parseFloat(appleMatch[2]),
+        zoom: appleMatch[3] ? Math.min(19, Math.max(2, parseInt(appleMatch[3], 10))) : 14,
+        source: 'Apple Maps'
+      };
+    }
+
+    // 4. OpenStreetMap #map=zoom/lat/lng
+    const osmMatch = str.match(/openstreetmap\.org\/.*#map=(\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)\/(-?\d+(?:\.\d+)?)/i);
+    if (osmMatch) {
+      return {
+        lat: parseFloat(osmMatch[2]),
+        lng: parseFloat(osmMatch[3]),
+        zoom: Math.min(19, Math.max(2, Math.round(parseFloat(osmMatch[1])))),
+        source: 'OpenStreetMap'
+      };
+    }
+
+    // 5. DMS (Degrees Minutes Seconds): 36°45'10.4"N 3°02'31.4"E or 36 45 10 N, 3 2 31 E
+    const dmsRegex = /([0-9.]+)[°\s]+([0-9.]+)['\s]+(?:([0-9.]+)["\s]*)?([NSEWnsew])\s*[, ]\s*([0-9.]+)[°\s]+([0-9.]+)['\s]+(?:([0-9.]+)["\s]*)?([NSEWnsew])/i;
+    const dmsMatch = str.match(dmsRegex);
+    if (dmsMatch) {
+      let lat = parseFloat(dmsMatch[1]) + (parseFloat(dmsMatch[2]) || 0) / 60 + (parseFloat(dmsMatch[3]) || 0) / 3600;
+      if (dmsMatch[4].toUpperCase() === 'S') lat = -lat;
+      let lng = parseFloat(dmsMatch[5]) + (parseFloat(dmsMatch[6]) || 0) / 60 + (parseFloat(dmsMatch[7]) || 0) / 3600;
+      if (dmsMatch[8].toUpperCase() === 'W') lng = -lng;
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return {
+          lat: parseFloat(lat.toFixed(6)),
+          lng: parseFloat(lng.toFixed(6)),
+          zoom: 14,
+          source: 'GPS (DMS)'
+        };
+      }
+    }
+
+    // 6. Decimal Coordinates: 36.752887, 3.042048 or 36.752887, 3.042048, 15z
+    const decMatch = str.match(/^\s*(?:lat:\s*)?(-?\d+(?:\.\d+)?)\s*[, ]\s*(?:lng:\s*|lon:\s*)?(-?\d+(?:\.\d+)?)(?:\s*[, ]\s*([0-9.]+)\s*z?)?\s*$/i);
+    if (decMatch) {
+      const lat = parseFloat(decMatch[1]);
+      const lng = parseFloat(decMatch[2]);
+      if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
+        return {
+          lat,
+          lng,
+          zoom: decMatch[3] ? Math.min(19, Math.max(2, Math.round(parseFloat(decMatch[3])))) : 12,
+          source: 'Coordinates'
+        };
+      }
+    }
+
+    return null;
+  }
+
   _geocode(query) {
     if (this._activeRequest) this._activeRequest.abort();
     const generation = ++this._requestGeneration;
-    // Check for raw coordinates
-    const match = query.match(/^\s*(-?\d+(?:\.\d+)?)\s*[, ]\s*(-?\d+(?:\.\d+)?)\s*$/);
-    if (match) {
-      this.viewport.setCenter(parseFloat(match[1]), parseFloat(match[2]));
-      this.viewport.setZoom(12);
-      this.results.classList.remove('visible');
+
+    // Universal Coordinate & Map URL Detection
+    const directLoc = this._parseUniversalLocation(query);
+    if (directLoc) {
+      this.viewport.setCenter(directLoc.lat, directLoc.lng);
+      if (typeof directLoc.zoom === 'number') {
+        this.viewport.setZoom(directLoc.zoom);
+      }
+      this.hideResults();
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('ui:status', {
+          message: `Jumped to ${directLoc.source} (${directLoc.lat.toFixed(4)}°, ${directLoc.lng.toFixed(4)}°)`,
+          isError: false
+        });
+      }
       return;
     }
     
@@ -125,7 +437,7 @@ class SearchPanel {
       if (this.resultsList) this.resultsList.textContent = '';
       
       if (!items.length) {
-        this.results.classList.remove('visible');
+        this.hideResults();
         if (typeof globalEventBus !== 'undefined') {
           globalEventBus.emit('ui:status', { message: 'No search result — try coordinates', isError: true });
         }
@@ -213,6 +525,7 @@ class SearchPanel {
             this.viewport.setCenter(parseFloat(item.lat), parseFloat(item.lon));
             this.viewport.setZoom(12);
           }
+          this.hideResults();
         };
         
         // 1. Jump Button
@@ -234,6 +547,7 @@ class SearchPanel {
         // also valid for a city result: the enclosing country is used.
         if (identity.drawingIso3 !== 'UNKNOWN') {
           const drawBtn = createBtn('pen-tool', 'Draw local 10m country outline (land borders + coastline)', 'var(--accent-color)', '24px', () => {
+            this.hideResults();
             if (typeof globalEventBus !== 'undefined') {
               globalEventBus.emit('search:drawCountryOutline', {
                 countryCode: identity.drawingIso3,
@@ -257,7 +571,7 @@ class SearchPanel {
         if (this.resultsList) this.resultsList.appendChild(row);
       });
       
-      this.results.classList.add('visible');
+      this.showResults();
       
       if (typeof lucide !== 'undefined' && this.resultsList) {
         lucide.createIcons({ root: this.resultsList });
@@ -280,6 +594,6 @@ class SearchPanel {
     this._activeRequest = null;
     this._domUnsubscribers.splice(0).forEach(unsubscribe => unsubscribe());
     if (this.resultsList) this.resultsList.textContent = '';
-    if (this.results) this.results.classList.remove('visible');
+    this.hideResults();
   }
 }

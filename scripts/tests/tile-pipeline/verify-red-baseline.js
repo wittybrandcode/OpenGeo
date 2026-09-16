@@ -30,7 +30,8 @@ const actualPasses = summary.passed.slice().sort();
 const exactPassMatch = expectedPasses.length === actualPasses.length &&
   expectedPasses.every((value, index) => value === actualPasses[index]);
 
-if (result.status === 0 || !exactOracleMatch || !exactPassMatch || summary.harnessErrors.length) {
+const expectedStatus = expected.length > 0 ? 1 : 0;
+if (result.status !== expectedStatus || !exactOracleMatch || !exactPassMatch || summary.harnessErrors.length) {
   console.error(output);
   throw new Error([
     'Red-baseline verification failed.',

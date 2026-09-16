@@ -456,8 +456,55 @@ const tests = [
   ['FI-07', fi07ChecksEveryTrajectorySamplePlacement],
   ['FI-08', fi08RejectsEqualCountIdentityMismatch],
   ['FI-09', fi09PreflightRunsBeforeNetwork],
-  ['FI-10', fi10HostResultUsesExactAssetIds]
+  ['FI-10', fi10HostResultUsesExactAssetIds],
+  ['FI-11', fi11ValidateStitchedAssetIdsRejectsDuplicates],
+  ['FI-12', fi12ValidateStitchedAssetIdsRejectsIncompleteCoverage]
 ];
+
+
+async function fi11ValidateStitchedAssetIdsRejectsDuplicates() {
+  const sandbox = { globalEventBus: { emit() {} } };
+  const FinalizeController = loadBrowserClass('client/js/core/FinalizeController.js', 'FinalizeController', sandbox);
+  const controller = new FinalizeController({});
+  const stitchedTiles = [
+    { placementKey: 'p-1', downloadKey: 'd-1', filePath: '/tmp/1.png' },
+    { placementKey: 'p-1', downloadKey: 'd-1', filePath: '/tmp/1.png' },
+    { placementKey: 'p-2', downloadKey: 'd-2', filePath: '/tmp/2.png' }
+  ];
+  let rejected = false;
+  try {
+    controller._validateStitchedAssetIds(stitchedTiles, [
+      { expectedCount: 3, decodedCount: 3 }
+    ]);
+  } catch (error) {
+    rejected = true;
+    if (error.code !== 'FINALIZE_DUPLICATE_ASSET_IDS') {
+      fail('FINALIZE_DUPLICATE_ASSET_IDS', 'Wrong error code: ' + error.code);
+    }
+  }
+  if (!rejected) fail('FINALIZE_DUPLICATE_ASSET_IDS', 'Duplicate stitched asset IDs were accepted.');
+}
+
+async function fi12ValidateStitchedAssetIdsRejectsIncompleteCoverage() {
+  const sandbox = { globalEventBus: { emit() {} } };
+  const FinalizeController = loadBrowserClass('client/js/core/FinalizeController.js', 'FinalizeController', sandbox);
+  const controller = new FinalizeController({});
+  const stitchedTiles = [
+    { placementKey: 'p-1', downloadKey: 'd-1', filePath: '/tmp/1.png' }
+  ];
+  let rejected = false;
+  try {
+    controller._validateStitchedAssetIds(stitchedTiles, [
+      { expectedCount: 2, decodedCount: 1 }
+    ]);
+  } catch (error) {
+    rejected = true;
+    if (error.code !== 'FINALIZE_MEGATILE_INCOMPLETE') {
+      fail('FINALIZE_MEGATILE_INCOMPLETE', 'Wrong error code: ' + error.code);
+    }
+  }
+  if (!rejected) fail('FINALIZE_MEGATILE_INCOMPLETE', 'Incomplete MegaTile coverage was accepted.');
+}
 
 async function main() {
   const expectedById = new Map(oracle.expectedFailures.map(entry => [entry.id, entry.code]));

@@ -59,28 +59,58 @@ function opengeoSynchronizeControllerCamera(mapLayer, time, camera) {
   return { applied: true, preservedAnimation: false };
 }
 
+function opengeoEscapeExpressionString(value) {
+  var str = String(value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\r/g, '').replace(/\n/g, ' ');
+  return str.replace(/[\u007f-\uffff]/g, function(c) {
+    return '\\u' + ('0000' + c.charCodeAt(0).toString(16)).slice(-4);
+  });
+}
+
 function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcompName, compWidth, compHeight) {
+  var safeContainingComp = opengeoEscapeExpressionString(containingCompName);
+  var safeMapcompName = opengeoEscapeExpressionString(mapcompName);
+
+  var preamble =
+    'var ctrl = null;\n' +
+    'try { ctrl = comp(\'' + safeContainingComp + '\').layer(\'' + safeMapcompName + '\'); } catch(e) {}\n';
+
   var scaleExpr =
-    "var ctrl = comp('" + containingCompName + "').layer('" + mapcompName + "');\n" +
-    'var diffTime = ctrl.startTime;\n' +
-    'var myTime = time + diffTime;\n' +
-    "var zoom = ctrl.effect('Zoom')(1).valueAtTime(myTime);\n" +
-    'var s = (100 * Math.pow(2, Math.max(0, Math.min(' + MAX_ZOOM + ', zoom))) * ' + TILE_REF_SIZE + ') / ' + MAP_SIZE + ';\n' +
-    '[s, s, s];';
+    preamble +
+    'if (!ctrl) {\n' +
+    '  value;\n' +
+    '} else {\n' +
+    '  try {\n' +
+    '    var diffTime = ctrl.startTime;\n' +
+    '    var myTime = time + diffTime;\n' +
+    '    var zoomEff = ctrl.effect("Zoom")(1);\n' +
+    '    var zoom = zoomEff ? zoomEff.valueAtTime(myTime) : 0;\n' +
+    '    var s = (100 * Math.pow(2, Math.max(0, Math.min(' + MAX_ZOOM + ', zoom))) * ' + TILE_REF_SIZE + ') / ' + MAP_SIZE + ';\n' +
+    '    [s, s, s];\n' +
+    '  } catch(scaleErr) { value; }\n' +
+    '}';
   mapPivot.property('Scale').expression = scaleExpr;
 
   var anchorExpr =
-    "var ctrl = comp('" + containingCompName + "').layer('" + mapcompName + "');\n" +
-    'var diffTime = ctrl.startTime;\n' +
-    'var myTime = time + diffTime;\n' +
-    "var lat = ctrl.effect('Latitude')(1).valueAtTime(myTime);\n" +
-    "var lon = ctrl.effect('Longitude')(1).valueAtTime(myTime);\n" +
-    'var mapSize = ' + MAP_SIZE + ';\n' +
-    'var latRad = lat * Math.PI / 180;\n' +
-    'var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-    'var worldX = ((lon + 180) / 360) * mapSize;\n' +
-    'var worldY = ((1 - mercN / Math.PI) / 2) * mapSize;\n' +
-    '[worldX, worldY];';
+    preamble +
+    'if (!ctrl) {\n' +
+    '  value;\n' +
+    '} else {\n' +
+    '  try {\n' +
+    '    var diffTime = ctrl.startTime;\n' +
+    '    var myTime = time + diffTime;\n' +
+    '    var latEff = ctrl.effect("Latitude")(1);\n' +
+    '    var lonEff = ctrl.effect("Longitude")(1);\n' +
+    '    var rawLat = latEff ? latEff.valueAtTime(myTime) : 0;\n' +
+    '    var lat = Math.max(-85.05112878, Math.min(85.05112878, rawLat));\n' +
+    '    var lon = lonEff ? lonEff.valueAtTime(myTime) : 0;\n' +
+    '    var mapSize = ' + MAP_SIZE + ';\n' +
+    '    var latRad = lat * Math.PI / 180;\n' +
+    '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
+    '    var worldX = ((lon + 180) / 360) * mapSize;\n' +
+    '    var worldY = ((1 - mercN / Math.PI) / 2) * mapSize;\n' +
+    '    [worldX, worldY];\n' +
+    '  } catch(anchorErr) { value; }\n' +
+    '}';
   mapPivot.property('Anchor Point').expression = anchorExpr;
   try { mapPivot.property('Position').expression = ''; } catch (ignoreExpression) {}
   mapPivot.property('Position').setValue([compWidth / 2, compHeight / 2]);

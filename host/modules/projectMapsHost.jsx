@@ -2,6 +2,16 @@
 // OpenGeo Project Maps — read-only project index and explicit map activation
 // ============================================================================
 
+function opengeoIsValidObject(obj) {
+  if (!obj) return false;
+  try {
+    var test = obj.name;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function opengeoProjectThumbnailInfo(documentId) {
   try {
     if (!app.project || !app.project.file) return null;
@@ -13,7 +23,42 @@ function opengeoProjectThumbnailInfo(documentId) {
     if (!file.exists || file.length <= 0) return null;
     var revision = 0;
     try { revision = file.modified ? file.modified.getTime() : file.length; } catch (modifiedError) { revision = file.length; }
-    return { path: file.fsName.replace(/\\/g, '/'), revision: revision, bytes: file.length };
+    
+    // Check if a high-quality PNG sequence exists for this map
+    var seqFrames = [];
+    var seqRevision = 0;
+    for (var seqIdx = 0; seqIdx < 60; seqIdx++) {
+      var seqFile = new File(projectPath + '/OpenGeo_Assets/Thumbnails/thumb_' + safeDocumentId + '_' + seqIdx + '.png');
+      if (!seqFile.exists || seqFile.length <= 0) break;
+      seqFrames.push(seqFile.fsName.replace(/\\/g, '/'));
+      try {
+        var m = seqFile.modified ? seqFile.modified.getTime() : seqFile.length;
+        if (m > seqRevision) seqRevision = m;
+      } catch (seqM) {}
+    }
+    var hasSequence = seqFrames.length > 1;
+
+    // Check if an animated filmstrip sprite sheet exists for this map
+    var stripFile = new File(projectPath + '/OpenGeo_Assets/Thumbnails/thumb_' + safeDocumentId + '_strip.png');
+    var stripRevision = 0;
+    var hasStrip = false;
+    if (stripFile.exists && stripFile.length > 0) {
+      hasStrip = true;
+      try { stripRevision = stripFile.modified ? stripFile.modified.getTime() : stripFile.length; } catch (stripErr) { stripRevision = stripFile.length; }
+    }
+
+    return {
+      path: file.fsName.replace(/\\/g, '/'),
+      revision: revision,
+      bytes: file.length,
+      stripPath: hasStrip ? stripFile.fsName.replace(/\\/g, '/') : null,
+      stripRevision: stripRevision,
+      hasFilmstrip: hasStrip,
+      hasSequence: hasSequence,
+      sequenceFrames: seqFrames,
+      sequenceCount: seqFrames.length,
+      sequenceRevision: seqRevision
+    };
   } catch (error) {
     return null;
   }
@@ -74,6 +119,13 @@ function opengeoProjectMapDescriptor(comp, activeCompId) {
     thumbnailPath: thumbnail ? thumbnail.path : null,
     thumbnailRevision: thumbnail ? thumbnail.revision : null,
     thumbnailBytes: thumbnail ? thumbnail.bytes : 0,
+    stripPath: thumbnail ? thumbnail.stripPath : null,
+    stripRevision: thumbnail ? thumbnail.stripRevision : null,
+    hasFilmstrip: thumbnail ? thumbnail.hasFilmstrip : false,
+    hasSequence: thumbnail ? thumbnail.hasSequence : false,
+    sequenceFrames: thumbnail && thumbnail.sequenceFrames ? thumbnail.sequenceFrames : [],
+    sequenceCount: thumbnail ? thumbnail.sequenceCount : 0,
+    sequenceRevision: thumbnail ? thumbnail.sequenceRevision : 0,
     thumbnailCaptureSupported: !!(app.project && app.project.file),
     thumbnailCaptureApiVersion: 5
   };
@@ -90,12 +142,14 @@ function opengeoListProjectMaps() {
     var truncated = false;
     var maxMaps = 200;
     for (var itemIndex = 1; itemIndex <= app.project.items.length; itemIndex++) {
-      var item = app.project.items[itemIndex];
-      if (!(item instanceof CompItem)) continue;
-      var descriptor = opengeoProjectMapDescriptor(item, activeCompId);
-      if (!descriptor) continue;
-      if (maps.length >= maxMaps) { truncated = true; skippedCount++; continue; }
-      maps.push(descriptor);
+      try {
+        var item = app.project.items[itemIndex];
+        if (!item || !opengeoIsValidObject(item) || !(item instanceof CompItem)) continue;
+        var descriptor = opengeoProjectMapDescriptor(item, activeCompId);
+        if (!descriptor) continue;
+        if (maps.length >= maxMaps) { truncated = true; skippedCount++; continue; }
+        maps.push(descriptor);
+      } catch (itemError) {}
     }
     maps.sort(function(left, right) {
       if (left.active !== right.active) return left.active ? -1 : 1;
@@ -146,10 +200,12 @@ function opengeoPrepareProjectMapThumbnail(compId, documentId) {
     }
     var folder = opengeoEnsureProjectThumbnailFolder();
     var target = new File(folder.fsName + '/thumb_' + actualDocument + '.png');
+    var stripTarget = new File(folder.fsName + '/thumb_' + actualDocument + '_strip.png');
     return JSON.stringify({
       compId: comp.id,
       documentId: actualDocument,
       thumbnailTargetPath: target.fsName.replace(/\\/g, '/'),
+      thumbnailStripTargetPath: stripTarget.fsName.replace(/\\/g, '/'),
       thumbnailCaptureApiVersion: 5,
       thumbnailSource: 'opengeo-preview-canvas'
     });

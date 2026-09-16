@@ -19,6 +19,7 @@ class AESyncEngine {
     this._syncTimer = null;
     this._cameraPushTimer = null;
     this._pendingCamera = null;
+    this._lastPushedCamera = null;
     this._pollInFlight = false;
     this._pollEpoch = 0;
     this._suspendActiveCompPolling = false;
@@ -61,6 +62,7 @@ class AESyncEngine {
     this._lastAeCamState = null;
     this._activeControllerId = null;
     this._pendingCamera = null;
+    this._lastPushedCamera = null;
     this._cameraWrites.clear();
     this._latestLocalIntentRevision = 0;
     this._detachedAeCamera = null;
@@ -156,14 +158,33 @@ class AESyncEngine {
   async _onPanelViewportChanged() {
     const compId = this.getActiveCompId();
     if (!this.isRunning || !compId || this.isApplyingAeState) return;
+
+    const currentLat = this.session.mapState.latitude;
+    const currentLng = this.session.mapState.longitude;
+    const currentZoom = this.session.mapState.compZoom;
+
+    if (!this.isKeyframeRecording && this._lastPushedCamera && this._lastPushedCamera.compId === compId) {
+      const isEquivalent = typeof MercatorProjection !== 'undefined' && MercatorProjection.camerasEquivalent
+        ? MercatorProjection.camerasEquivalent(
+            { lat: currentLat, lng: currentLng, zoom: currentZoom },
+            this._lastPushedCamera,
+            { tileSize: this.session.mapState.tileSize }
+          )
+        : (Math.abs(currentLat - this._lastPushedCamera.lat) < 1e-6 && Math.abs(currentLng - this._lastPushedCamera.lng) < 1e-6 && Math.abs(currentZoom - this._lastPushedCamera.zoom) < 0.001);
+      if (isEquivalent) {
+        return;
+      }
+    }
+
     this._pendingCamera = {
       compId,
-      lat: this.session.mapState.latitude,
-      lng: this.session.mapState.longitude,
-      zoom: this.session.mapState.compZoom,
+      lat: currentLat,
+      lng: currentLng,
+      zoom: currentZoom,
       recordKeyframe: this.isKeyframeRecording,
       revision: this._nextRevision()
     };
+    this._lastPushedCamera = { compId, lat: currentLat, lng: currentLng, zoom: currentZoom };
     // A poll that started before this local intent is necessarily stale, even
     // while the debounced write has not reached After Effects yet.
     this._latestLocalIntentRevision = this._pendingCamera.revision;
@@ -174,7 +195,12 @@ class AESyncEngine {
       this._cameraPushTimer = null;
       const camera = this._pendingCamera;
       this._pendingCamera = null;
-      if (!camera || !this.isRunning || camera.compId !== this.getActiveCompId()) return;
+      if (!camera || !this.isRunning || camera.compId !== this.getActiveCompId()) {
+        if (camera && camera.revision === this._latestLocalIntentRevision) {
+          this._latestLocalIntentRevision = this._lastAcknowledgedRevision;
+        }
+        return;
+      }
 
       this._cameraWrites.set(camera.revision, camera);
       this._pruneCameraWrites();
@@ -199,7 +225,11 @@ class AESyncEngine {
         if (camera.revision === this._latestLocalIntentRevision) {
           this._latestLocalIntentRevision = this._lastAcknowledgedRevision;
         }
-        console.warn('[AESyncEngine] Camera sync failed', e.message);
+        if (e && e.message && e.message.indexOf('Object is invalid') !== -1) {
+          // AE object was invalidated during camera write (e.g. comp closed or transaction in flight); dropped gracefully
+        } else {
+          console.warn('[AESyncEngine] Camera sync failed', e.message);
+        }
       }
     }, 200);
   }
@@ -232,7 +262,15 @@ class AESyncEngine {
         this._activeControllerId = state.controllerId || null;
         if (typeof globalEventBus !== 'undefined') {
           const eventName = typeof OpenGeoEvents !== 'undefined' ? OpenGeoEvents.SYNC_COMP_CHANGED : 'sync:compChanged';
-          globalEventBus.emit(eventName, { newId: state.compId, oldId });
+          globalEventBus.emit(eventName, { newId: state.compId, oldId, camera: state.camera });
+        }
+        if (state.camera) {
+          const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}`;
+          this._lastAeCamState = camHash;
+          if (typeof globalEventBus !== 'undefined') {
+            const eventName = typeof OpenGeoEvents !== 'undefined' ? OpenGeoEvents.SYNC_AE_CAMERA : 'sync:aeCamera';
+            globalEventBus.emit(eventName, state.camera);
+          }
         }
         return;
       }

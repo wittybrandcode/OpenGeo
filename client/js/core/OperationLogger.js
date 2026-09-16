@@ -50,6 +50,12 @@ class OperationLogger {
     this._unsubscribers.push(this.eventBus.on('operation:result', payload => this.record('operation:result', payload)));
     this._unsubscribers.push(this.eventBus.on('error:report', payload => this.record('error:report', payload)));
     this._unsubscribers.push(this.eventBus.on('sync:health', payload => this.record('sync:health', payload)));
+    // T7: Pipeline phase events
+    this._unsubscribers.push(this.eventBus.on('tile:pipeline:plan', payload => this.record('tile:pipeline:plan', payload)));
+    this._unsubscribers.push(this.eventBus.on('tile:pipeline:download', payload => this.record('tile:pipeline:download', payload)));
+    this._unsubscribers.push(this.eventBus.on('tile:pipeline:stitch', payload => this.record('tile:pipeline:stitch', payload)));
+    this._unsubscribers.push(this.eventBus.on('tile:pipeline:prepare', payload => this.record('tile:pipeline:prepare', payload)));
+    this._unsubscribers.push(this.eventBus.on('tile:pipeline:commit', payload => this.record('tile:pipeline:commit', payload)));
   }
 
   record(event, payload) {
@@ -109,7 +115,11 @@ class OperationLogger {
     if (typeof value === 'string') {
       return value
         .replace(/([?&](?:api_?key|key|access_token|token|signature|sig)=)[^&\s]+/gi, '$1[REDACTED]')
-        .replace(/Bearer\s+[^\s]+/gi, 'Bearer [REDACTED]');
+        .replace(/Bearer\s+[^\s]+/gi, 'Bearer [REDACTED]')
+        .replace(/\/Users\/[^\/]+/gi, '/Users/[REDACTED]')
+        .replace(/\/home\/[^\/]+/gi, '/home/[REDACTED]')
+        .replace(/[a-zA-Z]:\\(?:Users|Documents and Settings)\\[^\\]+/gi, m => m.replace(/\\[^\\]+$/, '\\[REDACTED]'))
+        .replace(/[a-zA-Z]:\/(?:Users|Documents and Settings)\/[^\/]+/gi, m => m.replace(/\/[^\/]+$/, '/[REDACTED]'));
     }
     if (!value || typeof value !== 'object') return value;
     if (Array.isArray(value)) return value.slice(0, 100).map(item => this._redact(item, depth + 1));
@@ -117,6 +127,9 @@ class OperationLogger {
     for (const key of Object.keys(value)) {
       if (/(?:api.?keys?|keys?|tokens?|authorization|secret|password|signature)/i.test(key)) result[key] = '[REDACTED]';
       else if (key === 'stack') result[key] = String(value[key] || '').split('\n').slice(0, 8).join('\n');
+      else if (/(?:path|filePath|url|href|src)/i.test(key) && typeof value[key] === 'string') {
+        result[key] = this._redact(value[key], depth + 1);
+      }
       else result[key] = this._redact(value[key], depth + 1);
     }
     return result;
@@ -129,6 +142,95 @@ class OperationLogger {
         .filter(name => /^operations(?:-\d+)?\.jsonl$/.test(name))
         .map(name => this.path.join(this.logDir, name));
     } catch (error) { return []; }
+  }
+
+
+  getSummary(operationId) {
+    if (!this.fs || !this.logFile) return null;
+    try {
+      const entries = [];
+      const files = this.getSupportFiles();
+      for (const file of files) {
+        const content = this.fs.readFileSync(file, 'utf8');
+        for (const line of content.split('\n')) {
+          if (!line.trim()) continue;
+          try {
+            const entry = JSON.parse(line);
+            if (entry.operationId === operationId) entries.push(entry);
+          } catch (_e) {}
+        }
+      }
+      if (!entries.length) return null;
+      const phases = {};
+      const errors = [];
+      let startedAt = null;
+      let endedAt = null;
+      for (const entry of entries) {
+        if (entry.event === 'operation:progress' && entry.phase === 'started') {
+          startedAt = entry.timestamp;
+        }
+        if (entry.event === 'operation:result') {
+          endedAt = entry.timestamp;
+        }
+        if (entry.event.startsWith('tile:pipeline:')) {
+          const phaseName = entry.event.replace('tile:pipeline:', '');
+          phases[phaseName] = {
+            timestamp: entry.timestamp,
+            status: entry.phase,
+            data: entry.data
+          };
+        }
+        if (entry.event === 'error:report' || (entry.errorCode && entry.errorCode !== 'null')) {
+          errors.push({
+            timestamp: entry.timestamp,
+            errorCode: entry.errorCode,
+            message: entry.data && entry.data.message ? entry.data.message : null
+          });
+        }
+      }
+      return {
+        operationId,
+        startedAt,
+        endedAt,
+        durationMs: startedAt && endedAt ? new Date(endedAt) - new Date(startedAt) : null,
+        phases,
+        errors: errors.slice(-10),
+        totalEntries: entries.length
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  getRecentErrors(limit = 20) {
+    if (!this.fs || !this.logFile) return [];
+    try {
+      const errors = [];
+      const files = this.getSupportFiles().slice().reverse();
+      for (const file of files) {
+        const content = this.fs.readFileSync(file, 'utf8');
+        const lines = content.split('\n').reverse();
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const entry = JSON.parse(line);
+            if (entry.event === 'error:report' || (entry.errorCode && entry.errorCode !== 'null')) {
+              errors.push({
+                timestamp: entry.timestamp,
+                operationId: entry.operationId,
+                errorCode: entry.errorCode,
+                message: entry.data && entry.data.message ? entry.data.message : null
+              });
+              if (errors.length >= limit) break;
+            }
+          } catch (_e) {}
+        }
+        if (errors.length >= limit) break;
+      }
+      return errors.slice(0, limit);
+    } catch (error) {
+      return [];
+    }
   }
 
   dispose() {

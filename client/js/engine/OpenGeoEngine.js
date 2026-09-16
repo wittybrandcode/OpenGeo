@@ -181,14 +181,15 @@ var OpenGeo = (function () {
       return { tile: tile, status: 'error', filePath: null, error: 'fs write failed' };
     }).catch(function (err) {
       if (self._cancelled) return { tile: tile, status: 'cancelled', filePath: null };
-      if (attempt < 3) {
+      if (attempt < 4) {
+        var backoffMs = Math.min(4000, (Math.pow(2, attempt - 1) * 500) + Math.floor(Math.random() * 250));
         return new Promise(function(resolve) {
           setTimeout(function() {
             resolve(self._fetch(tile, attempt + 1));
-          }, attempt * 1000);
+          }, backoffMs);
         });
       }
-      console.error('[TileDownloader] ' + (tile.downloadKey || 'unknown-download') + ' failed after 3 attempts', err);
+      console.error('[TileDownloader] ' + (tile.downloadKey || 'unknown-download') + ' failed after 4 attempts', err);
       return { tile: tile, status: 'error', filePath: null, error: err.message || String(err) };
     });
   };

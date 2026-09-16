@@ -3,6 +3,7 @@ const path = require('path');
 const crypto = require('crypto');
 const vm = require('vm');
 const os = require('os');
+const { readAggregatedCss } = require('./read-css');
 
 console.log('====================================');
 console.log('[OpenGeo] Running Security & Smoke Tests...');
@@ -1230,6 +1231,78 @@ assertDoesNotThrow(() => {
   }
 }, 'Add Key supersedes stale sync and commits one packed preview generation atomically');
 
+assertDoesNotThrow(() => {
+  const transactionPath = path.resolve(__dirname, '../host/modules/compositionTransaction.jsx');
+  const transactionSource = fs.readFileSync(transactionPath, 'utf8') +
+    '\nthis.__commitPreview = opengeoCommitPreviewRevision;';
+  const sandbox = { String, parseInt, JSON, Array, Error };
+  vm.runInNewContext(transactionSource, sandbox, { filename: transactionPath });
+
+  function makeComp(specs) {
+    const layers = [];
+    const comp = {
+      get numLayers() { return layers.length; },
+      layer(index) { return layers[index - 1]; }
+    };
+    specs.forEach(spec => {
+      const source = { comment: spec.comment };
+      const layer = {
+        comment: spec.comment,
+        enabled: spec.enabled,
+        source,
+        remove() {
+          const index = layers.indexOf(layer);
+          if (index >= 0) layers.splice(index, 1);
+        }
+      };
+      layers.push(layer);
+    });
+    return { comp, layers };
+  }
+
+  const oldComment = 'opengeo:v2;document=doc;role=preview;revision=old;placement=old';
+  const stageA = 'opengeo:v2;document=doc;role=preview-staging;revision=next;placement=a';
+  const stageB = 'opengeo:v2;document=doc;role=preview-staging;revision=next;placement=b';
+  const incomplete = makeComp([
+    { comment: oldComment, enabled: true },
+    { comment: stageA, enabled: false },
+    { comment: stageB, enabled: false }
+  ]);
+  const rejected = sandbox.__commitPreview(incomplete.comp, {}, 'doc', 'next', false, 3);
+  if (rejected !== 0 || incomplete.layers.length !== 3 || !incomplete.layers[0].enabled ||
+      incomplete.layers[1].enabled || incomplete.layers[2].enabled) {
+    throw new Error('An incomplete Preview revision removed or obscured the visible revision');
+  }
+
+  const complete = makeComp([
+    { comment: oldComment, enabled: true },
+    { comment: stageA, enabled: false },
+    { comment: stageB, enabled: false }
+  ]);
+  const promoted = sandbox.__commitPreview(complete.comp, {}, 'doc', 'next', false, 2);
+  if (promoted !== 2 || complete.layers.length !== 2 ||
+      complete.layers.some(layer => !layer.enabled || layer.comment.indexOf('role=preview;') < 0)) {
+    throw new Error('A complete Preview revision was not promoted before old-revision cleanup');
+  }
+
+  const tiles = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTiles.jsx'), 'utf8');
+  const builder = fs.readFileSync(path.resolve(__dirname, '../host/modules/compBuilder.jsx'), 'utf8');
+  const collisionGuard = "tileIndex + '_' + tile.z + '_' + tile.x + '_' + tile.y";
+  if (!tiles.includes(collisionGuard) ||
+      builder.indexOf('opengeoCommitPreviewRevision(mapComp, folders, documentId, previewRevision, replaceFinal, importedCount)') < 0) {
+    throw new Error('Mixed-zoom MegaTiles can still collapse onto one Preview layer name');
+  }
+}, 'Mixed-zoom Preview revisions use unique layers and preserve the visible map on mismatch');
+
+assertDoesNotThrow(() => {
+  const transaction = fs.readFileSync(path.resolve(__dirname, '../host/modules/compositionTransaction.jsx'), 'utf8');
+  const rigCallStart = transaction.indexOf('opengeoInstallMapPivotExpressions(');
+  const rigCall = transaction.slice(rigCallStart, rigCallStart + 260);
+  if (!rigCall.includes('resolved.controller.name') || rigCall.includes('resolved.mapComp.name')) {
+    throw new Error('Finalize installs MapPivot expressions against a mutable source-comp name');
+  }
+}, 'Finalize repairs MapPivot expressions from the actual controller layer identity');
+
 assertAsync(async () => {
   const emitted = [];
   let releaseHostMutation;
@@ -1905,7 +1978,9 @@ assertDoesNotThrow(() => {
   const destructiveCleanup = transaction.indexOf('oldFinalLayers[removeOld].remove()');
   if (activation < 0 || metadataCommit < activation || destructiveCleanup < 0 || destructiveCleanup < metadataCommit ||
       !transaction.includes("withUndoGroup('OpenGeo: Commit Finalize'") ||
-      !transaction.includes("role=' + String(role || 'unknown')")) {
+      !transaction.includes("role=' + String(role || 'unknown')") ||
+      !transaction.includes("result.assetIds.push(tileKey)") ||
+      !transaction.includes("result.assetIds.push(stagePlacement)")) {
     throw new Error('Host commit cleanup can precede activation or lacks revision ownership');
   }
 }, 'Finalize uses prepare/commit/rollback and cleans old revisions only after activation');
@@ -3206,7 +3281,7 @@ assertDoesNotThrow(() => {
   }
   const dispatcher = fs.readFileSync(path.resolve(__dirname, '../host/modules/bridgeDispatcher.jsx'), 'utf8');
   const toolbar = fs.readFileSync(path.resolve(__dirname, '../client/js/ui/ToolbarController.js'), 'utf8');
-  const css = fs.readFileSync(path.resolve(__dirname, '../client/css/style.css'), 'utf8');
+  const css = readAggregatedCss(path.resolve(__dirname, '../client/css/style.css'));
   if (!dispatcher.includes("'keyframe.clear': { kind: 'json'") || !toolbar.includes("invoke('keyframe.clear'") ||
       /\.toast-(info|error|success|warning)\s*\{[^}]*border-left/.test(css)) {
     throw new Error('Typed clear command or compact toast contract is incomplete');
@@ -3322,7 +3397,7 @@ assertDoesNotThrow(() => {
   const projectName = toolbar._normalizeProjectName('North Africa Documentary.aep');
   const suggested = toolbar._composeSuggestedMapName('project', projectName, ordinal);
   const html = fs.readFileSync(path.join(root, 'client/index.html'), 'utf8');
-  const css = fs.readFileSync(path.join(root, 'client/css/style.css'), 'utf8');
+  const css = readAggregatedCss(path.join(root, 'client/css/style.css'));
   const panel = fs.readFileSync(path.join(root, 'client/js/ui/ProjectMapsPanel.js'), 'utf8');
   const helpers = fs.readFileSync(path.join(root, 'host/modules/helpers.jsx'), 'utf8');
   if (!/^\d{4}$/.test(ordinal) || ordinal === '1234' || ordinal === '9999' ||
@@ -3389,7 +3464,7 @@ assertDoesNotThrow(() => {
 assertDoesNotThrow(() => {
   const root = path.resolve(__dirname, '..');
   const panel = fs.readFileSync(path.join(root, 'client/js/ui/ProjectMapsPanel.js'), 'utf8');
-  const css = fs.readFileSync(path.join(root, 'client/css/style.css'), 'utf8');
+  const css = readAggregatedCss(path.join(root, 'client/css/style.css'));
   const host = fs.readFileSync(path.join(root, 'host/modules/projectMapsHost.jsx'), 'utf8');
   const dispatcher = fs.readFileSync(path.join(root, 'host/modules/bridgeDispatcher.jsx'), 'utf8');
   if (!panel.includes("invoke('project.prepareOpenGeoMapThumbnail'") || !panel.includes("data-lucide', 'camera'") ||
@@ -3405,7 +3480,7 @@ assertDoesNotThrow(() => {
 assertDoesNotThrow(() => {
   const root = path.resolve(__dirname, '..');
   const panel = fs.readFileSync(path.join(root, 'client/js/ui/ProjectMapsPanel.js'), 'utf8');
-  const css = fs.readFileSync(path.join(root, 'client/css/style.css'), 'utf8');
+  const css = readAggregatedCss(path.join(root, 'client/css/style.css'));
   const host = fs.readFileSync(path.join(root, 'host/modules/projectMapsHost.jsx'), 'utf8');
   const debug = fs.readFileSync(path.join(root, '.debug'), 'utf8');
   const build = fs.readFileSync(path.join(root, 'scripts/build.js'), 'utf8');
@@ -3460,6 +3535,499 @@ assertDoesNotThrow(() => {
     throw new Error('CEP DevTools reload cannot restore the allowlisted Node runtime safely');
   }
 }, 'CEP DevTools reload restores require, Buffer and process from cep_node before application bootstrap');
+
+assertDoesNotThrow(() => {
+  const root = path.resolve(__dirname, '..');
+  const html = fs.readFileSync(path.join(root, 'client/index.html'), 'utf8');
+  if (!html.includes('<option value="normal" selected>Normal</option>')) {
+    throw new Error('Default finalize quality is not set to Normal (T6-04)');
+  }
+  const budgets = JSON.parse(fs.readFileSync(path.join(root, 'config/performance-budgets.json'), 'utf8'));
+  if (!budgets.preflight || budgets.preflight.uniqueDownloadCacheMisses.soft !== 2500) {
+    throw new Error('Preflight performance budget soft limit is not 2500');
+  }
+  const sandbox = {
+    console, Map, Error, String, Array, Set,
+    globalEventBus: { emit() {} },
+    document: { getElementById() { return null; } }
+  };
+  const FinalizeController = loadBrowserClass(
+    path.join(root, 'client/js/core/FinalizeController.js'), 'FinalizeController', sandbox
+  );
+  const controller = new FinalizeController({});
+  let rejected = false;
+  try {
+    controller._assertTypedImportResult({
+      ok: true, operationId: 'rev-1', expected: 2, imported: 2, failed: [], assetIds: ['p-1', 'p-3']
+    }, 2, 'rev-1', 'prepare', ['p-1', 'p-2']);
+  } catch (err) {
+    rejected = err.code === 'FINALIZE_PREPARE_ASSET_ID_MISMATCH';
+  }
+  if (!rejected) throw new Error('Mismatched asset IDs were accepted despite matching counts');
+}, '4K preflight budget defaults, Normal UI selection and exact asset ID checks are enforced');
+
+assertDoesNotThrow(() => {
+  const root = path.resolve(__dirname, '..');
+  const search = fs.readFileSync(path.join(root, 'client/js/ui/SearchPanel.js'), 'utf8');
+  const vectorManager = fs.readFileSync(path.join(root, 'client/js/core/VectorMapManager.js'), 'utf8');
+  const vectorHost = fs.readFileSync(path.join(root, 'host/modules/vectorHost.jsx'), 'utf8');
+  const pinHost = fs.readFileSync(path.join(root, 'host/modules/spatialPinHost.jsx'), 'utf8');
+
+  // SearchPanel pen button draws outline without hijacking camera or forcing jumpToLocation
+  const penDrawIndex = search.indexOf("createBtn('pen-tool'");
+  const penSlice = search.slice(penDrawIndex, search.indexOf('actionsDiv.appendChild(drawBtn)', penDrawIndex));
+  if (penDrawIndex < 0 || penSlice.includes('jumpToLocation()') || !penSlice.includes('search:drawCountryOutline')) {
+    throw new Error('SearchPanel country drawing pen tool should not invoke jumpToLocation');
+  }
+
+  // VectorMapManager must draw vector features without hijacking camera framing or queueing tile export
+  const drawStart = vectorManager.indexOf('async drawCountryOutlineFromSearch');
+  const drawSlice = vectorManager.slice(drawStart, vectorManager.indexOf('async drawGeoJSONInAE'));
+  if (drawStart < 0 || drawSlice.includes('viewport.fitBounds') ||
+      drawSlice.includes("invoke('camera.update'") ||
+      drawSlice.includes('queueAutoExport()')) {
+    throw new Error('VectorMapManager must not hijack camera framing or queue draft tile export');
+  }
+
+  // Vector host expressions must not use map.source (which evaluates at time 0 of project asset)
+  const ctrlStart = vectorHost.indexOf('function opengeoVectorCreateController');
+  const ctrlSlice = vectorHost.slice(ctrlStart, vectorHost.indexOf('function opengeoVectorCreateShapeLayer'));
+  const labelStart = vectorHost.indexOf('function opengeoVectorCreateLabelLayer');
+  const labelSlice = vectorHost.slice(labelStart, vectorHost.indexOf('var OPENGEO_VECTOR_LIMITS'));
+  if (ctrlSlice.includes('map.source.layer') || labelSlice.includes('map.source.layer')) {
+    throw new Error('Vector controller or label expressions use static map.source instead of dynamic composition evaluation');
+  }
+
+  // Vector host expressions must avoid circular MapPivot calls and use parented labels with clean naming
+  const bindStart = vectorHost.indexOf('function opengeoVectorBindToMap');
+  const bindSlice = vectorHost.slice(bindStart, vectorHost.indexOf('function opengeoVectorAddCheckbox'));
+  if (bindSlice.includes('.layer("MapPivot")') || ctrlSlice.includes('.layer("MapPivot")') ||
+      !labelSlice.includes('textLayer.parent = controller') ||
+      ctrlSlice.includes('•') || labelSlice.includes('—')) {
+    throw new Error('Vector expressions must not query MapPivot across comps and must use clean ASCII delimiters and parented labels');
+  }
+
+  // Spatial pin host must use (2 * Math.PI) in Mercator Y formula and dynamic comp reference
+  if (pinHost.includes('/ Math.PI) / 2') || !pinHost.includes('/ (2 * Math.PI)) / 2') ||
+      pinHost.includes('ctrl.source.layer("MapPivot")')) {
+    throw new Error('Spatial pin Mercator Y projection formula or pivot composition reference is incorrect');
+  }
+}, 'Search country outline drawing preserves camera framing and leaves composition tiles intact without forced preview');
+
+assertAsync(async () => {
+  const root = path.resolve(__dirname, '..');
+  const sandbox = {
+    console, Map, Error, String, Array, Set, Promise,
+    globalEventBus: { emit() {} },
+    document: { getElementById() { return null; } }
+  };
+  const FinalizeController = loadBrowserClass(
+    path.join(root, 'client/js/core/FinalizeController.js'), 'FinalizeController', sandbox
+  );
+
+  let confirmPrompted = false;
+  let confirmOptions = null;
+  const mockApp = {
+    config: { preflight: { uniqueDownloadCacheMisses: { soft: 2500, hard: 20000 } } },
+    dialog: {
+      confirm: async (opts) => {
+        confirmPrompted = true;
+        confirmOptions = opts;
+        return true;
+      }
+    }
+  };
+
+  const controller = new FinalizeController(mockApp);
+  const largePlan = new Array(6377).fill({ downloadKey: 'k', placementKey: 'p' });
+  const snapshot = Object.freeze({ operationId: 'test_op' });
+
+  // 1. With dialog confirming: evaluateFinalizeBudget resolves and sets userConfirmed
+  const result = await controller.evaluateFinalizeBudget(largePlan, snapshot);
+  if (!confirmPrompted || !result.userConfirmed || result.estimatedDownloads !== 6377) {
+    throw new Error('evaluateFinalizeBudget did not prompt dialog or mark confirmed on user acceptance');
+  }
+  if (!confirmOptions || !confirmOptions.title || !/\b6[\s\u202f,.]?377\b/.test(confirmOptions.message)) {
+    throw new Error('evaluateFinalizeBudget dialog options missing tile count or title: ' + JSON.stringify(confirmOptions));
+  }
+
+  // 2. With dialog cancelling: evaluateFinalizeBudget throws FINALIZE_USER_CANCELLED
+  mockApp.dialog.confirm = async () => false;
+  let cancelled = false;
+  try {
+    await controller.evaluateFinalizeBudget(largePlan, { operationId: 'test_op2' });
+  } catch (err) {
+    cancelled = err.code === 'FINALIZE_USER_CANCELLED';
+  }
+  if (!cancelled) {
+    throw new Error('evaluateFinalizeBudget did not throw FINALIZE_USER_CANCELLED when user rejected confirmation');
+  }
+
+  // 3. Without dialog available: evaluateFinalizeBudget throws FINALIZE_SOFT_BUDGET_UNCONFIRMED
+  const headlessController = new FinalizeController({});
+  let softUnconfirmed = false;
+  try {
+    await headlessController.evaluateFinalizeBudget(largePlan, { operationId: 'test_op3' });
+  } catch (err) {
+    softUnconfirmed = err.code === 'FINALIZE_SOFT_BUDGET_UNCONFIRMED';
+  }
+  if (!softUnconfirmed) {
+    throw new Error('evaluateFinalizeBudget without dialog did not enforce soft budget limit');
+  }
+}, 'Finalize soft budget exceeding tiles prompts user via DialogManager and proceeds on confirmation or cancels cleanly');
+
+assertAsync(async () => {
+  const root = path.resolve(__dirname, '..');
+  const sandbox = {
+    console,
+    process,
+    require,
+    __dirname: path.join(root, 'client/js/core'),
+    globalEventBus: { emit: () => {} }
+  };
+  const FinalizeController = loadBrowserClass(
+    path.join(root, 'client/js/core/FinalizeController.js'), 'FinalizeController', sandbox
+  );
+
+  const mockApp = {
+    config: {
+      preflight: { uniqueDownloadCacheMisses: { soft: 2500, hard: 20000 } },
+      fourK: {
+        tileBudgetByQuality: {
+          normal: 2500,
+          high: 9000,
+          ultra: 25000
+        }
+      }
+    },
+    dialog: null
+  };
+
+  const controller = new FinalizeController(mockApp);
+  const plan6377 = new Array(6377).fill({ downloadKey: 'k', placementKey: 'p' });
+
+  // 1. 4K High (9,000 budget): 6,377 tiles is within budget and does not throw
+  const highSnapshot = {
+    operationId: 'op_4k_high',
+    composition: { width: 3840, height: 2160 },
+    quality: 'high'
+  };
+  const highResult = await controller.evaluateFinalizeBudget(plan6377, highSnapshot);
+  if (highResult.softLimit !== 9000 || highResult.estimatedDownloads !== 6377) {
+    throw new Error(`4K High budget did not adapt: softLimit=${highResult.softLimit}`);
+  }
+
+  // 2. 4K Ultra (25,000 budget): 12,000 tiles is within budget and does not throw
+  const ultraPlan = new Array(12000).fill({ downloadKey: 'k', placementKey: 'p' });
+  const ultraSnapshot = {
+    operationId: 'op_4k_ultra',
+    composition: { width: 3840, height: 2160 },
+    quality: 'ultra'
+  };
+  const ultraResult = await controller.evaluateFinalizeBudget(ultraPlan, ultraSnapshot);
+  if (ultraResult.softLimit !== 25000 || ultraResult.hardLimit < 25000) {
+    throw new Error(`4K Ultra budget did not adapt: softLimit=${ultraResult.softLimit}`);
+  }
+
+  // 2b. 4K Ultra (22,000 tiles - exceeds standard 20k limit but within 25k Ultra budget): does not throw
+  const ultra22kPlan = new Array(22000).fill({ downloadKey: 'k', placementKey: 'p' });
+  const ultra22kResult = await controller.evaluateFinalizeBudget(ultra22kPlan, ultraSnapshot);
+  if (ultra22kResult.softLimit !== 25000 || ultra22kResult.estimatedDownloads !== 22000) {
+    throw new Error(`4K Ultra 22k plan budget mismatch: softLimit=${ultra22kResult.softLimit}`);
+  }
+
+  // 2c. 4K Ultra (26,000 tiles - exceeds 25k limit): throws FINALIZE_HARD_BUDGET_EXCEEDED
+  let ultraHardExceeded = false;
+  const ultra26kPlan = new Array(26000).fill({ downloadKey: 'k', placementKey: 'p' });
+  try {
+    await controller.evaluateFinalizeBudget(ultra26kPlan, ultraSnapshot);
+  } catch (err) {
+    ultraHardExceeded = err.code === 'FINALIZE_HARD_BUDGET_EXCEEDED';
+  }
+  if (!ultraHardExceeded) {
+    throw new Error('4K Ultra plan exceeding 25,000 tiles did not enforce hardLimit');
+  }
+
+  // 3. 4K Normal (2,500 budget): 6,377 tiles exceeds budget and throws without dialog
+  let normalExceeded = false;
+  const normalSnapshot = {
+    operationId: 'op_4k_normal',
+    composition: { width: 3840, height: 2160 },
+    quality: 'normal'
+  };
+  try {
+    await controller.evaluateFinalizeBudget(plan6377, normalSnapshot);
+  } catch (err) {
+    normalExceeded = err.code === 'FINALIZE_SOFT_BUDGET_UNCONFIRMED' && err.softLimit === 2500;
+  }
+  if (!normalExceeded) {
+    throw new Error('4K Normal plan exceeding 2500 tiles did not enforce softLimit');
+  }
+}, 'Finalize adapts soft and hard budgets for 4K compositions based on Normal, High, and Ultra quality');
+
+assertDoesNotThrow(() => {
+  const sandbox = { console, window: {}, Number, Math, Object, Array };
+  const Mercator = loadBrowserClass(path.resolve(__dirname, '../client/js/map/MercatorProjection.js'), 'MercatorProjection', sandbox);
+  const MapState = loadBrowserClass(path.resolve(__dirname, '../client/js/MapState.js'), 'MapState', sandbox);
+  const Viewport = loadBrowserClass(path.resolve(__dirname, '../client/js/map/Viewport.js'), 'Viewport', sandbox);
+  let emitCount = 0;
+  sandbox.globalEventBus = { emit: () => { emitCount++; } };
+  sandbox.OpenGeoEvents = { VIEWPORT_CHANGED: 'viewport:changed' };
+  sandbox.MercatorProjection = Mercator;
+
+  const state = new MapState();
+  state.setCenter(25.2048, 55.2708);
+  state.compZoom = 12;
+  const viewport = new Viewport(state, { minZoom: 2, maxZoom: 19, centerLat: 25.2048, centerLng: 55.2708, zoom: 12 });
+  viewport.setSize(800, 600);
+  emitCount = 0;
+
+  // Container resize must NOT emit camera motion events
+  viewport.setSize(1200, 900);
+  if (emitCount !== 0) {
+    throw new Error('viewport.setSize emitted viewport:changed when camera coordinates were unchanged');
+  }
+
+  viewport.setSize(1200, 900);
+  if (emitCount !== 0) {
+    throw new Error('viewport.setSize with identical dimensions emitted viewport:changed');
+  }
+
+  // Actual camera motion DOES emit
+  viewport.setCenter(30.0, 31.0);
+  if (emitCount !== 1) {
+    throw new Error('viewport.setCenter did not emit viewport:changed');
+  }
+}, 'Viewport setSize isolates container resize from camera motion events');
+
+assertDoesNotThrow(() => {
+  const sandbox = { console, window: {}, setTimeout, clearTimeout, Number, Math, Object, Array };
+  const Mercator = loadBrowserClass(path.resolve(__dirname, '../client/js/map/MercatorProjection.js'), 'MercatorProjection', sandbox);
+  const SyncManager = loadBrowserClass(path.resolve(__dirname, '../client/js/core/SyncManager.js'), 'SyncManager', sandbox);
+  sandbox.MercatorProjection = Mercator;
+
+  const mockApp = {
+    activeCompId: 'comp_1',
+    finalizeController: { isFinalizing: false },
+    session: {
+      isFinalized: true,
+      finalizedCamera: { lat: 25.2048, lng: 55.2708, zoom: 12 },
+      mapState: { latitude: 25.2048, longitude: 55.2708, compZoom: 12, tileSize: 256 },
+      setFinalized(val) { this.isFinalized = val; }
+    }
+  };
+
+  const sync = new SyncManager(mockApp);
+  sync.exportToAE = () => {};
+
+  // 1. Call queueAutoExport while camera is equivalent to finalized camera: must NOT export
+  sync.queueAutoExport();
+  if (sync.exportTimer !== null) {
+    throw new Error('queueAutoExport scheduled export while camera is unchanged from finalized camera');
+  }
+
+  // 2. Move camera away: MUST schedule export and transition out of finalized lock
+  mockApp.session.mapState.latitude = 35.0;
+  sync.queueAutoExport();
+  if (sync.exportTimer === null) {
+    throw new Error('queueAutoExport did not schedule export when camera moved away from finalized view');
+  }
+  if (mockApp.session.isFinalized !== false) {
+    throw new Error('Moving camera away from finalized view did not reset isFinalized to false');
+  }
+  clearTimeout(sync.exportTimer);
+}, 'SyncManager blocks auto-export on finalized comp until camera moves away');
+
+assertAsync(async () => {
+  const metadataSyncCode = fs.readFileSync(path.resolve(__dirname, '../host/modules/metadataSync.jsx'), 'utf8');
+  if (!metadataSyncCode.includes('cache.comp.layer(cache.controller.index)') ||
+      !metadataSyncCode.includes('findLayerByComment(item, \'opengeo:controller\')') ||
+      !metadataSyncCode.includes('latProp.property(1).valueAtTime') ||
+      !metadataSyncCode.includes('metadata.opengeo.centerLat = latProp.property(1).valueAtTime')) {
+    throw new Error('Host metadataSync does not have controller fallback for CEP focus loss and missing metadata');
+  }
+
+  const emitted = [];
+  const sandbox = {
+    console, Map, Date, Math, Number, String, Object, Promise, isFinite,
+    setTimeout: () => 1, clearTimeout() {},
+    globalEventBus: { on: () => () => {}, emit: (event, data) => emitted.push({ event, data }) },
+    OpenGeoEvents: { VIEWPORT_CHANGED: 'viewport:changed', SYNC_COMP_CHANGED: 'sync:compChanged', SYNC_AE_CAMERA: 'sync:aeCamera' }
+  };
+  const AESyncEngine = loadBrowserClass(path.resolve(__dirname, '../client/js/ae/AESyncEngine.js'), 'AESyncEngine', sandbox);
+  const session = {
+    composition: null, mapState: {},
+    setComposition(value) { this.composition = value; }
+  };
+  const engine = new AESyncEngine({ invoke: async () => ({}) }, session);
+  engine.isRunning = true;
+  engine._syncTimer = null;
+  engine.aeBridge = {
+    invoke: async () => ({
+      compId: 55,
+      controllerId: 2,
+      appliedRevision: 0,
+      camera: { lat: 28.03, lng: 1.65, zoom: 6 }
+    })
+  };
+  await engine._pollAfterEffects();
+  const compChanged = emitted.find(e => e.event === 'sync:compChanged');
+  const aeCam = emitted.find(e => e.event === 'sync:aeCamera');
+  if (!compChanged || compChanged.data.newId !== 55) throw new Error('Active comp was not detected by AESyncEngine');
+  if (!aeCam || aeCam.data.lat !== 28.03 || aeCam.data.lng !== 1.65 || aeCam.data.zoom !== 6) {
+    throw new Error('AESyncEngine did not immediately emit camera for newly discovered composition');
+  }
+}, 'Active composition discovery in host and client restores camera synchronization immediately');
+
+assertAsync(async () => {
+  const createClassList = () => {
+    const s = new Set();
+    return {
+      add: (...c) => c.forEach(x => s.add(x)),
+      remove: (...c) => c.forEach(x => s.delete(x)),
+      toggle: (c, val) => (val !== undefined ? (val ? s.add(c) : s.delete(c)) : (s.has(c) ? s.delete(c) : s.add(c))),
+      contains: (c) => s.has(c)
+    };
+  };
+
+  const elements = {
+    'opengeo-dialog': {
+      classList: createClassList(),
+      setAttribute(k, v) { this[k] = v; },
+      querySelector() {
+        return {
+          classList: createClassList(),
+          replaceChildren() {},
+          appendChild() {}
+        };
+      }
+    },
+    'opengeo-dialog-title': { textContent: '' },
+    'opengeo-dialog-message': { textContent: '' },
+    'opengeo-dialog-input': { style: {}, value: '', placeholder: '' },
+    'opengeo-dialog-confirm': { textContent: '', classList: createClassList(), addEventListener(e, fn) { this['on' + e] = fn; }, removeEventListener() {} },
+    'opengeo-dialog-cancel': { textContent: '', style: {}, addEventListener(e, fn) { this['on' + e] = fn; }, removeEventListener() {} },
+    'opengeo-dialog-close': { addEventListener(e, fn) { this['on' + e] = fn; }, removeEventListener() {} }
+  };
+
+  const listeners = {};
+  const docStub = {
+    getElementById: id => elements[id] || null,
+    addEventListener: (ev, fn) => { listeners[ev] = fn; },
+    removeEventListener: (ev) => { delete listeners[ev]; },
+    activeElement: null
+  };
+
+  const sandbox = {
+    document: docStub,
+    setTimeout: (fn) => fn(),
+    Promise,
+    String,
+    Set
+  };
+
+  const DialogManager = loadBrowserClass(path.resolve(__dirname, '../client/js/ui/DialogManager.js'), 'DialogManager', sandbox);
+  const dm = new DialogManager();
+
+  // Test 1: alert() sets message, title, hides cancel, and resolves on confirm
+  const alertPromise = dm.alert({
+    title: 'Finalize Complete',
+    message: '7,655 tiles downloaded.',
+    success: true,
+    confirmLabel: 'OK'
+  });
+
+  if (elements['opengeo-dialog-title'].textContent !== 'Finalize Complete') {
+    throw new Error('Dialog title was not set correctly');
+  }
+  if (elements['opengeo-dialog-cancel'].style.display !== 'none') {
+    throw new Error('Cancel button was not hidden for alert');
+  }
+  if (!elements['opengeo-dialog'].classList.contains('visible') || !elements['opengeo-dialog'].classList.contains('success')) {
+    throw new Error('Dialog overlay did not get visible and success classes');
+  }
+
+  // Simulate clicking confirm
+  elements['opengeo-dialog-confirm'].onclick();
+  const res = await alertPromise;
+  if (res !== true) throw new Error('Alert did not resolve to true on confirm');
+  if (elements['opengeo-dialog'].classList.contains('visible')) {
+    throw new Error('Dialog remained visible after resolution');
+  }
+
+  // Test 2: alert() resolves true on cancel/esc
+  const alertPromise2 = dm.alert({ title: 'Alert 2', message: 'Second alert' });
+  elements['opengeo-dialog-close'].onclick();
+  const res2 = await alertPromise2;
+  if (res2 !== true) throw new Error('Alert did not resolve to true on close/cancel');
+
+  dm.dispose();
+
+  // Test 3: FinalizeController triggers alert on completion
+  const finalizeCode = fs.readFileSync(path.resolve(__dirname, '../client/js/core/FinalizeController.js'), 'utf8');
+  if (!finalizeCode.includes('this.app.dialog.alert(') || !finalizeCode.includes("title: 'Finalize Complete'")) {
+    throw new Error('FinalizeController does not trigger completion alert dialog');
+  }
+}, 'DialogManager alert mode and FinalizeController completion alert notification operate correctly');
+
+assertAsync(async () => {
+  // 1. Client SpatialPin forwards options to bridge
+  let bridgeArgs = null;
+  const mockBridge = {
+    invoke: async (command, args) => {
+      if (command === 'pin.add') {
+        bridgeArgs = args;
+        return '42';
+      }
+      return null;
+    }
+  };
+  const SpatialPin = loadBrowserClass(path.resolve(__dirname, '../client/js/ae/SpatialPin.js'), 'SpatialPin', { console });
+  const pinClient = new SpatialPin(mockBridge);
+
+  const res = await pinClient.addPin('comp-1', 48.8566, 2.3522, 'Eiffel Tower', {
+    attachGraphic: true,
+    attachLabel: true,
+    attachSelected: true,
+    maintainScreenSize: true,
+    autoOrient: true,
+    color: '#e74c3c'
+  });
+
+  if (res !== '42') throw new Error('SpatialPin did not return pin id from bridge');
+  if (!bridgeArgs || bridgeArgs.compId !== 'comp-1' || bridgeArgs.lat !== 48.8566 || bridgeArgs.name !== 'Eiffel Tower' ||
+      bridgeArgs.attachGraphic !== true || bridgeArgs.attachSelected !== true || bridgeArgs.color !== '#e74c3c') {
+    throw new Error('SpatialPin did not forward options to bridge correctly');
+  }
+
+  // 2. Host bridgeDispatcher passes args options to opengeoAddSpatialPin
+  const dispatcherCode = fs.readFileSync(path.resolve(__dirname, '../host/modules/bridgeDispatcher.jsx'), 'utf8');
+  if (!dispatcherCode.includes("opengeoAddSpatialPin(args.compId, args.lat, args.lng, args.name, args)")) {
+    throw new Error('bridgeDispatcher does not pass options args to opengeoAddSpatialPin');
+  }
+
+  // 3. Host spatialPinHost implements professional effects, dual-mode scale, auto-orient, marker & label offset
+  const pinHostCode = fs.readFileSync(path.resolve(__dirname, '../host/modules/spatialPinHost.jsx'), 'utf8');
+  if (!pinHostCode.includes('Maintain Screen Size') ||
+      !pinHostCode.includes('Auto-Orient to Camera') ||
+      !pinHostCode.includes('Label Offset') ||
+      !pinHostCode.includes('ADBE Vector Shape - Ellipse') ||
+      !pinHostCode.includes('comp.selectedLayers') ||
+      !pinHostCode.includes('Math.pow(2, curZ - ')) {
+    throw new Error('spatialPinHost is missing professional effect controls, vector marker or zoom scale expressions');
+  }
+}, 'Professional Spatial Pin system with attached components, zoom scaling modes and layer parenting operates correctly');
+
+assertDoesNotThrow(() => {
+  const syncCode = fs.readFileSync(path.resolve(__dirname, '../client/js/core/SyncManager.js'), 'utf8');
+  const compBuilderCode = fs.readFileSync(path.resolve(__dirname, '../host/modules/compBuilder.jsx'), 'utf8');
+  if (!syncCode.includes('width: snapshot.composition.width') ||
+      !syncCode.includes('height: snapshot.composition.height') ||
+      !compBuilderCode.includes('opengeoFindDocumentOuterComp(documentId)') ||
+      !compBuilderCode.includes('existingComp ? existingComp.width : 0')) {
+    throw new Error('4K composition dimensions are not preserved during trajectory preview build');
+  }
+}, '4K composition framing and dimensions are preserved during keyframe trajectory previews and host builds');
 
 // Summary
 Promise.all(pendingAsyncTests).then(() => {

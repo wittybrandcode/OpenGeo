@@ -46,20 +46,31 @@ class Viewport {
   }
 
   setSize(w, h) {
-    this.mapState.updatePanelSize(w, h);
+    const numW = Math.max(0, Math.round(Number(w) || 0));
+    const numH = Math.max(0, Math.round(Number(h) || 0));
+    if (numW === this.width && numH === this.height) return;
+    const prevCompZoom = this.mapState.compZoom;
+    this.mapState.updatePanelSize(numW, numH);
     // Only lift an undersized initial viewport. We never zoom a user out on
     // resize, so their chosen composition framing remains stable.
     if (this.zoom < this._getSafeMinZoom()) this._commitCamera({ uiZoom: this._getSafeMinZoom() });
-    this._emitChanged();
+    if (Math.abs(this.mapState.compZoom - prevCompZoom) > 1e-6) {
+      this._emitChanged();
+    }
   }
 
   setZoom(z) {
-    this._commitCamera({ uiZoom: this.clampZoom(z) });
+    const targetZoom = this.clampZoom(z);
+    if (targetZoom === this.zoom) return;
+    this._commitCamera({ uiZoom: targetZoom });
     this._emitChanged();
   }
 
   setCenter(lat, lng) {
-    this._commitCamera({ lat, lng });
+    const numLat = Number(lat);
+    const numLng = Number(lng);
+    if (numLat === this.centerLat && numLng === this.centerLng) return;
+    this._commitCamera({ lat: numLat, lng: numLng });
     this._emitChanged();
   }
 

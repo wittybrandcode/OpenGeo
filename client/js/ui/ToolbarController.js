@@ -18,9 +18,11 @@ class ToolbarController {
   bind() {
     if (this._bound) return;
     this._bound = true;
+    this._selectedPinColor = '#1473e6';
     this._bindMapControls();
     this._bindProviderSettings();
     this._bindCompositionSettings();
+    this._bindSpatialPinModal();
     this._bindActions();
     this._bindGeoJSONImport();
   }
@@ -192,6 +194,9 @@ class ToolbarController {
       };
       applySuggestedName();
       modal.style.display = 'flex';
+      if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+        lucide.createIcons({ root: modal });
+      }
       setTimeout(() => { name.focus(); name.select(); }, 0);
     });
     const close = () => { modal.style.display = 'none'; };
@@ -210,6 +215,68 @@ class ToolbarController {
       close();
       app.compositionController.create(settings);
     });
+  }
+
+  _bindSpatialPinModal() {
+    const modal = document.getElementById('spatial-pin-modal');
+    if (!modal) return;
+    const closeBtn = document.getElementById('pin-modal-close');
+    const cancelBtn = document.getElementById('pin-modal-cancel');
+    const createBtn = document.getElementById('pin-modal-create');
+    const palette = document.getElementById('pin-color-palette');
+
+    const hide = () => {
+      modal.style.display = 'none';
+      modal.classList.remove('visible');
+    };
+
+    if (closeBtn) this._listen(closeBtn, 'click', hide);
+    if (cancelBtn) this._listen(cancelBtn, 'click', hide);
+
+    if (palette) {
+      this._listen(palette, 'click', (e) => {
+        const pill = e.target.closest('.pin-color-pill');
+        if (!pill) return;
+        palette.querySelectorAll('.pin-color-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        this._selectedPinColor = pill.getAttribute('data-color') || '#1473e6';
+      });
+    }
+
+    if (createBtn) {
+      this._listen(createBtn, 'click', async () => {
+        const app = this.app;
+        if (!app.activeCompId) {
+          globalEventBus.emit('toast:show', { message: 'No active comp! Create one first.', type: 'error' });
+          hide();
+          return;
+        }
+        const nameInput = document.getElementById('pin-name-input');
+        const name = (nameInput && nameInput.value.trim()) || 'Spatial Pin';
+        const optGraphic = document.getElementById('pin-opt-graphic');
+        const optLabel = document.getElementById('pin-opt-label');
+        const optSelected = document.getElementById('pin-opt-selected');
+        const optOrient = document.getElementById('pin-opt-orient');
+        const scaleRadio = document.querySelector('input[name="pin-scale-mode"]:checked');
+
+        const options = {
+          attachGraphic: optGraphic ? optGraphic.checked : true,
+          attachLabel: optLabel ? optLabel.checked : true,
+          attachSelected: optSelected ? optSelected.checked : false,
+          autoOrient: optOrient ? optOrient.checked : false,
+          maintainScreenSize: scaleRadio ? scaleRadio.value === 'maintain' : true,
+          color: this._selectedPinColor || '#1473e6'
+        };
+
+        hide();
+        try {
+          await app.spatialPin.addPin(app.activeCompId, app.mapState.latitude, app.mapState.longitude, name, options);
+          globalEventBus.emit('toast:show', { message: `Spatial Pin "${name}" created in AE!`, type: 'success' });
+        } catch (error) {
+          globalEventBus.emit('toast:show', { message: 'Failed to add Spatial Pin: ' + error.message, type: 'error' });
+        }
+      });
+    }
   }
 
   _normalizeMapName(value) {
@@ -351,6 +418,28 @@ class ToolbarController {
       globalEventBus.emit('toast:show', { message: 'No active comp! Create one first.', type: 'error' });
       return;
     }
+
+    const modal = document.getElementById('spatial-pin-modal');
+    if (modal) {
+      const nameInput = document.getElementById('pin-name-input');
+      if (nameInput) nameInput.value = 'Spatial Pin';
+      const coordsBadge = document.getElementById('pin-coords-badge');
+      if (coordsBadge && app.mapState) {
+        const lat = typeof app.mapState.latitude === 'number' ? app.mapState.latitude.toFixed(4) : '0.0000';
+        const lng = typeof app.mapState.longitude === 'number' ? app.mapState.longitude.toFixed(4) : '0.0000';
+        coordsBadge.textContent = `${lat}°, ${lng}°`;
+      }
+      modal.style.display = 'block';
+      modal.classList.add('visible');
+      if (window.lucide && typeof window.lucide.createIcons === 'function') {
+        window.lucide.createIcons({ root: modal });
+      }
+      if (nameInput && typeof nameInput.focus === 'function') {
+        setTimeout(() => { nameInput.focus(); nameInput.select(); }, 50);
+      }
+      return;
+    }
+
     const requestedName = await app.dialog.prompt({
       title: 'Create spatial pin',
       message: 'Name the Null/label that will be created at the current map position.',
@@ -453,7 +542,6 @@ class ToolbarController {
         this.syncKeyframeRecordingState(compId);
         globalEventBus.emit('marker:clear');
         globalEventBus.emit('geojson:clear');
-        app.syncManager.queueTrajectoryPreview();
       }
       const removed = result && Number.isFinite(Number(result.keysRemoved)) ? Number(result.keysRemoved) : 0;
       globalEventBus.emit('toast:show', { message: `Map animation cleared (${removed} keyframes removed).`, type: 'success', duration: 3000 });

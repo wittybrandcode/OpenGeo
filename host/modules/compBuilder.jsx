@@ -13,7 +13,7 @@ function opengeoBuildComposition(jsonData) {
     if (!data || !(tiles instanceof Array) || tiles.length === 0) {
       return JSON.stringify({ error: "No tiles provided" });
     }
-    if (tiles.length > 5000) return JSON.stringify({ error: "Too many tiles provided" });
+    if (tiles.length > 10000) return JSON.stringify({ error: "Too many tiles provided" });
     if (!camera || typeof camera.lat !== 'number' || typeof camera.lon !== 'number' || typeof camera.zoom !== 'number') {
       return JSON.stringify({ error: "Invalid camera payload" });
     }
@@ -24,21 +24,25 @@ function opengeoBuildComposition(jsonData) {
     var folders = getOpenGeoFolderStructure();
 
     var compSettings = data.compSettings || {};
-    var compWidth = compSettings.width || (camera && camera.viewportWidth) || 1920;
-    var compHeight = compSettings.height || (camera && camera.viewportHeight) || 1080;
-    var fps = compSettings.fps || 30;
-    var duration = compSettings.duration || 30;
-
     var documentId = String(data.documentId || 'legacy').replace(/[^a-zA-Z0-9_-]/g, '_');
+    var existingOuterComp = opengeoFindDocumentOuterComp(documentId);
+    var existingMapComp = opengeoFindDocumentMapComp(documentId);
+    var existingComp = existingOuterComp || existingMapComp;
+
+    var compWidth = compSettings.width || (data.composition && data.composition.width) || (existingComp ? existingComp.width : 0) || (camera && camera.viewportWidth) || 1920;
+    var compHeight = compSettings.height || (data.composition && data.composition.height) || (existingComp ? existingComp.height : 0) || (camera && camera.viewportHeight) || 1080;
+    var fps = compSettings.fps || (existingComp ? existingComp.frameRate : 30) || 30;
+    var duration = compSettings.duration || (existingComp ? existingComp.duration : 30) || 30;
+
     var requestedDisplayName = String(data.displayName || compSettings.displayName || 'OpenGeo Map')
       .replace(/[\\\/\'\"\r\n\t]/g, ' ').replace(/^\s+|\s+$/g, '').substring(0, 80) || 'OpenGeo Map';
     var identitySuffix = documentId.length > 10 ? documentId.substring(documentId.length - 10) : documentId;
-    var containingCompName = requestedDisplayName + " • " + identitySuffix;
-    var mapcompName = requestedDisplayName + " • Map • " + identitySuffix;
+    var containingCompName = requestedDisplayName + " - " + identitySuffix;
+    var mapcompName = requestedDisplayName + " - Map - " + identitySuffix;
     var documentAssetComment = 'opengeo:document:' + documentId;
 
     // STEP 1: Inner pre-comp (uses actual comp dimensions, NOT hardcoded 1000x1000)
-    var mapComp = opengeoFindDocumentMapComp(documentId) || opengeoEnsureComposition(mapcompName, folders.comps, compWidth, compHeight, duration, fps);
+    var mapComp = existingMapComp || opengeoEnsureComposition(mapcompName, folders.comps, compWidth, compHeight, duration, fps);
     mapComp.name = mapcompName;
 
     // STEP 2: MapPivot
@@ -76,7 +80,7 @@ function opengeoBuildComposition(jsonData) {
         opengeoDiscardPreviewRevision(mapComp, folders, documentId, previewRevision);
         throw new Error('Preview import incomplete: ' + importedCount + '/' + tiles.length + ' tiles');
       }
-      var promotedCount = opengeoCommitPreviewRevision(mapComp, folders, documentId, previewRevision, replaceFinal);
+      var promotedCount = opengeoCommitPreviewRevision(mapComp, folders, documentId, previewRevision, replaceFinal, importedCount);
       if (promotedCount !== importedCount) {
         opengeoDiscardPreviewRevision(mapComp, folders, documentId, previewRevision);
         throw new Error('Preview commit incomplete: ' + promotedCount + '/' + importedCount + ' layers');
