@@ -25,7 +25,7 @@
   gap: 3px;
   background: rgba(255, 255, 255, 0.025);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   padding: 1px 2px;
 }
 
@@ -33,7 +33,7 @@
   height: 22px;
   border: none;
   background: transparent;
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -42,13 +42,12 @@
   font-family: var(--font-family);
   font-size: var(--font-xs);
   color: var(--text-secondary);
-  transition: background 0.12s, color 0.12s, transform 0.05s;
+  transition: background 0.12s, color 0.12s;
   white-space: nowrap;
   box-sizing: border-box;
 }
 
 .bottom-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.bottom-btn:active { transform: scale(0.97); }
 
 .bottom-btn svg {
   width: 12px;
@@ -60,12 +59,12 @@
   height: 22px;
   padding: 0;
   justify-content: center;
-  color: #dff5e5;
-  background: #237841;
-  border: 1px solid #3fa760;
-  border-radius: var(--border-radius-sm);
+  color: #121212;
+  background: var(--accent-default);
+  border: 1px solid var(--accent-hover);
+  border-radius: 0px;
 }
-.create-map-btn:hover { color: #fff; background: #2b914f; border-color: #52c277; }
+.create-map-btn:hover { color: #121212; background: var(--accent-hover); }
 .create-map-btn svg { width: 14px; height: 14px; }
 
 .sync-btn.active { color: var(--text-accent); background: var(--accent-subtle); }
@@ -108,16 +107,15 @@
   overflow: visible;
 }
 
-/* مجموعة أزرار الراديو للجودة بتصميم كبسولي أنيق */
+/* مجموعة أزرار الراديو للجودة بتصميم هندسي حاد */
 .quality-radio-group {
   display: inline-flex;
   align-items: center;
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 6px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: 0px;
   padding: 2px;
   gap: 2px;
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .quality-radio-btn {
@@ -125,12 +123,12 @@
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  border-radius: 4px;
+  border-radius: 0px;
   cursor: pointer;
   font-size: 10px;
   font-weight: 500;
-  color: #94a3b8;
-  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  color: var(--text-secondary);
+  transition: all 0.14s ease;
   user-select: none;
   position: relative;
   line-height: 1;
@@ -149,10 +147,10 @@
 .quality-radio-btn .radio-indicator {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  border: 1px solid #64748b;
+  border-radius: 0px;
+  border: 1px solid var(--border-focus);
   background: transparent;
-  transition: all 0.16s ease;
+  transition: all 0.14s ease;
   flex-shrink: 0;
 }
 
@@ -162,31 +160,29 @@
 }
 
 .quality-radio-btn:hover {
-  color: #e2e8f0;
-  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  background: var(--bg-hover);
 }
 
 .quality-radio-btn:has(input:checked),
 .quality-radio-btn.active {
   color: #ffffff;
   font-weight: 600;
-  background: rgba(16, 185, 129, 0.2);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  background: var(--accent-subtle);
 }
 
 .quality-radio-btn input:checked + .radio-indicator {
-  border-color: #34d399;
-  background: #10b981;
-  box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
+  border-color: var(--accent-hover);
+  background: var(--accent-default);
 }
 
-/* الزر السيادي البارز بتعبئة خضراء صلبة وأيقونة خاصة */
+/* الزر السيادي البارز بتصميم هندسي صلب */
 .sovereign-finalize-btn {
   height: 24px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid #34d399 !important;
-  border-radius: 6px !important;
+  background: var(--accent-default) !important;
+  color: #121212 !important;
+  border: 1px solid var(--accent-hover) !important;
+  border-radius: 0px !important;
   padding: 0 10px 0 8px !important;
   font-weight: 700 !important;
   font-size: 11px !important;
@@ -196,31 +192,25 @@
   gap: 6px !important;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  transition: all 0.14s ease !important;
 }
 
 .sovereign-finalize-btn:hover {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
-  box-shadow: 0 3px 14px rgba(16, 185, 129, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
-  transform: translateY(-1px);
+  background: var(--accent-hover) !important;
 }
 
 .sovereign-finalize-btn:active {
-  transform: translateY(1px);
-  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.4) !important;
+  background: var(--accent-active) !important;
 }
 
 .sovereign-finalize-btn .finalize-icon {
   width: 14px;
   height: 14px;
-  color: #ffffff;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+  color: #121212;
 }
 
 .sovereign-finalize-btn span {
   font-weight: 700;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* بطاقة تقدير البلاطات المسبق لـ Finalize */
@@ -229,21 +219,19 @@
   bottom: calc(100% + 7px);
   right: 0;
   left: auto;
-  background: rgba(15, 23, 42, 0.96);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(52, 211, 153, 0.4);
-  border-radius: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--accent-border);
+  border-radius: 0px;
   padding: 4px 8px;
   font-size: 10px;
-  color: #cbd5e1;
+  color: var(--text-secondary);
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
   transform: translateY(4px);
   transition: opacity 0.18s ease, transform 0.18s ease;
   z-index: 1000;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -255,7 +243,7 @@
   top: 100%;
   right: 28px;
   border: 4px solid transparent;
-  border-top-color: rgba(15, 23, 42, 0.96);
+  border-top-color: var(--bg-panel);
 }
 
 .finalize-split-group:hover .finalize-estimate-badge {
@@ -263,6 +251,6 @@
   transform: translateY(0);
 }
 
-.finalize-estimate-badge .est-action { color: #38bdf8; font-weight: 600; margin-right: 2px; }
-.finalize-estimate-badge .est-tiles { color: #6ee7b7; font-weight: 600; }
-.finalize-estimate-badge .est-quality { color: #94a3b8; font-size: 9px; }
+.finalize-estimate-badge .est-action { color: var(--accent-hover); font-weight: 600; margin-right: 2px; }
+.finalize-estimate-badge .est-tiles { color: var(--text-primary); font-weight: 600; }
+.finalize-estimate-badge .est-quality { color: var(--text-dim); font-size: 9px; }

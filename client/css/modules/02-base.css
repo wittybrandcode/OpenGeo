@@ -20,7 +20,7 @@ html, body {
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--scroll-gray); border-radius: 3px; }
+::-webkit-scrollbar-thumb { background: var(--scroll-gray); border-radius: 0px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
 
 /* Light Theme */
@@ -36,8 +36,11 @@ html, body {
   --text-primary: #333;
   --text-secondary: #666;
   --text-dim: #999;
-  --text-accent: #1473e6;
-  --accent-subtle: #d0e0f8;
+  --text-accent: #059669;
+  --accent-color: #059669;
+  --accent-default: #059669;
+  --accent-hover: #10b981;
+  --accent-subtle: rgba(5, 150, 105, 0.12);
   --scroll-gray: #bbb;
   --scroll-hover: #999;
 }

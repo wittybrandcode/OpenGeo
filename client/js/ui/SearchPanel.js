@@ -490,7 +490,7 @@ class SearchPanel {
           
           btn.style.color = defaultColor;
           btn.style.transition = 'all 0.15s ease';
-          btn.style.borderRadius = '3px';
+          btn.style.borderRadius = '0px';
           btn.title = title;
           const icon = typeof SecurityPolicy !== 'undefined'
             ? SecurityPolicy.createLucideIcon(document, iconName, 14)

@@ -104,7 +104,7 @@
   height: var(--btn-size);
   border: none;
   background: transparent;
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -132,7 +132,7 @@
   height: var(--btn-size);
   background: var(--bg-input);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   color: var(--text-primary);
   font-size: var(--font-sm);
   padding: 0 var(--spacing-sm);
@@ -155,9 +155,8 @@
 .provider-status-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
-  background: #22c55e;
-  box-shadow: 0 0 6px #22c55e;
+  border-radius: 0px;
+  background: var(--status-success);
   flex-shrink: 0;
 }
 
@@ -278,7 +277,7 @@
   gap: 2px;
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-color);
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   padding: 1px 3px;
 }
 
@@ -293,7 +292,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: 2px;
+  border-radius: 0px;
   transition: color 0.1s, background 0.1s;
 }
 
@@ -319,7 +318,7 @@
   justify-content: center;
   cursor: pointer;
   padding: 0;
-  border-radius: var(--border-radius-sm);
+  border-radius: 0px;
   transition: color 0.15s, background 0.15s;
 }
 

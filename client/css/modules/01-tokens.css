@@ -1,21 +1,40 @@
 :root {
   --bg-panel: #2c2c2c;
   --bg-toolbar: #242424;
-  --bg-canvas: #1a1a1a;
-  --bg-input: #1e1e1e;
-  --bg-hover: #3a3a3a;
-  --bg-active: #444;
-  --bg-dropdown: #2c2c2c;
-  --border-color: #404040;
-  --border-radius-sm: 3px;
-  --border-radius-md: 4px;
-  --text-primary: #e6e6e6;
-  --text-secondary: #999;
-  --text-dim: #666;
-  --text-accent: #1473e6;
-  --accent-default: #1473e6;
-  --accent-hover: #2c8cff;
-  --accent-subtle: #1a3a5c;
+  --bg-canvas: #121212;
+  --bg-panel: #181818;
+  --bg-toolbar: #1f1f1f;
+  --bg-dropdown: #1c1c1c;
+  --bg-input: #242424;
+  --bg-hover: #2a2a2a;
+  --bg-active: #333333;
+  --border-color: #363636;
+  --border-focus: #505050;
+  
+  /* Strict Zero Border Radius across all components */
+  --border-radius-none: 0px;
+  --border-radius-sm: 0px;
+  --border-radius-md: 0px;
+  --border-radius-lg: 0px;
+
+  /* Typography & Technical Palette */
+  --text-primary: #ededed;
+  --text-secondary: #9ca3af;
+  --text-dim: #64748b;
+  
+  /* Precision Technical Green Palette (Subtle, Muted Emerald) */
+  --accent-color: #10b981;
+  --accent-default: #10b981;
+  --accent-hover: #34d399;
+  --accent-active: #059669;
+  --accent-subtle: rgba(16, 185, 129, 0.08);
+  --accent-border: rgba(16, 185, 129, 0.35);
+  --text-accent: #10b981;
+  
+  /* Semantic Status Tokens (Matte, non-neon) */
+  --status-success: #10b981;
+  --status-warning: #f59e0b;
+  --status-danger: #ef4444;
   --scroll-gray: #555;
   --scroll-hover: #777;
   --toolbar-height: 32px;
