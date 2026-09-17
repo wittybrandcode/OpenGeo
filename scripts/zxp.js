@@ -18,8 +18,7 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..');
-const DIST = path.join(ROOT, 'dist');
-const BUILD = path.join(ROOT, 'build');
+const STAGE_DIR = path.join(ROOT, 'release', 'stage');
 const PACKAGE_NAME = 'OpenGeo.zxp';
 const PACKAGE_DEST = path.join(ROOT, PACKAGE_NAME);
 
@@ -44,10 +43,10 @@ function findZXPSignCmd() {
 }
 
 function buildZXP(sign, certPath, certPass) {
-  log('Packaging ZXP from: ' + DIST);
+  log('Packaging ZXP from: ' + STAGE_DIR);
 
-  if (!fs.existsSync(DIST)) {
-    log('ERROR: dist/ not found. Run "node scripts/build.js" first.');
+  if (!fs.existsSync(STAGE_DIR)) {
+    log('ERROR: release/stage/ not found. Run "node scripts/build.js" first.');
     process.exit(1);
   }
 
@@ -60,16 +59,16 @@ function buildZXP(sign, certPath, certPass) {
     const args = [
       `-selfSigned`,
       `"${PACKAGE_DEST}"`,
-      `"${DIST}"`,
+      `"${STAGE_DIR}"`,
       PACKAGE_NAME
     ];
 
     if (sign && certPath && certPass) {
-      const cmd = `"${ZXPSignCmd}" -sign "${DIST}" "${PACKAGE_DEST}" "${certPath}" "${certPass}" -expiresDays 3650`;
+      const cmd = `"${ZXPSignCmd}" -sign "${STAGE_DIR}" "${PACKAGE_DEST}" "${certPath}" "${certPass}" -expiresDays 3650`;
       log('Running: ' + cmd);
       execSync(cmd, { stdio: 'inherit' });
     } else {
-      const cmd = `"${ZXPSignCmd}" -selfSigned "${PACKAGE_DEST}" "${DIST}" "${PACKAGE_NAME}"`;
+      const cmd = `"${ZXPSignCmd}" -selfSigned "${PACKAGE_DEST}" "${STAGE_DIR}" "${PACKAGE_NAME}"`;
       log('Running (self-signed): ' + cmd);
       execSync(cmd, { stdio: 'inherit' });
     }
@@ -82,7 +81,7 @@ function buildZXP(sign, certPath, certPass) {
     log('');
     log('  Download: https://github.com/Adobe-Photoshop/SignCmd/releases');
     log('');
-    log('Or use the dist/ directory directly as an unpacked extension.');
+    log('Or use the release/stage/ directory directly as an unpacked extension.');
     process.exit(1);
   }
 }
@@ -96,10 +95,10 @@ const passIndex = args.indexOf('--pass');
 const certPass = passIndex >= 0 ? args[passIndex + 1] : null;
 
 if (!findZXPSignCmd()) {
-  log('ZXPSignCmd not found. Install it or use dist/ as unpacked extension.');
+  log('ZXPSignCmd not found. Install it or use release/stage/ as unpacked extension.');
   log('');
   log('To install as unpacked extension:');
-  log('  Copy dist/ to:');
+  log('  Copy release/stage/ to:');
   log('    C:\\Program Files (x86)\\Common Files\\Adobe\\CEP\\extensions\\OpenGeo');
   log('  OR');
   log('    %APPDATA%\\Adobe\\CEP\\extensions\\OpenGeo');
