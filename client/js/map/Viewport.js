@@ -80,18 +80,22 @@ class Viewport {
     this._emitChanged();
   }
 
-  zoomAtPoint(newZoom, px, py) {
+  zoomAtGeoPoint(newZoom, geoLat, geoLng, px, py) {
     const targetZoom = this.clampZoom(newZoom);
     if (targetZoom === this.zoom) return;
 
-    const focus = this.screenToLatLng(px, py);
-    const focusWorld = MercatorProjection.latLngToWorldPoint(focus.lat, focus.lng, targetZoom, this.tileSize);
+    const focusWorld = MercatorProjection.latLngToWorldPoint(geoLat, geoLng, targetZoom, this.tileSize);
     const centerWorldX = focusWorld.x - (px - this.width / 2);
     const centerWorldY = focusWorld.y - (py - this.height / 2);
 
     const newCenter = MercatorProjection.worldPointToLatLng(centerWorldX, centerWorldY, targetZoom, this.tileSize);
     this._commitCamera({ lat: newCenter.lat, lng: newCenter.lng, uiZoom: targetZoom });
     this._emitChanged();
+  }
+
+  zoomAtPoint(newZoom, px, py) {
+    const focus = this.screenToLatLng(px, py);
+    this.zoomAtGeoPoint(newZoom, focus.lat, focus.lng, px, py);
   }
 
   pan(dx, dy) {

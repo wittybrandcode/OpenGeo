@@ -9,14 +9,22 @@ class CoveragePlanner {
     const center = MercatorProjection.latLngToWorldPoint(viewport.centerLat, viewport.centerLng, tileZoom, viewport.tileSize);
     const pitch = Number(viewport.pitch || (viewport.mapState && viewport.mapState.pitch) || 0);
     const pitchRad = (Math.max(0, Math.min(45, pitch)) * Math.PI) / 180;
-    const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
-    const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
+    // Frustum and camera motion overscan: anticipate rapid pan/inertia and 3D horizon perspective
+    const overscanScale = pitch > 0 ? 1 + 1.5 * Math.sin(pitchRad) : 1;
+    const overscanY = pitch > 0 ? Math.max(overscanScale * 1.3, (1 / Math.cos(pitchRad)) * 1.3) : 1;
+    const overscanX = pitch > 0 ? overscanScale * 1.25 : 1;
     const halfWidth = (viewport.width / (2 * tileScale)) * overscanX;
     const halfHeight = (viewport.height / (2 * tileScale)) * overscanY;
-    const minX = Math.floor((center.x - halfWidth) / viewport.tileSize) - 1;
-    const maxX = Math.floor((center.x + halfWidth) / viewport.tileSize) + 1;
-    const minY = Math.max(0, Math.floor((center.y - halfHeight) / viewport.tileSize) - 1);
-    const maxY = Math.min(count - 1, Math.floor((center.y + halfHeight) / viewport.tileSize) + 1);
+    
+    // Gutter buffers: generous side margins plus extra horizon buffer for 3D tilt
+    const gutterX = pitch > 0 ? 3 : 1;
+    const gutterY = pitch > 0 ? 3 : 1;
+    const horizonGutter = pitch > 0 ? 3 : 0;
+    
+    const minX = Math.floor((center.x - halfWidth) / viewport.tileSize) - gutterX;
+    const maxX = Math.floor((center.x + halfWidth) / viewport.tileSize) + gutterX;
+    const minY = Math.max(0, Math.floor((center.y - halfHeight) / viewport.tileSize) - (gutterY + horizonGutter));
+    const maxY = Math.min(count - 1, Math.floor((center.y + halfHeight) / viewport.tileSize) + gutterY);
     const centerScreenX = viewport.width / 2;
     const centerScreenY = viewport.height / 2;
     const tiles = [];
@@ -51,8 +59,8 @@ class CoveragePlanner {
     const sourcePixelsPerCompPixel = Math.pow(2, downloadZoom - camera.zoom);
     const pitch = Number(camera.pitch || options.pitch || 0);
     const pitchRad = (Math.max(0, Math.min(45, pitch)) * Math.PI) / 180;
-    const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
-    const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
+    const overscanY = pitch > 0 ? (1 / Math.cos(pitchRad)) * 1.35 : 1;
+    const overscanX = pitch > 0 ? 1 + Math.sin(pitchRad) * 0.8 : 1;
     const halfWidth = (options.width / 2) * sourcePixelsPerCompPixel * overscanX;
     const halfHeight = (options.height / 2) * sourcePixelsPerCompPixel * overscanY;
     const requestedGutter = Number(options.gutterTiles);

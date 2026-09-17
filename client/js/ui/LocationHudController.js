@@ -166,8 +166,8 @@ class LocationHudController {
         // so that the tilted plane expands outward to eliminate side trapezoid cutoffs
         // and eliminates top clipping completely up to the 45 degree limit.
         const pRad = (p * Math.PI) / 180;
-        const overscanScale = 1 + 1.25 * Math.sin(pRad);
-        const translateY = -Math.round(25 * Math.sin(pRad));
+        const overscanScale = 1 + 1.45 * Math.sin(pRad);
+        const translateY = -Math.round(45 * Math.sin(pRad));
         canvas.style.transformOrigin = 'center center';
         canvas.style.transform = `scale(${overscanScale.toFixed(4)}) rotateX(${p}deg) translateY(${translateY}px)`;
         const vignette = document.getElementById('map-horizon-vignette');

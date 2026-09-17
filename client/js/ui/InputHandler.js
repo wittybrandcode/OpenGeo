@@ -14,6 +14,7 @@ class InputHandler {
     this._wheelFrameId = null;
     this._wheelTargetZoom = null;
     this._wheelAnimationPoint = null;
+    this._wheelAnchorGeo = null;
     this._wheelAnimationFrameId = null;
     this._boundHandlers = {
       pointerdown: this._onPointerDown.bind(this),
@@ -106,15 +107,25 @@ class InputHandler {
     this.canvas.style.cursor = 'grab';
   }
 
+  _getScreenPoint(e) {
+    const container = this.canvas.parentElement || this.canvas;
+    const rect = container.getBoundingClientRect();
+    const px = Math.max(0, Math.min(this.viewport.width, e.clientX - rect.left));
+    const py = Math.max(0, Math.min(this.viewport.height, e.clientY - rect.top));
+    return { x: px, y: py };
+  }
+
   _onWheel(e) {
     e.preventDefault();
-    const rect = this.canvas.getBoundingClientRect();
-    const modeScale = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? rect.height : 1);
+    const point = this._getScreenPoint(e);
+    const container = this.canvas.parentElement || this.canvas;
+    const rect = container.getBoundingClientRect();
+    const modeScale = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? (this.viewport.height || rect.height) : 1);
     // Trackpads issue many small deltas while mouse wheels issue larger
     // ones. Coalesce input once per frame rather than turning every event
     // into a fixed 0.5 zoom jump.
     this._wheelDelta += Math.max(-180, Math.min(180, e.deltaY * modeScale));
-    this._wheelPoint = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    this._wheelPoint = point;
     if (this._wheelFrameId === null) {
       this._wheelFrameId = requestAnimationFrame(() => this._applyWheelZoom());
     }
@@ -130,24 +141,41 @@ class InputHandler {
     const baseZoom = this._wheelTargetZoom === null ? this.viewport.zoom : this._wheelTargetZoom;
     this._wheelTargetZoom = this.viewport.clampZoom(baseZoom - delta * 0.0018);
     this._wheelAnimationPoint = point;
+    if (!this._wheelAnchorGeo) {
+      this._wheelAnchorGeo = this.viewport.screenToLatLng(point.x, point.y);
+    }
     if (this._wheelAnimationFrameId === null) this._tickWheelZoom();
+  }
+
+  _applyZoomStep(zoom) {
+    if (typeof this.viewport.zoomAtGeoPoint === 'function' && this._wheelAnchorGeo) {
+      this.viewport.zoomAtGeoPoint(zoom, this._wheelAnchorGeo.lat, this._wheelAnchorGeo.lng, this._wheelAnimationPoint.x, this._wheelAnimationPoint.y);
+    } else {
+      this.viewport.zoomAtPoint(zoom, this._wheelAnimationPoint.x, this._wheelAnimationPoint.y);
+    }
   }
 
   _tickWheelZoom() {
     this._wheelAnimationFrameId = null;
-    if (this._wheelTargetZoom === null || !this._wheelAnimationPoint) return;
+    if (this._wheelTargetZoom === null || !this._wheelAnimationPoint || !this._wheelAnchorGeo) {
+      this._wheelTargetZoom = null;
+      this._wheelAnimationPoint = null;
+      this._wheelAnchorGeo = null;
+      return;
+    }
     const currentZoom = this.viewport.zoom;
     const difference = this._wheelTargetZoom - currentZoom;
     if (Math.abs(difference) <= 0.001) {
       if (difference !== 0) {
-        this.viewport.zoomAtPoint(this._wheelTargetZoom, this._wheelAnimationPoint.x, this._wheelAnimationPoint.y);
+        this._applyZoomStep(this._wheelTargetZoom);
       }
       this._wheelTargetZoom = null;
       this._wheelAnimationPoint = null;
+      this._wheelAnchorGeo = null;
       return;
     }
     const nextZoom = currentZoom + difference * 0.42;
-    this.viewport.zoomAtPoint(nextZoom, this._wheelAnimationPoint.x, this._wheelAnimationPoint.y);
+    this._applyZoomStep(nextZoom);
     this._wheelAnimationFrameId = requestAnimationFrame(() => this._tickWheelZoom());
   }
 
@@ -160,6 +188,7 @@ class InputHandler {
     this._wheelPoint = null;
     this._wheelTargetZoom = null;
     this._wheelAnimationPoint = null;
+    this._wheelAnchorGeo = null;
   }
 
   _flushPan() {
@@ -173,8 +202,8 @@ class InputHandler {
   }
 
   _onDoubleClick(e) {
-    const rect = this.canvas.getBoundingClientRect();
-    const point = this.viewport.screenToLatLng(e.clientX - rect.left, e.clientY - rect.top);
+    const pt = this._getScreenPoint(e);
+    const point = this.viewport.screenToLatLng(pt.x, pt.y);
     
     if (typeof globalEventBus !== 'undefined') {
       globalEventBus.emit('marker:add', { lat: point.lat, lng: point.lng, label: '' });
