@@ -25,6 +25,12 @@ class Viewport {
   get centerLat() { return this.mapState.latitude; }
   get centerLng() { return this.mapState.longitude; }
   get zoom() { return this.mapState.getUIZoom(); }
+  get pitch() { return this.mapState.getPitch(); }
+  setPitch(deg, origin = 'ui') {
+    this.mapState.setPitch(deg);
+    this._commitCamera({ pitch: this.mapState.getPitch() }, origin);
+    this._emitChanged();
+  }
   set tileSize(val) {
     if (this.session) this.session.setTileSize(val, { origin: 'viewport' });
     else this.mapState.tileSize = val;

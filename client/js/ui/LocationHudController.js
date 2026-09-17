@@ -26,6 +26,8 @@ class LocationHudController {
     this.framingBadgeEl = null;
     this.compassEl = null;
     this.estimateBadgeEl = null;
+    this.pitchControlEl = null;
+    this.pitchValueEl = null;
   }
 
   bind() {
@@ -41,6 +43,50 @@ class LocationHudController {
     this.framingBadgeEl = document.getElementById('framing-badge');
     this.compassEl = document.getElementById('map-compass');
     this.estimateBadgeEl = document.getElementById('finalize-estimate-badge');
+    this.pitchControlEl = document.getElementById('map-pitch-control');
+    this.pitchValueEl = document.getElementById('pitch-value-display');
+
+    // 3D Pitch / Tilt Scrubber interaction
+    if (this.pitchControlEl) {
+      let isScrubbing = false;
+      let startY = 0;
+      let startPitch = 0;
+
+      const onPointerMove = (e) => {
+        if (!isScrubbing || !this.app.viewport) return;
+        const dy = startY - e.clientY;
+        const newPitch = Math.max(0, Math.min(65, startPitch + dy * 0.5));
+        this.app.viewport.setPitch(newPitch);
+        this.updatePitch(newPitch);
+      };
+
+      const onPointerUp = () => {
+        if (!isScrubbing) return;
+        isScrubbing = false;
+        if (this.pitchControlEl) this.pitchControlEl.classList.remove('active');
+        window.removeEventListener('pointermove', onPointerMove);
+        window.removeEventListener('pointerup', onPointerUp);
+      };
+
+      this.pitchControlEl.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        isScrubbing = true;
+        startY = e.clientY;
+        startPitch = this.app.viewport ? this.app.viewport.pitch : 0;
+        this.pitchControlEl.classList.add('active');
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+      });
+
+      this.pitchControlEl.addEventListener('dblclick', (e) => {
+        e.preventDefault();
+        if (this.app.viewport) {
+          this.app.viewport.setPitch(0);
+          this.updatePitch(0);
+        }
+      });
+    }
 
     // Compass click resets to standard center/north
     if (this.compassEl) {
@@ -94,11 +140,28 @@ class LocationHudController {
     const lat = this.app.viewport.centerLat;
     const lng = this.app.viewport.centerLng;
     const zoom = this.app.viewport.zoom;
+    const pitch = this.app.viewport.pitch || 0;
 
     this.updateScaleBar(lat, zoom);
     this.updateLocationIdentity(lat, lng, zoom);
     this.updateFramingBadge();
     this.updateEstimate();
+    this.updatePitch(pitch);
+  }
+
+  /**
+   * Updates 3D pitch numeric readout and applies GPU-accelerated perspective tilt to canvas.
+   */
+  updatePitch(pitch) {
+    if (this.pitchValueEl) {
+      const rounded = Math.round(pitch || 0);
+      this.pitchValueEl.textContent = `${rounded}°`;
+    }
+    const canvas = document.getElementById('map-canvas');
+    if (canvas) {
+      const p = pitch || 0;
+      canvas.style.transform = p > 0 ? `rotateX(${p}deg)` : '';
+    }
   }
 
   /**

@@ -7,8 +7,12 @@ class CoveragePlanner {
     const drawSize = viewport.tileSize * tileScale;
     const count = Math.pow(2, tileZoom);
     const center = MercatorProjection.latLngToWorldPoint(viewport.centerLat, viewport.centerLng, tileZoom, viewport.tileSize);
-    const halfWidth = viewport.width / (2 * tileScale);
-    const halfHeight = viewport.height / (2 * tileScale);
+    const pitch = Number(viewport.pitch || (viewport.mapState && viewport.mapState.pitch) || 0);
+    const pitchRad = (Math.max(0, Math.min(75, pitch)) * Math.PI) / 180;
+    const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
+    const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
+    const halfWidth = (viewport.width / (2 * tileScale)) * overscanX;
+    const halfHeight = (viewport.height / (2 * tileScale)) * overscanY;
     const minX = Math.floor((center.x - halfWidth) / viewport.tileSize) - 1;
     const maxX = Math.floor((center.x + halfWidth) / viewport.tileSize) + 1;
     const minY = Math.max(0, Math.floor((center.y - halfHeight) / viewport.tileSize) - 1);
@@ -45,8 +49,12 @@ class CoveragePlanner {
     // ratio must remain fractional when downloading a lower-resolution draft;
     // clamping it to 1 expands a z-2 viewport by 4x on each axis.
     const sourcePixelsPerCompPixel = Math.pow(2, downloadZoom - camera.zoom);
-    const halfWidth = (options.width / 2) * sourcePixelsPerCompPixel;
-    const halfHeight = (options.height / 2) * sourcePixelsPerCompPixel;
+    const pitch = Number(camera.pitch || options.pitch || 0);
+    const pitchRad = (Math.max(0, Math.min(75, pitch)) * Math.PI) / 180;
+    const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
+    const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
+    const halfWidth = (options.width / 2) * sourcePixelsPerCompPixel * overscanX;
+    const halfHeight = (options.height / 2) * sourcePixelsPerCompPixel * overscanY;
     const requestedGutter = Number(options.gutterTiles);
     const gutterTiles = Number.isFinite(requestedGutter)
       ? Math.max(0, Math.min(4, Math.floor(requestedGutter)))

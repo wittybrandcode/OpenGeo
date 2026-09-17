@@ -10,11 +10,12 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
   mapLayer.name = mapcompName;
 
   mapLayer.collapseTransformation = true;
+  mapLayer.threeDLayer = true;
   mapLayer.property('Anchor Point').setValue([compWidth / 2, compHeight / 2]);
   mapLayer.property('Position').setValue([compWidth / 2, compHeight / 2]);
 
+  var effects = mapLayer.property('ADBE Effect Parade');
   if (!hasEffect(mapLayer, 'Latitude')) {
-    var effects = mapLayer.property('ADBE Effect Parade');
     var latCtrl = effects.addProperty('ADBE Angle Control');
     latCtrl.name = 'Latitude';
     latCtrl.property(1).setValue(camera.lat);
@@ -27,6 +28,22 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
     zoomCtrl.name = 'Zoom';
     zoomCtrl.property(1).setValue(camera.zoom);
   }
+
+  if (!hasEffect(mapLayer, 'Pitch')) {
+    var pitchCtrl = effects.addProperty('ADBE Angle Control');
+    pitchCtrl.name = 'Pitch';
+    pitchCtrl.property(1).setValue(camera.pitch || 0);
+  }
+
+  try {
+    var xRot = mapLayer.property('X Rotation') || mapLayer.property('ADBE Rotate X');
+    if (xRot) {
+      xRot.expression =
+        'var p = 0;\n' +
+        'try { p = effect("Pitch")(1).value; } catch(e) {}\n' +
+        'p;\n';
+    }
+  } catch(ignoreXRot) {}
   // A composition rebuild may be the first operation after a restored panel
   // or a provider switch. Synchronize its controller now rather than relying
   // on a later polling round-trip, otherwise CEP and AE can show different
@@ -42,20 +59,30 @@ function opengeoSynchronizeControllerCamera(mapLayer, time, camera) {
   if (!mapLayer || !camera) return;
   var effects = mapLayer.property('ADBE Effect Parade');
   if (!effects) return;
-  var latitudeProperty = effects.property('Latitude').property(1);
-  var longitudeProperty = effects.property('Longitude').property(1);
-  var zoomProperty = effects.property('Zoom').property(1);
+  var latEffect = effects.property('Latitude');
+  var latitudeProperty = latEffect ? latEffect.property(1) : null;
+  var lonEffect = effects.property('Longitude');
+  var longitudeProperty = lonEffect ? lonEffect.property(1) : null;
+  var zoomEffect = effects.property('Zoom');
+  var zoomProperty = zoomEffect ? zoomEffect.property(1) : null;
+  var pitchEffect = effects.property('Pitch');
+  var pitchProperty = pitchEffect ? pitchEffect.property(1) : null;
   // Composition rebuilds and Finalize own map assets, not camera animation.
-  // Treat the three controls as one transaction: if any control is animated,
+  // Treat the controls as one transaction: if any control is animated,
   // preserve all keys and values regardless of the CTI when the async build
   // happens to finish. Explicit Add Key/Record/camera.update remain the only
   // commands allowed to edit animated controls.
-  var hasCameraAnimation = latitudeProperty.numKeys > 0 ||
-    longitudeProperty.numKeys > 0 || zoomProperty.numKeys > 0;
+  var hasCameraAnimation = (latitudeProperty && latitudeProperty.numKeys > 0) ||
+    (longitudeProperty && longitudeProperty.numKeys > 0) ||
+    (zoomProperty && zoomProperty.numKeys > 0) ||
+    (pitchProperty && pitchProperty.numKeys > 0);
   if (hasCameraAnimation) return { applied: false, preservedAnimation: true };
-  latitudeProperty.setValue(camera.lat);
-  longitudeProperty.setValue(camera.lon);
-  zoomProperty.setValue(camera.zoom);
+  if (latitudeProperty) latitudeProperty.setValue(camera.lat);
+  if (longitudeProperty) longitudeProperty.setValue(camera.lon);
+  if (zoomProperty) zoomProperty.setValue(camera.zoom);
+  if (pitchProperty && camera.pitch !== undefined && camera.pitch !== null) {
+    pitchProperty.setValue(camera.pitch);
+  }
   return { applied: true, preservedAnimation: false };
 }
 

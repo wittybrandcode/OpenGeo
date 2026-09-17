@@ -198,9 +198,11 @@ function opengeoGetActiveState() {
       var lat = latProp.property(1).value;
       var lng = lngProp.property(1).value;
       var zoom = zoomProp.property(1).value;
+      var pitchProp = effects.property('Pitch');
+      var pitch = (pitchProp && pitchProp.property(1)) ? pitchProp.property(1).value : 0;
       stateStr += ', "controllerId":' + controller.index;
       stateStr += ', "appliedRevision":' + opengeoGetSyncRevision(effects);
-      stateStr += ', "camera":{"lat":' + lat + ', "lng":' + lng + ', "zoom":' + zoom + '}';
+      stateStr += ', "camera":{"lat":' + lat + ', "lng":' + lng + ', "zoom":' + zoom + ', "pitch":' + pitch + '}';
     } catch (ex) {
       return '{}';
     }
@@ -211,7 +213,7 @@ function opengeoGetActiveState() {
   }
 }
 
-function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
+function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, pitch) {
   try {
     var comp = ensureComp(compId);
     if (!comp) {
@@ -243,6 +245,7 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
     var latEffect = effects.property('Latitude');
     var lngEffect = effects.property('Longitude');
     var zoomEffect = effects.property('Zoom');
+    var pitchEffect = effects.property('Pitch');
     if (!latEffect || !lngEffect || !zoomEffect) {
       return JSON.stringify({
         applied: false,
@@ -254,6 +257,7 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
     var latitudeProperty = latEffect.property(1);
     var longitudeProperty = lngEffect.property(1);
     var zoomProperty = zoomEffect.property(1);
+    var pitchProperty = pitchEffect ? pitchEffect.property(1) : null;
     if (!latitudeProperty || !longitudeProperty || !zoomProperty) {
       return JSON.stringify({
         applied: false,
@@ -264,7 +268,8 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
 
     var canApplyCamera = opengeoCanSetCameraControlValue(latitudeProperty, comp.time, recordKeyframe === true) &&
       opengeoCanSetCameraControlValue(longitudeProperty, comp.time, recordKeyframe === true) &&
-      opengeoCanSetCameraControlValue(zoomProperty, comp.time, recordKeyframe === true);
+      opengeoCanSetCameraControlValue(zoomProperty, comp.time, recordKeyframe === true) &&
+      (!pitchProperty || opengeoCanSetCameraControlValue(pitchProperty, comp.time, recordKeyframe === true));
 
     // Keyframed properties are evaluated from their timeline values. In
     // normal navigation we therefore leave an existing animation intact;
@@ -273,6 +278,9 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
       opengeoSetCameraControlValue(latitudeProperty, comp.time, lat, recordKeyframe === true);
       opengeoSetCameraControlValue(longitudeProperty, comp.time, lng, recordKeyframe === true);
       opengeoSetCameraControlValue(zoomProperty, comp.time, zoom, recordKeyframe === true);
+      if (pitchProperty && pitch !== undefined && pitch !== null && isFinite(parseFloat(pitch))) {
+        opengeoSetCameraControlValue(pitchProperty, comp.time, parseFloat(pitch), recordKeyframe === true);
+      }
     }
     var appliedRevision = canApplyCamera
       ? opengeoSetSyncRevision(effects, revision)
@@ -280,7 +288,8 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision) {
     var actualCamera = {
       lat: latitudeProperty.valueAtTime(comp.time, false),
       lng: longitudeProperty.valueAtTime(comp.time, false),
-      zoom: zoomProperty.valueAtTime(comp.time, false)
+      zoom: zoomProperty.valueAtTime(comp.time, false),
+      pitch: pitchProperty ? pitchProperty.valueAtTime(comp.time, false) : 0
     };
     OPEN_GEO_ACTIVE_STATE_CACHE.activeItemId = null;
     return JSON.stringify({

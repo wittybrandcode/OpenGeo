@@ -472,7 +472,8 @@ class ToolbarController {
     const camera = {
       lat: app.mapState.latitude,
       lng: app.mapState.longitude,
-      zoom: app.mapState.compZoom
+      zoom: app.mapState.compZoom,
+      pitch: app.mapState.pitch || 0
     };
     const mutationKey = String(compId);
     const previous = this._keyframeMutationTails.get(mutationKey) || Promise.resolve(true);
@@ -483,7 +484,7 @@ class ToolbarController {
         // build or trigger a second, redundant viewport preview afterwards.
         app.syncManager.prepareForKeyframeMutation();
         await app.aeBridge.invoke('keyframe.add', {
-          compId, lat: camera.lat, lng: camera.lng, zoom: camera.zoom
+          compId, lat: camera.lat, lng: camera.lng, zoom: camera.zoom, pitch: camera.pitch
         });
         if (!options.silent) globalEventBus.emit('toast:show', { message: 'Keyframe added!', type: 'success' });
         if (app.activeCompId === compId) app.syncManager.queueTrajectoryPreview();

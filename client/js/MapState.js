@@ -25,6 +25,8 @@ class MapState {
     // Normal = 0, High = +1, Ultra = +2 (finalize)
     this.qualityOffset = -2; // Default: Draft during work
     
+    // 3D Pitch / Tilt angle (degrees, 0 = flat top-down)
+    this.pitch = 0;
   }
 
   getDownloadZoom() {
@@ -100,5 +102,16 @@ class MapState {
       this.frameHeight = availHeight;
       this.frameWidth = availHeight * compAspect;
     }
+  }
+
+  getPitch() {
+    return this.pitch;
+  }
+
+  setPitch(val) {
+    const num = Number(val);
+    const clamped = Math.max(0, Math.min(60, Number.isFinite(num) ? num : 0));
+    this.pitch = Math.round(clamped * 10) / 10;
+    return this.pitch;
   }
 }

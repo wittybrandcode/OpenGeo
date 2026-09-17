@@ -14,6 +14,8 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
     var latProp = effects.property('Latitude').property(1);
     var lonProp = effects.property('Longitude').property(1);
     var zoomProp = effects.property('Zoom').property(1);
+    var pitchEffect = effects.property('Pitch');
+    var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
     
     var fps = comp.frameRate;
     var workStart = comp.workAreaStart;
@@ -21,6 +23,7 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
     var firstKeyTime = null;
     var lastKeyTime = null;
     var cameraProperties = [latProp, lonProp, zoomProp];
+    if (pitchProp) cameraProperties.push(pitchProp);
     for (var propertyIndex = 0; propertyIndex < cameraProperties.length; propertyIndex++) {
       var cameraProperty = cameraProperties[propertyIndex];
       if (cameraProperty.numKeys < 1) continue;
@@ -60,11 +63,13 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
       var lat = latProp.valueAtTime(sampleTime, false);
       var lon = lonProp.valueAtTime(sampleTime, false);
       var zoom = zoomProp.valueAtTime(sampleTime, false);
-      frames.push('{"lat":' + lat + ',"lon":' + lon + ',"zoom":' + zoom + '}');
+      var pitch = pitchProp ? pitchProp.valueAtTime(sampleTime, false) : 0;
+      frames.push('{"lat":' + lat + ',"lon":' + lon + ',"zoom":' + zoom + ',"pitch":' + pitch + '}');
       lastSampleTime = sampleTime;
     }
     if (lastSampleTime === null || Math.abs(lastSampleTime - end) >= 0.000001) {
-      frames.push('{"lat":' + latProp.valueAtTime(end, false) + ',"lon":' + lonProp.valueAtTime(end, false) + ',"zoom":' + zoomProp.valueAtTime(end, false) + '}');
+      var endPitch = pitchProp ? pitchProp.valueAtTime(end, false) : 0;
+      frames.push('{"lat":' + latProp.valueAtTime(end, false) + ',"lon":' + lonProp.valueAtTime(end, false) + ',"zoom":' + zoomProp.valueAtTime(end, false) + ',"pitch":' + endPitch + '}');
     }
     
     return '{"frames":[' + frames.join(',') + ']}';
@@ -74,7 +79,7 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
   }
 }
 
-function opengeoAddKeyframe(compId, lat, lon, zoom) {
+function opengeoAddKeyframe(compId, lat, lon, zoom, pitch) {
   return withUndoGroup("OpenGeo: Add Keyframe", function() {
     try {
     var comp = ensureComp(compId);
@@ -87,22 +92,28 @@ function opengeoAddKeyframe(compId, lat, lon, zoom) {
     var latProp = effects.property('Latitude').property(1);
     var lonProp = effects.property('Longitude').property(1);
     var zoomProp = effects.property('Zoom').property(1);
+    var pitchEffect = effects.property('Pitch');
+    var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
     
     var t = comp.time;
     
     // Atomic keyframe seeding: If the camera was static (no keyframes) and the
     // new keyframe is being added at t > 0, preserve the initial framing by
     // setting an anchor keyframe at t = 0 first.
-    var isStatic = latProp.numKeys === 0 && lonProp.numKeys === 0 && zoomProp.numKeys === 0;
+    var isStatic = latProp.numKeys === 0 && lonProp.numKeys === 0 && zoomProp.numKeys === 0 && (!pitchProp || pitchProp.numKeys === 0);
     if (isStatic && t > 0.001) {
       latProp.setValueAtTime(0, latProp.valueAtTime(0, false));
       lonProp.setValueAtTime(0, lonProp.valueAtTime(0, false));
       zoomProp.setValueAtTime(0, zoomProp.valueAtTime(0, false));
+      if (pitchProp) pitchProp.setValueAtTime(0, pitchProp.valueAtTime(0, false));
     }
     
     latProp.setValueAtTime(t, lat);
     lonProp.setValueAtTime(t, lon);
     zoomProp.setValueAtTime(t, zoom);
+    if (pitchProp && pitch !== undefined && pitch !== null && isFinite(parseFloat(pitch))) {
+      pitchProp.setValueAtTime(t, parseFloat(pitch));
+    }
     
     return 'success';
     } catch (e) {
@@ -125,12 +136,18 @@ function opengeoClearCameraKeyframes(compId) {
       var latProp = effects.property('Latitude').property(1);
       var lonProp = effects.property('Longitude').property(1);
       var zoomProp = effects.property('Zoom').property(1);
+      var pitchEffect = effects.property('Pitch');
+      var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
       var properties = [latProp, lonProp, zoomProp];
       var values = [
         latProp.valueAtTime(comp.time, false),
         lonProp.valueAtTime(comp.time, false),
         zoomProp.valueAtTime(comp.time, false)
       ];
+      if (pitchProp) {
+        properties.push(pitchProp);
+        values.push(pitchProp.valueAtTime(comp.time, false));
+      }
       var removed = 0;
 
       for (var propertyIndex = 0; propertyIndex < properties.length; propertyIndex++) {
@@ -143,7 +160,7 @@ function opengeoClearCameraKeyframes(compId) {
       return JSON.stringify({
         status: 'success',
         keysRemoved: removed,
-        camera: { lat: values[0], lng: values[1], zoom: values[2] }
+        camera: { lat: values[0], lng: values[1], zoom: values[2], pitch: pitchProp ? values[3] : 0 }
       });
     } catch (e) {
       var errStr = e.toString().replace(/"/g, '\\"').replace(/\n/g, '\\n');

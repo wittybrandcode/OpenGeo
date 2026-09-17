@@ -30,7 +30,7 @@ var opengeoBridgeHandlers = {
   'project.openOpenGeoMap': { kind: 'json', run: function(args) { return opengeoOpenProjectMap(args.compId, args.documentId); } },
   'project.prepareOpenGeoMapThumbnail': { kind: 'json', run: function(args) { return opengeoPrepareProjectMapThumbnail(args.compId, args.documentId); } },
   'camera.getActive': { kind: 'json', run: function(args) { return opengeoGetActiveState(); } },
-  'camera.update': { kind: 'json', run: function(args) { return opengeoUpdateCamera(args.compId, args.lat, args.lng, args.zoom, args.recordKeyframe === true, args.revision); } },
+  'camera.update': { kind: 'json', run: function(args) { return opengeoUpdateCamera(args.compId, args.lat, args.lng, args.zoom, args.recordKeyframe === true, args.revision, args.pitch); } },
   'metadata.get': { kind: 'json', run: function(args) { return opengeoGetCompMetadata(args.compId); } },
   'metadata.set': { kind: 'empty', run: function(args) { return opengeoSetCompMetadata(args.compId, args.data); } },
   'composition.build': { kind: 'json', run: function(args) { return opengeoBuildComposition(args.payloadFile ? opengeoReadPayloadFile(args.payloadFile) : args.payload); } },
@@ -45,7 +45,7 @@ var opengeoBridgeHandlers = {
   'feature.visibility': { kind: 'json', run: function(args) { return opengeoFeatureSetVisibility(args.compId, args.featureId, args.visible === true); } },
   'feature.delete': { kind: 'json', run: function(args) { return opengeoFeatureDelete(args.compId, args.featureId); } },
   'pin.add': { kind: 'scalar', run: function(args) { return opengeoAddSpatialPin(args.compId, args.lat, args.lng, args.name, args); } },
-  'keyframe.add': { kind: 'empty', run: function(args) { return opengeoAddKeyframe(args.compId, args.lat, args.lng, args.zoom); } },
+  'keyframe.add': { kind: 'empty', run: function(args) { return opengeoAddKeyframe(args.compId, args.lat, args.lng, args.zoom, args.pitch); } },
   'keyframe.clear': { kind: 'json', run: function(args) { return opengeoClearCameraKeyframes(args.compId); } }
 };
 

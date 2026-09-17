@@ -19,6 +19,7 @@ const suites = [
   { name: 'Universal Geo Link & Coordinate Parser Suite', script: 'scripts/tests/map/universal-geo-parser.test.js' },
   { name: 'Download Telemetry HUD Suite', script: 'scripts/tests/ui/download-telemetry.test.js' },
   { name: 'Tooltip Manager & Z-Index Suite', script: 'scripts/tests/ui/tooltip-manager.test.js' },
+  { name: '3D Map Pitch & Horizon Architecture Suite', script: 'scripts/tests/map/pitch-3d.test.js' },
   { name: 'End-to-End Production Stress Suite', script: 'scripts/tests/e2e/production-stress.test.js' }
 ];
 

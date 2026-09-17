@@ -57,6 +57,9 @@ class MapSession {
     } else if (Number.isFinite(camera.uiZoom)) {
       this.mapState.setUIZoom(camera.uiZoom);
     }
+    if (Number.isFinite(camera.pitch)) {
+      this.mapState.setPitch(camera.pitch);
+    }
     this._notify({ type: 'camera', origin: options.origin || 'system' });
   }
 
@@ -64,7 +67,8 @@ class MapSession {
     this.setCamera({
       lat: viewport.centerLat,
       lng: viewport.centerLng,
-      compZoom: viewport.mapState.compZoom
+      compZoom: viewport.mapState.compZoom,
+      pitch: viewport.pitch
     }, { origin });
   }
 
@@ -219,6 +223,7 @@ class MapSession {
         lng: this.mapState.longitude,
         compZoom: this.mapState.compZoom,
         uiZoom: this.mapState.getUIZoom(),
+        pitch: this.mapState.getPitch(),
         tileSize: this.mapState.tileSize
       },
       layout: {

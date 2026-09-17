@@ -162,15 +162,17 @@ class AESyncEngine {
     const currentLat = this.session.mapState.latitude;
     const currentLng = this.session.mapState.longitude;
     const currentZoom = this.session.mapState.compZoom;
+    const currentPitch = this.session.mapState.pitch || 0;
 
     if (!this.isKeyframeRecording && this._lastPushedCamera && this._lastPushedCamera.compId === compId) {
-      const isEquivalent = typeof MercatorProjection !== 'undefined' && MercatorProjection.camerasEquivalent
+      const pitchDiff = Math.abs(currentPitch - (this._lastPushedCamera.pitch || 0));
+      const isEquivalent = pitchDiff < 0.1 && (typeof MercatorProjection !== 'undefined' && MercatorProjection.camerasEquivalent
         ? MercatorProjection.camerasEquivalent(
             { lat: currentLat, lng: currentLng, zoom: currentZoom },
             this._lastPushedCamera,
             { tileSize: this.session.mapState.tileSize }
           )
-        : (Math.abs(currentLat - this._lastPushedCamera.lat) < 1e-6 && Math.abs(currentLng - this._lastPushedCamera.lng) < 1e-6 && Math.abs(currentZoom - this._lastPushedCamera.zoom) < 0.001);
+        : (Math.abs(currentLat - this._lastPushedCamera.lat) < 1e-6 && Math.abs(currentLng - this._lastPushedCamera.lng) < 1e-6 && Math.abs(currentZoom - this._lastPushedCamera.zoom) < 0.001));
       if (isEquivalent) {
         return;
       }
@@ -181,10 +183,11 @@ class AESyncEngine {
       lat: currentLat,
       lng: currentLng,
       zoom: currentZoom,
+      pitch: currentPitch,
       recordKeyframe: this.isKeyframeRecording,
       revision: this._nextRevision()
     };
-    this._lastPushedCamera = { compId, lat: currentLat, lng: currentLng, zoom: currentZoom };
+    this._lastPushedCamera = { compId, lat: currentLat, lng: currentLng, zoom: currentZoom, pitch: currentPitch };
     // A poll that started before this local intent is necessarily stale, even
     // while the debounced write has not reached After Effects yet.
     this._latestLocalIntentRevision = this._pendingCamera.revision;
@@ -283,7 +286,7 @@ class AESyncEngine {
       }
 
       if (state.camera) {
-        const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}`;
+        const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}_${state.camera.pitch || 0}`;
         if (this._shouldIgnoreAeCamera(state.camera, state.appliedRevision)) return;
         if (camHash !== this._lastAeCamState) {
           this._lastAeCamState = camHash;

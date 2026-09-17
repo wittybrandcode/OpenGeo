@@ -34,11 +34,13 @@ class InputHandler {
     this.canvas.addEventListener('pointercancel', this._boundHandlers.pointercancel);
     this.canvas.addEventListener('wheel', this._boundHandlers.wheel, { passive: false });
     this.canvas.addEventListener('dblclick', this._boundHandlers.dblclick);
+    this.canvas.addEventListener('contextmenu', e => e.preventDefault());
   }
 
   _onPointerDown(e) {
     e.preventDefault();
     this.dragging = true;
+    this.isTilt = (e.button === 2) || (e.shiftKey && e.button === 0);
     this.lastPointer = { x: e.clientX, y: e.clientY, t: Date.now() };
     this.velBuffer = [];
     this._cancelWheelAnimation();
@@ -47,7 +49,7 @@ class InputHandler {
       this.canvas.setPointerCapture(e.pointerId); 
     } catch (ex) {}
     
-    this.canvas.style.cursor = 'grabbing';
+    this.canvas.style.cursor = this.isTilt ? 'ns-resize' : 'grabbing';
     this.inertia.active = false;
     if (this.inertia.frameId !== null) {
       cancelAnimationFrame(this.inertia.frameId);
@@ -64,6 +66,14 @@ class InputHandler {
     const dx = e.clientX - this.lastPointer.x;
     const dy = e.clientY - this.lastPointer.y;
     const dt = Math.max(1, now - this.lastPointer.t);
+
+    if (this.isTilt) {
+      const currentPitch = this.viewport.pitch || 0;
+      const newPitch = Math.max(0, Math.min(65, currentPitch - dy * 0.4));
+      this.viewport.setPitch(newPitch);
+      this.lastPointer = { x: e.clientX, y: e.clientY, t: now };
+      return;
+    }
     
     this._panDx += dx;
     this._panDy += dy;
@@ -78,16 +88,20 @@ class InputHandler {
 
   _onPointerUp(e) {
     if (!this.dragging) return;
-    this._flushPan();
+    if (!this.isTilt) {
+      this._flushPan();
+      this._startInertia();
+    }
     this.dragging = false;
+    this.isTilt = false;
     this.lastPointer = null;
     this.canvas.style.cursor = 'grab';
-    this._startInertia();
   }
 
   _onPointerCancel(e) {
-    this._flushPan();
+    if (!this.isTilt) this._flushPan();
     this.dragging = false;
+    this.isTilt = false;
     this.lastPointer = null;
     this.canvas.style.cursor = 'grab';
   }
