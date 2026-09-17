@@ -1,73 +1,99 @@
-# OpenGeo — Interactive Map Extension for After Effects
+# OpenGeo — Geospatial Engine for Adobe After Effects
 
-CEP extension that displays an interactive world map inside After Effects, with tile loading, pan, zoom, and camera synchronization.
+![Version](https://img.shields.io/badge/version-1.0.0-emerald)
+![Tests](https://img.shields.io/badge/tests-162%2F162%20passed-brightgreen)
+![Adobe CEP](https://img.shields.io/badge/Adobe%20CEP-10%2B%20%7C%2011%2B%20%7C%2012%2B-blue)
+![After Effects](https://img.shields.io/badge/After%20Effects-2022--2025%2B-purple)
 
-## Installation
+**OpenGeo** is an enterprise-grade interactive geospatial map engine and CEP extension for Adobe After Effects. It enables motion designers, VFX artists, and animators to seamlessly navigate, frame, and synchronize high-resolution geographic map animations directly inside After Effects compositions.
 
-Copy `OpenGeo/` to:
+---
 
-**Windows:**
-- `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\`
-- or `%appdata%\Adobe\CEP\extensions\`
+## ✨ Key Features
 
-Then open After Effects → `Window → Extensions → OpenGeo`.
+* **Native 3D Camera Rig & Tilt:**
+  * Interactive map pitch up to 45° with live HUD angle scrubbers.
+  * Frustum-based edge-to-edge tile overscan to completely eliminate boundary clipping and black void seams.
+  * True 3D ground-plane collapse (`threeDLayer`) with automatic camera billboarding for pins and labels.
 
-## Development
+* **High-Performance Multi-Provider Tile Engine:**
+  * Multi-source imagery (Satellite Photogrammetry, OpenStreetMap, Carto Dark/Light).
+  * Transactional tile downloading with in-memory caching and LRU eviction.
+  * Deterministic MegaTile stitching with transparency fallbacks and bounded memory limits.
+
+* **Spatial Pins & Vector GeoJSON:**
+  * 3D spatial pin anchoring with dynamic scale compensation and layer parenting.
+  * GeoJSON vector boundary rendering (countries, regions, custom polygons) directly as native After Effects shape layers.
+
+* **Bi-Directional Camera Synchronization:**
+  * Real-time CTI (Current Time Indicator) timeline scrubbing sync.
+  * Keyframe trajectory recording (`Record`, `Add Key`, `Clear`) with smooth Bézier spatial interpolation.
+  * Project Maps management: instant local map saves, thumbnails, and one-click workspace recall.
+
+---
+
+## 🚀 Installation
+
+### Option 1: Automated Release ZIP
+1. Download the latest `OpenGeo-v1.0.0.zip` from [Releases](https://github.com/wittybrandcode/OpenGeo/releases).
+2. Extract the archive directly into your Adobe CEP extensions folder:
+   * **Windows:** `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\OpenGeo`
+     *(or `%APPDATA%\Adobe\CEP\extensions\OpenGeo`)*
+   * **macOS:** `/Library/Application Support/Adobe/CEP/extensions/OpenGeo`
+     *(or `~/Library/Application Support/Adobe/CEP/extensions/OpenGeo`)*
+3. Restart Adobe After Effects.
+4. Launch OpenGeo from **Window → Extensions → OpenGeo**.
+
+---
+
+## 🛠️ Development & Testing
 
 ### Enable Debug Mode
-
 ```powershell
+# Windows
 New-ItemProperty -Path "HKCU:\Software\Adobe\CSXS.12" -Name "PlayerDebugMode" -Value 1 -PropertyType DWord -Force
 ```
 
-### Remote Debugging
+### Verification & Quality Gate
+OpenGeo enforces strict architectural integrity, supply chain provenance, and zero-regression automated test suites:
 
-1. Ensure `.debug` file exists in extension root
-2. Restart After Effects
-3. Open `http://localhost:8088` in Chrome
-4. Or use `chrome://inspect`
+```bash
+# Run Master QA Test Suite (162 automated tests)
+npm test
 
-### Project Structure
+# Verify package structure & release integrity
+npm run verify:package
+
+# Verify release bundle
+npm run verify:release
+```
+
+---
+
+## 📂 Architecture Overview
 
 ```
 OpenGeo/
-├── CSXS/manifest.xml          (Adobe CEP Manifest)
-├── client/
-│   ├── index.html
-│   ├── css/style.css
-│   ├── assets/                (Icons, GeoJSON data)
-│   └── js/
-│       ├── core/              (Managers: Export, Sync, Provider, Vector)
-│       ├── engine/            (MegaTileStitcher, OpenGeoEngine)
-│       ├── map/               (MapRenderer, TileGrid, Viewport)
-│       ├── tiles/             (Caches, Downloaders)
-│       ├── ui/                (Panels, Search, Toast)
-│       └── app.js             (Bootstrap logic)
-├── host/
-│   ├── index.jsx              (AE ExtendScript entry)
-│   └── modules/               (compBuilder, spatialPinHost, etc)
-├── scripts/
-│   ├── build.js               (Build pipeline)
-│   ├── test.js                (Smoke & Security tests)
-│   └── verify-package.js      (Quality Gate)
-└── docs/
+├── CSXS/                      # Adobe CEP Extension Manifest
+├── client/                    # HTML5 / Chromium Panel UI
+│   ├── css/                   # Precision emerald UI design tokens
+│   ├── js/
+│   │   ├── ae/                # Host ExtendScript bridge & event dispatcher
+│   │   ├── core/              # SyncManager, ExportManager, VectorManager
+│   │   ├── engine/            # OpenGeoEngine, TilePlanner, MegaTileStitcher
+│   │   ├── map/               # Viewport, MapRenderer, CameraProjection3D
+│   │   ├── tiles/             # CoveragePlanner, TileDownloader, TileCache
+│   │   └── ui/                # HUD, Search, PinManager, Toast, DialogManager
+├── host/                      # Adobe After Effects ExtendScript Modules
+│   ├── index.jsx              # Main ExtendScript entrypoint & router
+│   └── modules/               # compositionTiles, cameraRig, spatialPinHost, vectorHost
+├── docs/                      # Architectural Decision Records (ADRs) & Specifications
+└── scripts/                   # Verification gates, security audits, build runners
 ```
 
-## Build & Release
+---
 
-We use automated scripts to test, verify, and pack the extension to ensure security and integrity.
+## 📄 License & Release Notes
 
-```bash
-# Run tests
-npm test
-
-# Build the release (Copies files to release/stage, excluding dev files)
-npm run build
-
-# Run all tests, build, sync versions, verify package, and create a ZXP
-npm run package:zxp
-```
-
-## Communication
-
-JS ↔ AE: Use `AEInterface.evalScript()` from `client/js/ae/AEInterface.js`.
+For detailed release history and changes, see [CHANGELOG.md](CHANGELOG.md).  
+OpenGeo is licensed and maintained by **wittybrandcode**.
