@@ -256,7 +256,7 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
       });
     }
 
-    // Auto-upgrade: Ensure inner mapComp layers (MapPivot and tiles) are 3D
+    // Auto-upgrade: Ensure inner mapComp layers (MapPivot and tiles) and outer vector/pin features are 3D
     try {
       if (controller.source && controller.source.layers) {
         var innerComp = controller.source;
@@ -268,6 +268,16 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
             }
           } catch (innerLayerErr) {}
         }
+      }
+      for (var cIdx = 1; cIdx <= comp.numLayers; cIdx++) {
+        try {
+          var cLayer = comp.layer(cIdx);
+          if (cLayer && cLayer.comment && (cLayer.comment.indexOf('opengeo:feature:') === 0 || cLayer.comment.indexOf('opengeo:pin:') === 0)) {
+            if (!cLayer.threeDLayer) {
+              cLayer.threeDLayer = true;
+            }
+          }
+        } catch (cLayerErr) {}
       }
     } catch (upgradeErr) {}
 

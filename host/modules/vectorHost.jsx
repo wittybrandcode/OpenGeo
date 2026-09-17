@@ -10,6 +10,7 @@ function opengeoVectorEscapeExpressionString(value) {
 }
 
 function opengeoVectorBindToMap(layer, mapLayerName) {
+  layer.threeDLayer = true;
   var safeMapLayerName = opengeoVectorEscapeExpressionString(mapLayerName);
   var resolveMapPreamble =
     'var map = null;\n' +
@@ -26,7 +27,7 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
 
   layer.property("Position").expression =
     resolveMapPreamble +
-    'map ? map.transform.position : value;';
+    'if (map) { var p = map.transform.position; [p[0], p[1], p[2] - 1]; } else { value; }';
 
   layer.property("Anchor Point").expression =
     resolveMapPreamble +
@@ -38,7 +39,7 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
     '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
     '    var camX = ((lon + 180) / 360) * 262144;\n' +
     '    var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-    '    [camX / 32, camY / 32];\n' +
+    '    [camX / 32, camY / 32, 0];\n' +
     '  } catch(anchorErr) { value; }\n' +
     '}';
 
@@ -102,6 +103,7 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
   if (!controller) return null;
   controller.name = 'OG - ' + String(payload.displayName || payload.layerName || featureId) + ' - CTRL';
   controller.comment = prefix + 'controller';
+  controller.threeDLayer = true;
   try {
     controller.property('Anchor Point').setValue([0, 0]);
   } catch (anchorErr) {}
@@ -137,7 +139,7 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
       '    var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
       '    var pt = [' + ptX + ', ' + ptY + '];\n' +
       '    var mapPos = map.transform.position;\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s];\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
       '  } catch(posErr) { value; }\n' +
       '}';
   }
@@ -218,6 +220,7 @@ function opengeoVectorCreateShapeLayer(outerComp, mapLayerName, payload, definit
     opengeoVectorAddSlider(fx, "Trim End", 100);
     opengeoVectorAddSlider(fx, "Trim Offset", 0);
     opengeoVectorAddCheckbox(fx, "Show Label", true);
+    opengeoVectorAddCheckbox(fx, "Auto-Orient Label to Camera", true);
     opengeoVectorAddSlider(fx, "Label Size", 100);
     opengeoVectorAddSlider(fx, "Label Offset X", 0);
     opengeoVectorAddSlider(fx, "Label Offset Y", 0);
@@ -274,6 +277,7 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
   if (!textLayer) return null;
   textLayer.name = (payload.layerName || 'Vector Map') + ' - LABEL - ' + String(label.name);
   textLayer.comment = comment;
+  textLayer.threeDLayer = true;
   try {
     var sourceText = textLayer.property("ADBE Text Properties").property("ADBE Text Document");
     var document = sourceText.value;
@@ -296,6 +300,19 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
         '  var ox = shp.effect("Label Offset X")("Slider");\n' +
         '  var oy = shp.effect("Label Offset Y")("Slider");\n' +
         '  [ox, oy];\n' +
+        '} catch (e) { value; }';
+
+      textLayer.property("Orientation").expression =
+        'try {\n' +
+        '  var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        '  var autoOrient = (!shp.effect("Auto-Orient Label to Camera")) ? 1 : (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0);\n' +
+        '  if (autoOrient == 1) {\n' +
+        '    var cam = null;\n' +
+        '    try { cam = thisComp.activeCamera; } catch(ce) {}\n' +
+        '    if (cam && cam.hasVideo) {\n' +
+        '      lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
+        '    } else { value; }\n' +
+        '  } else { value; }\n' +
         '} catch (e) { value; }';
 
       textLayer.property("Scale").expression =
@@ -360,10 +377,25 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
       '    var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
       '    var pt = [' + x + ', ' + y + '];\n' +
       '    var mapPos = map.transform.position;\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s];\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
       '  } catch(posErr) { value; }\n' +
       '}';
     textLayer.property("Scale").setValue([100, 100]);
+    if (visibilityLayerName) {
+      var safeShapeName2 = opengeoVectorEscapeExpressionString(visibilityLayerName);
+      textLayer.property("Orientation").expression =
+        'try {\n' +
+        '  var shp = thisComp.layer("' + safeShapeName2 + '");\n' +
+        '  var autoOrient = (!shp.effect("Auto-Orient Label to Camera")) ? 1 : (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0);\n' +
+        '  if (autoOrient == 1) {\n' +
+        '    var cam = null;\n' +
+        '    try { cam = thisComp.activeCamera; } catch(ce) {}\n' +
+        '    if (cam && cam.hasVideo) {\n' +
+        '      lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
+        '    } else { value; }\n' +
+        '  } else { value; }\n' +
+        '} catch (e) { value; }';
+    }
   }
   if (visibilityLayerName) {
     var safeVisibilityLayerName = opengeoVectorEscapeExpressionString(visibilityLayerName);
@@ -581,7 +613,7 @@ function opengeoVectorOrderShapeControls(layer) {
     'Show Fill', 'Fill Color', 'Fill Opacity',
     'Show Stroke', 'Stroke Color', 'Stroke Width', 'Stroke Opacity',
     'Trim Start', 'Trim End', 'Trim Offset',
-    'Show Label', 'Label Size', 'Label Offset X', 'Label Offset Y',
+    'Show Label', 'Auto-Orient Label to Camera', 'Label Size', 'Label Offset X', 'Label Offset Y',
     'Scale with Zoom', 'Reference Zoom', 'Min Zoom Scale', 'Max Zoom Scale'
   ];
   var effects = layer.property('ADBE Effect Parade');
@@ -651,6 +683,9 @@ function opengeoNormalizeVectorFeatureControls(compId) {
     for (var groupIndex = 0; groupIndex < pending.length; groupIndex++) {
       var group = pending[groupIndex];
       var controller = group.controller;
+      if (controller) {
+        try { controller.threeDLayer = true; } catch (ctrl3dErr) {}
+      }
       var firstShape = group.shapes[0];
       var visible = Number(opengeoVectorReadEffectValue(controller, 'Visible', opengeoVectorReadEffectValue(firstShape, 'Visible', 1))) === 0 ? 0 : 1;
       var anchorLatitude = Number(opengeoVectorReadEffectValue(controller, 'Anchor Latitude', opengeoVectorReadEffectValue(firstShape, 'Anchor Latitude', 0))) || 0;
@@ -662,6 +697,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
 
       for (var shapeIndex = 0; shapeIndex < group.shapes.length; shapeIndex++) {
         var shape = group.shapes[shapeIndex];
+        try { shape.threeDLayer = true; } catch (s3dErr) {}
         opengeoVectorEnsureShapeControl(shape, 'Visible', 'checkbox', visible);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Latitude', 'slider', anchorLatitude);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Longitude', 'slider', anchorLongitude);
@@ -670,6 +706,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
         opengeoVectorEnsureShapeControl(shape, 'Fill Color', 'color', fillColor);
         opengeoVectorEnsureShapeControl(shape, 'Fill Opacity', 'slider', fillOpacity);
         opengeoVectorEnsureShapeControl(shape, 'Show Label', 'checkbox', 1);
+        opengeoVectorEnsureShapeControl(shape, 'Auto-Orient Label to Camera', 'checkbox', 1);
         opengeoVectorEnsureShapeControl(shape, 'Label Size', 'slider', 100);
         opengeoVectorEnsureShapeControl(shape, 'Label Offset X', 'slider', 0);
         opengeoVectorEnsureShapeControl(shape, 'Label Offset Y', 'slider', 0);
@@ -685,6 +722,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
       var safeShapeName = opengeoVectorEscapeExpressionString(firstShape.name);
       for (var labelIndex = 0; labelIndex < group.labels.length; labelIndex++) {
         try {
+          group.labels[labelIndex].threeDLayer = true;
           group.labels[labelIndex].property('Opacity').expression = 'thisComp.layer("' + safeShapeName + '").effect("Visible")("Checkbox") == 1 ? 100 : 0';
           group.labels[labelIndex].enabled = true;
         } catch (labelError) {}

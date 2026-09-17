@@ -64,7 +64,7 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
 
         var orientCtrl = effects.addProperty('ADBE Checkbox Control');
         orientCtrl.name = 'Auto-Orient to Camera';
-        orientCtrl.property(1).setValue(options.autoOrient ? 1 : 0);
+        orientCtrl.property(1).setValue(options.autoOrient !== false ? 1 : 0);
 
         var altCtrl = effects.addProperty('ADBE Slider Control');
         altCtrl.name = 'Altitude (Z)';
@@ -109,7 +109,7 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
         '  var ctrlPos = ctrl.transform.position;\n' +
         '  var alt = 0;\n' +
         '  try { alt = effect("Altitude (Z)")(1).value; } catch(e) {}\n' +
-        '  [ctrlPos[0] + (worldX - camX) * s, ctrlPos[1] + (worldY - camY) * s, -alt];\n' +
+        '  [ctrlPos[0] + (worldX - camX) * s, ctrlPos[1] + (worldY - camY) * s, -(alt !== 0 ? alt : 2)];\n' +
         '}';
 
       // Scale expression supporting Constant Screen Size vs World Scale with map zoom
@@ -133,7 +133,12 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
         '      var camPos = cam.toWorld([0,0,0]);\n' +
         '      var myPos = toWorld(anchorPoint);\n' +
         '      var dist = length(myPos, camPos);\n' +
-        '      var refDist = cam.cameraOption.zoom;\n' +
+        '      var refDist = 1874;\n' +
+        '      try { refDist = cam.cameraOption.zoom; } catch(z1) {\n' +
+        '        try { refDist = cam.zoom; } catch(z2) {\n' +
+        '          try { refDist = cam.cameraOption("Zoom").value; } catch(z3) {}\n' +
+        '        }\n' +
+        '      }\n' +
         '      var mult = dist / Math.max(1, refDist);\n' +
         '      var sc = baseScale * mult;\n' +
         '      [sc, sc, sc];\n' +

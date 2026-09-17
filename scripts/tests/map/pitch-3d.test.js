@@ -175,6 +175,18 @@ assert(metadataSyncCode.includes('innerLayer.threeDLayer = true;'), 'metadataSyn
 const bridgeDispatcherCode = fs.readFileSync(path.join(projectRoot, 'host/modules/bridgeDispatcher.jsx'), 'utf8');
 assert(bridgeDispatcherCode.includes('args.pitch'), 'bridgeDispatcher forwards args.pitch in camera.update and keyframe.add');
 
+const vectorHostCode = fs.readFileSync(path.join(projectRoot, 'host/modules/vectorHost.jsx'), 'utf8');
+assert(vectorHostCode.includes('layer.threeDLayer = true;'), 'vectorHost enables 3D on shape layers via opengeoVectorBindToMap');
+assert(vectorHostCode.includes('controller.threeDLayer = true;'), 'vectorHost enables 3D on vector controllers');
+assert(vectorHostCode.includes('textLayer.threeDLayer = true;'), 'vectorHost enables 3D on label text layers');
+assert(vectorHostCode.includes('Auto-Orient Label to Camera'), 'vectorHost implements Auto-Orient Label to Camera control and orientation expression');
+
+const spatialPinCode = fs.readFileSync(path.join(projectRoot, 'host/modules/spatialPinHost.jsx'), 'utf8');
+assert(spatialPinCode.includes('options.autoOrient !== false'), 'spatialPinHost defaults Auto-Orient to Camera to enabled');
+assert(spatialPinCode.includes('-(alt !== 0 ? alt : 2)'), 'spatialPinHost offsets pin to Z = -2 to eliminate Z-fighting on 3D ground plane');
+
+assert(metadataSyncCode.includes('opengeo:feature:'), 'metadataSync auto-upgrades existing vector features in open comps to 3D');
+
 console.log('====================================');
 console.log(`3D Pitch Tests: Passed: ${passed} | Failed: ${failed}`);
 console.log('====================================');
