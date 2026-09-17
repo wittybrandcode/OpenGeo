@@ -237,6 +237,7 @@ function opengeoPrepareCompositionRevision(jsonData) {
       result.failed.push({ key: '', code: 'MAP_PIVOT_MISSING' });
       return JSON.stringify(result);
     }
+    mapPivot.threeDLayer = true;
 
     for (var tileIndex = 0; tileIndex < tiles.length; tileIndex++) {
       var tile = tiles[tileIndex];
@@ -254,12 +255,13 @@ function opengeoPrepareCompositionRevision(jsonData) {
         tileLayer.name = 'staging_' + operationId + '_' + tile.z + '_' + tile.x + '_' + tile.y;
         tileLayer.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'placement=' + tileKey);
         tileLayer.enabled = false;
+        tileLayer.threeDLayer = true;
         var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
         var tileActualSize = footageItem.width || 256;
-        tileLayer.property('Anchor Point').setValue([0, 0]);
+        tileLayer.property('Anchor Point').setValue([0, 0, 0]);
         tileLayer.parent = mapPivot;
-        tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize]);
-        tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100]);
+        tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize, 0]);
+        tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100, 100]);
         try {
           tileLayer.quality = LayerQuality.BEST;
           tileLayer.blendingMode = BlendingMode.ALPHA_ADD;

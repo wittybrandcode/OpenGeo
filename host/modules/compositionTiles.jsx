@@ -48,12 +48,13 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     tileLayer.name = tileName;
     tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + placementIdentity);
     if (isPreviewStaging) tileLayer.enabled = false;
+    tileLayer.threeDLayer = true;
     var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
     var tileActualSize = footageItem.width || 256;
-    tileLayer.property('Anchor Point').setValue([0, 0]);
+    tileLayer.property('Anchor Point').setValue([0, 0, 0]);
     tileLayer.parent = mapPivot;
-    tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize]);
-    tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100]);
+    tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize, 0]);
+    tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100, 100]);
     try {
       tileLayer.quality = LayerQuality.BEST;
       tileLayer.blendingMode = BlendingMode.ALPHA_ADD;

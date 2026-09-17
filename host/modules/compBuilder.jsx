@@ -51,6 +51,7 @@ function opengeoBuildComposition(jsonData) {
       mapPivot = mapComp.layers.addNull();
       mapPivot.name = "MapPivot";
     }
+    mapPivot.threeDLayer = true;
     mapPivot.comment = opengeoOwnershipComment(documentId, 'pivot', data.operationId || data.previewGeneration || 'legacy');
 
     // STEP 2.5: Deep Cleanup & Map Source Changes

@@ -256,6 +256,21 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
       });
     }
 
+    // Auto-upgrade: Ensure inner mapComp layers (MapPivot and tiles) are 3D
+    try {
+      if (controller.source && controller.source.layers) {
+        var innerComp = controller.source;
+        for (var lIdx = 1; lIdx <= innerComp.numLayers; lIdx++) {
+          try {
+            var innerLayer = innerComp.layer(lIdx);
+            if (innerLayer && !innerLayer.threeDLayer) {
+              innerLayer.threeDLayer = true;
+            }
+          } catch (innerLayerErr) {}
+        }
+      }
+    } catch (upgradeErr) {}
+
     var effects = controller.property("ADBE Effect Parade");
     if (!effects || !opengeoIsValidObject(effects)) {
       return JSON.stringify({

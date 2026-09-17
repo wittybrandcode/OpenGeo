@@ -161,6 +161,17 @@ const trajectoryScannerCode = fs.readFileSync(path.join(projectRoot, 'host/modul
 assert(trajectoryScannerCode.includes('"pitch":'), 'trajectoryScanner samples pitch in timeline trajectory');
 assert(trajectoryScannerCode.includes('opengeoAddKeyframe(compId, lat, lon, zoom, pitch)'), 'trajectoryScanner supports pitch in opengeoAddKeyframe');
 
+const compBuilderCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compBuilder.jsx'), 'utf8');
+assert(compBuilderCode.includes('mapPivot.threeDLayer = true;'), 'compBuilder sets mapPivot.threeDLayer = true for 3D coordinate space');
+
+const compositionTilesCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compositionTiles.jsx'), 'utf8');
+assert(compositionTilesCode.includes('tileLayer.threeDLayer = true;'), 'compositionTiles sets tileLayer.threeDLayer = true so collapsed precomps interact with 3D camera');
+
+const compositionTransactionCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compositionTransaction.jsx'), 'utf8');
+assert(compositionTransactionCode.includes('tileLayer.threeDLayer = true;'), 'compositionTransaction sets tileLayer.threeDLayer = true on staged tiles');
+
+assert(metadataSyncCode.includes('innerLayer.threeDLayer = true;'), 'metadataSync auto-upgrades existing inner mapComp layers to 3D on sync');
+
 const bridgeDispatcherCode = fs.readFileSync(path.join(projectRoot, 'host/modules/bridgeDispatcher.jsx'), 'utf8');
 assert(bridgeDispatcherCode.includes('args.pitch'), 'bridgeDispatcher forwards args.pitch in camera.update and keyframe.add');
 

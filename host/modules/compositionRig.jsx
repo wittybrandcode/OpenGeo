@@ -216,10 +216,11 @@ function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcomp
     '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
     '    var worldX = ((lon + 180) / 360) * mapSize;\n' +
     '    var worldY = ((1 - mercN / Math.PI) / 2) * mapSize;\n' +
-    '    [worldX, worldY];\n' +
+    '    [worldX, worldY, 0];\n' +
     '  } catch(anchorErr) { value; }\n' +
     '}';
   mapPivot.property('Anchor Point').expression = anchorExpr;
+  mapPivot.threeDLayer = true;
   try { mapPivot.property('Position').expression = ''; } catch (ignoreExpression) {}
-  mapPivot.property('Position').setValue([compWidth / 2, compHeight / 2]);
+  mapPivot.property('Position').setValue([compWidth / 2, compHeight / 2, 0]);
 }
