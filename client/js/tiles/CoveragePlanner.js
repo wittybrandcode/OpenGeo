@@ -8,7 +8,7 @@ class CoveragePlanner {
     const count = Math.pow(2, tileZoom);
     const center = MercatorProjection.latLngToWorldPoint(viewport.centerLat, viewport.centerLng, tileZoom, viewport.tileSize);
     const pitch = Number(viewport.pitch || (viewport.mapState && viewport.mapState.pitch) || 0);
-    const pitchRad = (Math.max(0, Math.min(75, pitch)) * Math.PI) / 180;
+    const pitchRad = (Math.max(0, Math.min(45, pitch)) * Math.PI) / 180;
     const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
     const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
     const halfWidth = (viewport.width / (2 * tileScale)) * overscanX;
@@ -50,7 +50,7 @@ class CoveragePlanner {
     // clamping it to 1 expands a z-2 viewport by 4x on each axis.
     const sourcePixelsPerCompPixel = Math.pow(2, downloadZoom - camera.zoom);
     const pitch = Number(camera.pitch || options.pitch || 0);
-    const pitchRad = (Math.max(0, Math.min(75, pitch)) * Math.PI) / 180;
+    const pitchRad = (Math.max(0, Math.min(45, pitch)) * Math.PI) / 180;
     const overscanY = pitch > 0 ? 1 / Math.cos(pitchRad) : 1;
     const overscanX = pitch > 0 ? 1 + (overscanY - 1) * 0.5 : 1;
     const halfWidth = (options.width / 2) * sourcePixelsPerCompPixel * overscanX;

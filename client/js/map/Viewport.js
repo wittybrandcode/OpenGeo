@@ -171,7 +171,7 @@ class Viewport {
   }
 
   getCenterCoords() {
-    return { lat: this.centerLat, lng: this.centerLng, zoom: this.zoom };
+    return { lat: this.centerLat, lng: this.centerLng, zoom: this.zoom, pitch: this.pitch };
   }
 
   _commitCamera(camera, origin) {
@@ -182,6 +182,7 @@ class Viewport {
     if (Number.isFinite(camera.lat) && Number.isFinite(camera.lng)) this.mapState.setCenter(camera.lat, camera.lng);
     if (Number.isFinite(camera.compZoom)) this.mapState.compZoom = camera.compZoom;
     else if (Number.isFinite(camera.uiZoom)) this.mapState.setUIZoom(camera.uiZoom);
+    if (Number.isFinite(camera.pitch)) this.mapState.setPitch(camera.pitch);
   }
   
   _emitChanged() {

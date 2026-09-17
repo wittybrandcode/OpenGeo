@@ -61,7 +61,7 @@ assert(mapState.pitch === 30, 'setPitch(30) sets pitch to 30 degrees');
 assert(mapState.getPitch() === 30, 'getPitch() returns 30');
 
 mapState.setPitch(75);
-assert(mapState.pitch === 60, 'setPitch(75) clamps to safe maximum 60 degrees');
+assert(mapState.pitch === 45, 'setPitch(75) clamps to safe maximum 45 degrees');
 
 mapState.setPitch(-15);
 assert(mapState.pitch === 0, 'setPitch(-15) clamps to safe minimum 0 degrees');
@@ -118,7 +118,7 @@ const css = fs.readFileSync(path.join(projectRoot, 'client/css/modules/04-map.cs
 assert(css.includes('.map-pitch-control'), '04-map.css has .map-pitch-control styling rule');
 assert(css.includes('border-radius: 0px;') || css.includes('border-radius: 0;'), '04-map.css enforces strict zero border-radius on pitch controller');
 assert(css.includes('perspective: 1000px'), '04-map.css configures 3D perspective on .map-container');
-assert(css.includes('transform-origin: 50% 100%'), '04-map.css anchors transform-origin at bottom edge for frustum alignment');
+assert(css.includes('transform-origin: center center'), '04-map.css anchors transform-origin at center center to eliminate top clipping');
 assert(css.includes('.map-horizon-vignette'), '04-map.css styles atmospheric horizon vignette overlay');
 
 // ----------------------------------------------------

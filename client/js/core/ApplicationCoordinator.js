@@ -94,7 +94,16 @@ class ApplicationCoordinator {
       app._suppressViewportEffects = true;
       app.syncEngine.isApplyingAeState = true;
       try {
-        app.session.setCamera({ lat: camera.lat, lng: camera.lng, compZoom: camera.zoom }, { origin: 'ae' });
+        const pitch = Math.max(0, Math.min(45, camera.pitch || 0));
+        app.session.setCamera({
+          lat: camera.lat,
+          lng: camera.lng,
+          compZoom: camera.zoom,
+          pitch: pitch
+        }, { origin: 'ae' });
+        if (app.locationHudController) {
+          app.locationHudController.updatePitch(pitch);
+        }
       } finally {
         app.syncEngine.isApplyingAeState = false;
         app._suppressViewportEffects = false;

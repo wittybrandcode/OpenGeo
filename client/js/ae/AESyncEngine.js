@@ -268,7 +268,7 @@ class AESyncEngine {
           globalEventBus.emit(eventName, { newId: state.compId, oldId, camera: state.camera });
         }
         if (state.camera) {
-          const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}`;
+          const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}_${state.camera.pitch || 0}`;
           this._lastAeCamState = camHash;
           if (typeof globalEventBus !== 'undefined') {
             const eventName = typeof OpenGeoEvents !== 'undefined' ? OpenGeoEvents.SYNC_AE_CAMERA : 'sync:aeCamera';

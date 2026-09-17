@@ -48,30 +48,62 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
       if (cameraLayer) {
         cameraCreated = true;
         var ctrlNameEscaped = String(mapLayer.name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        var defaultZoom = 1874;
+        try {
+          if (cameraLayer.property('Camera Options') && cameraLayer.property('Camera Options').property('Zoom')) {
+            defaultZoom = cameraLayer.property('Camera Options').property('Zoom').value;
+          }
+        } catch(zErr) {}
+
         var camPoi = cameraLayer.property('Point of Interest');
         if (camPoi) {
           camPoi.expression =
             'var ctrl = null;\n' +
             'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
+            'if (!ctrl || !ctrl.transform || !ctrl.transform.position) {\n' +
+            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+            '    try {\n' +
+            '      var l = thisComp.layer(i);\n' +
+            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
+            '    } catch(err) {}\n' +
+            '  }\n' +
+            '}\n' +
             'if (ctrl && ctrl.transform && ctrl.transform.position) {\n' +
             '  [ctrl.transform.position[0], ctrl.transform.position[1], 0];\n' +
             '} else {\n' +
             '  [' + (compWidth / 2) + ', ' + (compHeight / 2) + ', 0];\n' +
             '}\n';
         }
+
         var camPos = cameraLayer.property('Position');
         if (camPos) {
           camPos.expression =
             'var ctrl = null;\n' +
             'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
             'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
+            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+            '    try {\n' +
+            '      var l = thisComp.layer(i);\n' +
+            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
+            '    } catch(err) {}\n' +
+            '  }\n' +
+            '}\n' +
+            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
             '  value;\n' +
             '} else {\n' +
             '  var p = 0;\n' +
             '  try { p = ctrl.effect("Pitch")(1).value; } catch(e) {}\n' +
-            '  var rad = Math.max(0, Math.min(85, p)) * Math.PI / 180;\n' +
-            '  var d = cameraOption.zoom;\n' +
-            '  var poi = pointOfInterest;\n' +
+            '  var rad = Math.max(0, Math.min(45, p)) * Math.PI / 180;\n' +
+            '  var d = ' + defaultZoom + ';\n' +
+            '  try { d = cameraOption("Zoom").value; } catch(err) {\n' +
+            '    try { d = cameraOption("Zoom"); } catch(err2) {\n' +
+            '      try { d = cameraOption.zoom.value; } catch(err3) {\n' +
+            '        try { d = cameraOption.zoom; } catch(err4) {}\n' +
+            '      }\n' +
+            '    }\n' +
+            '  }\n' +
+            '  var poi = [' + (compWidth / 2) + ', ' + (compHeight / 2) + ', 0];\n' +
+            '  try { poi = pointOfInterest; } catch(err) {}\n' +
             '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
             '}\n';
         }

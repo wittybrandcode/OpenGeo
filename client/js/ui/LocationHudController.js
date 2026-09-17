@@ -55,7 +55,7 @@ class LocationHudController {
       const onPointerMove = (e) => {
         if (!isScrubbing || !this.app.viewport) return;
         const dy = startY - e.clientY;
-        const newPitch = Math.max(0, Math.min(65, startPitch + dy * 0.5));
+        const newPitch = Math.max(0, Math.min(45, startPitch + dy * 0.5));
         this.app.viewport.setPitch(newPitch);
         this.updatePitch(newPitch);
       };
@@ -151,7 +151,7 @@ class LocationHudController {
 
   /**
    * Updates 3D pitch numeric readout, applies Frustum-compensated edge-to-edge
-   * perspective tilt to canvas, and controls atmospheric horizon vignette.
+   * perspective tilt centered on the canvas, eliminating top clipping and side cutoffs.
    */
   updatePitch(pitch) {
     if (this.pitchValueEl) {
@@ -159,25 +159,31 @@ class LocationHudController {
       this.pitchValueEl.textContent = `${rounded}°`;
     }
     const canvas = document.getElementById('map-canvas');
-    const p = Math.max(0, Math.min(60, pitch || 0));
+    const p = Math.max(0, Math.min(45, pitch || 0));
     if (canvas) {
       if (p > 0) {
-        // Frustum compensation: calculate overscan scale so that the top corners of
-        // the tilted plane never shrink below the container width, eliminating dark side gaps.
+        // Frustum compensation: calculate overscan scale centered on map canvas
+        // so that the tilted plane expands outward to eliminate side trapezoid cutoffs
+        // and eliminates top clipping completely up to the 45 degree limit.
         const pRad = (p * Math.PI) / 180;
-        const containerHeight = (canvas.parentElement && canvas.parentElement.clientHeight) || 600;
-        const perspectiveDist = 1000;
-        const overscanScale = 1 + (containerHeight / perspectiveDist) * Math.sin(pRad);
-        canvas.style.transformOrigin = '50% 100%';
-        canvas.style.transform = `scale(${overscanScale.toFixed(4)}) rotateX(${p}deg)`;
+        const overscanScale = 1 + 1.25 * Math.sin(pRad);
+        const translateY = -Math.round(25 * Math.sin(pRad));
+        canvas.style.transformOrigin = 'center center';
+        canvas.style.transform = `scale(${overscanScale.toFixed(4)}) rotateX(${p}deg) translateY(${translateY}px)`;
+        const vignette = document.getElementById('map-horizon-vignette');
+        if (vignette) {
+          vignette.style.opacity = '0';
+          vignette.style.display = 'none';
+        }
       } else {
+        canvas.style.transformOrigin = 'center center';
         canvas.style.transform = '';
+        const vignette = document.getElementById('map-horizon-vignette');
+        if (vignette) {
+          vignette.style.opacity = '0';
+          vignette.style.display = 'none';
+        }
       }
-    }
-    const vignette = document.getElementById('map-horizon-vignette');
-    if (vignette) {
-      // Atmospheric horizon fade smoothly strengthens as pitch increases
-      vignette.style.opacity = p > 0 ? Math.min(1, p / 40).toFixed(3) : '0';
     }
   }
 

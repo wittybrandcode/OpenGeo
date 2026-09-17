@@ -112,7 +112,8 @@ function opengeoAddKeyframe(compId, lat, lon, zoom, pitch) {
     lonProp.setValueAtTime(t, lon);
     zoomProp.setValueAtTime(t, zoom);
     if (pitchProp && pitch !== undefined && pitch !== null && isFinite(parseFloat(pitch))) {
-      pitchProp.setValueAtTime(t, parseFloat(pitch));
+      var clampedPitch = Math.max(0, Math.min(45, parseFloat(pitch)));
+      pitchProp.setValueAtTime(t, clampedPitch);
     }
     
     return 'success';

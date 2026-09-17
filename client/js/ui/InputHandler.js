@@ -69,7 +69,7 @@ class InputHandler {
 
     if (this.isTilt) {
       const currentPitch = this.viewport.pitch || 0;
-      const newPitch = Math.max(0, Math.min(65, currentPitch - dy * 0.4));
+      const newPitch = Math.max(0, Math.min(45, currentPitch - dy * 0.4));
       this.viewport.setPitch(newPitch);
       this.lastPointer = { x: e.clientX, y: e.clientY, t: now };
       return;

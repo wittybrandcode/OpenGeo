@@ -110,7 +110,7 @@ class MapState {
 
   setPitch(val) {
     const num = Number(val);
-    const clamped = Math.max(0, Math.min(60, Number.isFinite(num) ? num : 0));
+    const clamped = Math.max(0, Math.min(45, Number.isFinite(num) ? num : 0));
     this.pitch = Math.round(clamped * 10) / 10;
     return this.pitch;
   }

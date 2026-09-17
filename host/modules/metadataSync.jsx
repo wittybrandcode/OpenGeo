@@ -200,6 +200,29 @@ function opengeoGetActiveState() {
       var zoom = zoomProp.property(1).value;
       var pitchProp = effects.property('Pitch');
       var pitch = (pitchProp && pitchProp.property(1)) ? pitchProp.property(1).value : 0;
+
+      // Two-way AE Camera Sync: derive pitch from cameraLayer if camera has moved
+      var cameraLayer = findLayerByComment(comp, 'opengeo:camera') || findLayerByName(comp, 'OpenGeo Camera');
+      if (cameraLayer && opengeoIsValidObject(cameraLayer)) {
+        try {
+          var cPos = cameraLayer.property('Position');
+          var cPoi = cameraLayer.property('Point of Interest');
+          if (cPos && cPoi) {
+            var pPos = cPos.value;
+            var pPoi = cPoi.value;
+            var dy = pPos[1] - pPoi[1];
+            var dz = -(pPos[2] - pPoi[2]);
+            if (dz > 0.001) {
+              var derived = Math.round((Math.atan2(dy, dz) * 180 / Math.PI) * 10) / 10;
+              if (isFinite(derived) && derived >= 0 && (!pitchProp || (pitchProp.property(1) && pitchProp.property(1).numKeys === 0 && Math.abs(derived - pitch) > 0.5))) {
+                pitch = derived;
+              }
+            }
+          }
+        } catch (cErr) {}
+      }
+      pitch = Math.max(0, Math.min(45, pitch));
+
       stateStr += ', "controllerId":' + controller.index;
       stateStr += ', "appliedRevision":' + opengeoGetSyncRevision(effects);
       stateStr += ', "camera":{"lat":' + lat + ', "lng":' + lng + ', "zoom":' + zoom + ', "pitch":' + pitch + '}';
@@ -246,6 +269,14 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
     var lngEffect = effects.property('Longitude');
     var zoomEffect = effects.property('Zoom');
     var pitchEffect = effects.property('Pitch');
+    if (!pitchEffect) {
+      try {
+        pitchEffect = effects.addProperty('ADBE Angle Control');
+        pitchEffect.name = 'Pitch';
+        pitchEffect.property(1).setValue(0);
+      } catch (addPitchErr) {}
+    }
+
     if (!latEffect || !lngEffect || !zoomEffect) {
       return JSON.stringify({
         applied: false,
@@ -279,9 +310,44 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
       opengeoSetCameraControlValue(longitudeProperty, comp.time, lng, recordKeyframe === true);
       opengeoSetCameraControlValue(zoomProperty, comp.time, zoom, recordKeyframe === true);
       if (pitchProperty && pitch !== undefined && pitch !== null && isFinite(parseFloat(pitch))) {
-        opengeoSetCameraControlValue(pitchProperty, comp.time, parseFloat(pitch), recordKeyframe === true);
+        var clampedPitch = Math.max(0, Math.min(45, parseFloat(pitch)));
+        opengeoSetCameraControlValue(pitchProperty, comp.time, clampedPitch, recordKeyframe === true);
       }
     }
+
+    // Ensure and synchronize real After Effects 3D Camera
+    try {
+      var cameraLayer = findLayerByComment(comp, 'opengeo:camera') || findLayerByName(comp, 'OpenGeo Camera');
+      if (!cameraLayer && comp.layers && typeof comp.layers.addCamera === 'function') {
+        try {
+          cameraLayer = comp.layers.addCamera('OpenGeo Camera', [comp.width / 2, comp.height / 2]);
+          cameraLayer.comment = 'opengeo:camera';
+          cameraLayer.moveToBeginning();
+        } catch (addCamErr) {}
+      }
+
+      if (cameraLayer && opengeoIsValidObject(cameraLayer)) {
+        var camPos = cameraLayer.property('Position');
+        var camPoi = cameraLayer.property('Point of Interest');
+        var dZoom = 1874;
+        try {
+          if (cameraLayer.property('Camera Options') && cameraLayer.property('Camera Options').property('Zoom')) {
+            dZoom = cameraLayer.property('Camera Options').property('Zoom').value;
+          }
+        } catch (zErr) {}
+
+        var pVal = pitchProperty ? pitchProperty.valueAtTime(comp.time, false) : (pitch || 0);
+        var pRad = Math.max(0, Math.min(45, pVal)) * Math.PI / 180;
+        var curPoi = [comp.width / 2, comp.height / 2, 0];
+        if (camPoi) {
+          try { curPoi = camPoi.value; } catch (poiErr) {}
+        }
+        if (camPos && camPos.numKeys === 0) {
+          camPos.setValue([curPoi[0], curPoi[1] + dZoom * Math.sin(pRad), -dZoom * Math.cos(pRad)]);
+        }
+      }
+    } catch (camSyncErr) {}
+
     var appliedRevision = canApplyCamera
       ? opengeoSetSyncRevision(effects, revision)
       : opengeoGetSyncRevision(effects);
