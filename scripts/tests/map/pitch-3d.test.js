@@ -112,12 +112,14 @@ const html = fs.readFileSync(path.join(projectRoot, 'client/index.html'), 'utf8'
 assert(html.includes('id="map-pitch-control"'), 'index.html contains #map-pitch-control element');
 assert(html.includes('id="pitch-value-display"'), 'index.html contains #pitch-value-display element');
 assert(html.includes('pitch-label'), 'index.html contains pitch-label badge');
+assert(html.includes('id="map-horizon-vignette"'), 'index.html contains #map-horizon-vignette atmospheric element');
 
 const css = fs.readFileSync(path.join(projectRoot, 'client/css/modules/04-map.css'), 'utf8');
 assert(css.includes('.map-pitch-control'), '04-map.css has .map-pitch-control styling rule');
 assert(css.includes('border-radius: 0px;') || css.includes('border-radius: 0;'), '04-map.css enforces strict zero border-radius on pitch controller');
 assert(css.includes('perspective: 1000px'), '04-map.css configures 3D perspective on .map-container');
-assert(css.includes('transform-origin: center center'), '04-map.css configures center transform origin for natural tilt');
+assert(css.includes('transform-origin: 50% 100%'), '04-map.css anchors transform-origin at bottom edge for frustum alignment');
+assert(css.includes('.map-horizon-vignette'), '04-map.css styles atmospheric horizon vignette overlay');
 
 // ----------------------------------------------------
 // 4. Client Controller & Interaction Code Checks
@@ -127,6 +129,8 @@ const hudControllerCode = fs.readFileSync(path.join(projectRoot, 'client/js/ui/L
 assert(hudControllerCode.includes('map-pitch-control'), 'LocationHudController binds #map-pitch-control');
 assert(hudControllerCode.includes('updatePitch'), 'LocationHudController includes updatePitch method');
 assert(hudControllerCode.includes('rotateX'), 'LocationHudController applies rotateX transform on map-canvas');
+assert(hudControllerCode.includes('overscanScale'), 'LocationHudController computes overscanScale to eliminate side trapezoid cutoffs');
+assert(hudControllerCode.includes('map-horizon-vignette'), 'LocationHudController updates atmospheric horizon vignette opacity');
 assert(hudControllerCode.includes('pointerdown'), 'LocationHudController registers pointerdown for pitch scrubbing');
 
 const inputHandlerCode = fs.readFileSync(path.join(projectRoot, 'client/js/ui/InputHandler.js'), 'utf8');
@@ -141,9 +145,12 @@ assert(syncEngineCode.includes('pitch'), 'AESyncEngine includes pitch in camera 
 // ----------------------------------------------------
 console.log('\n--- 5. Host ExtendScript Rig & Bridge Protocol Tests ---');
 const compositionRigCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compositionRig.jsx'), 'utf8');
-assert(compositionRigCode.includes('mapLayer.threeDLayer = true;'), 'compositionRig sets map layer threeDLayer to true for 3D tilt');
+assert(compositionRigCode.includes('addCamera'), 'compositionRig ensures real After Effects 3D Camera layer');
+assert(compositionRigCode.includes('opengeo:camera'), 'compositionRig tags Camera layer with opengeo:camera comment');
+assert(compositionRigCode.includes('Point of Interest'), 'compositionRig locks camera Point of Interest to controller center');
+assert(compositionRigCode.includes('cameraOption.zoom'), 'compositionRig wires orbital position expression to camera zoom and Pitch effect');
+assert(compositionRigCode.includes('mapLayer.threeDLayer = true;'), 'compositionRig sets map layer threeDLayer to true for 3D space interaction');
 assert(compositionRigCode.includes("pitchCtrl.name = 'Pitch'") || compositionRigCode.includes('pitchCtrl.name = "Pitch"'), 'compositionRig creates ADBE Angle Control named "Pitch"');
-assert(compositionRigCode.includes('X Rotation'), 'compositionRig binds X Rotation to Pitch effect via expression');
 assert(compositionRigCode.includes('pitchProperty'), 'compositionRig synchronizes pitch property safely without overwriting keyframes');
 
 const metadataSyncCode = fs.readFileSync(path.join(projectRoot, 'host/modules/metadataSync.jsx'), 'utf8');

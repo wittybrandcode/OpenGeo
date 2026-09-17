@@ -150,7 +150,8 @@ class LocationHudController {
   }
 
   /**
-   * Updates 3D pitch numeric readout and applies GPU-accelerated perspective tilt to canvas.
+   * Updates 3D pitch numeric readout, applies Frustum-compensated edge-to-edge
+   * perspective tilt to canvas, and controls atmospheric horizon vignette.
    */
   updatePitch(pitch) {
     if (this.pitchValueEl) {
@@ -158,9 +159,25 @@ class LocationHudController {
       this.pitchValueEl.textContent = `${rounded}°`;
     }
     const canvas = document.getElementById('map-canvas');
+    const p = Math.max(0, Math.min(60, pitch || 0));
     if (canvas) {
-      const p = pitch || 0;
-      canvas.style.transform = p > 0 ? `rotateX(${p}deg)` : '';
+      if (p > 0) {
+        // Frustum compensation: calculate overscan scale so that the top corners of
+        // the tilted plane never shrink below the container width, eliminating dark side gaps.
+        const pRad = (p * Math.PI) / 180;
+        const containerHeight = (canvas.parentElement && canvas.parentElement.clientHeight) || 600;
+        const perspectiveDist = 1000;
+        const overscanScale = 1 + (containerHeight / perspectiveDist) * Math.sin(pRad);
+        canvas.style.transformOrigin = '50% 100%';
+        canvas.style.transform = `scale(${overscanScale.toFixed(4)}) rotateX(${p}deg)`;
+      } else {
+        canvas.style.transform = '';
+      }
+    }
+    const vignette = document.getElementById('map-horizon-vignette');
+    if (vignette) {
+      // Atmospheric horizon fade smoothly strengthens as pitch increases
+      vignette.style.opacity = p > 0 ? Math.min(1, p / 40).toFixed(3) : '0';
     }
   }
 

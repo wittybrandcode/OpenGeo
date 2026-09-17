@@ -35,13 +35,62 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
     pitchCtrl.property(1).setValue(camera.pitch || 0);
   }
 
+  // Ensure real 3D Camera layer in the containing composition
+  var cameraCreated = false;
+  if (containingComp.layers && typeof containingComp.layers.addCamera === 'function') {
+    try {
+      var cameraLayer = findLayerByComment(containingComp, 'opengeo:camera') || findLayerByName(containingComp, 'OpenGeo Camera');
+      if (!cameraLayer) {
+        cameraLayer = containingComp.layers.addCamera('OpenGeo Camera', [compWidth / 2, compHeight / 2]);
+        cameraLayer.comment = 'opengeo:camera';
+        cameraLayer.moveToBeginning();
+      }
+      if (cameraLayer) {
+        cameraCreated = true;
+        var ctrlNameEscaped = String(mapLayer.name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        var camPoi = cameraLayer.property('Point of Interest');
+        if (camPoi) {
+          camPoi.expression =
+            'var ctrl = null;\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
+            'if (ctrl && ctrl.transform && ctrl.transform.position) {\n' +
+            '  [ctrl.transform.position[0], ctrl.transform.position[1], 0];\n' +
+            '} else {\n' +
+            '  [' + (compWidth / 2) + ', ' + (compHeight / 2) + ', 0];\n' +
+            '}\n';
+        }
+        var camPos = cameraLayer.property('Position');
+        if (camPos) {
+          camPos.expression =
+            'var ctrl = null;\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
+            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
+            '  value;\n' +
+            '} else {\n' +
+            '  var p = 0;\n' +
+            '  try { p = ctrl.effect("Pitch")(1).value; } catch(e) {}\n' +
+            '  var rad = Math.max(0, Math.min(85, p)) * Math.PI / 180;\n' +
+            '  var d = cameraOption.zoom;\n' +
+            '  var poi = pointOfInterest;\n' +
+            '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
+            '}\n';
+        }
+      }
+    } catch(camErr) {}
+  }
+
   try {
     var xRot = mapLayer.property('X Rotation') || mapLayer.property('ADBE Rotate X');
     if (xRot) {
-      xRot.expression =
-        'var p = 0;\n' +
-        'try { p = effect("Pitch")(1).value; } catch(e) {}\n' +
-        'p;\n';
+      if (cameraCreated) {
+        xRot.expression = '';
+        xRot.setValue(0);
+      } else {
+        xRot.expression =
+          'var p = 0;\n' +
+          'try { p = effect("Pitch")(1).value; } catch(e) {}\n' +
+          'p;\n';
+      }
     }
   } catch(ignoreXRot) {}
   // A composition rebuild may be the first operation after a restored panel
