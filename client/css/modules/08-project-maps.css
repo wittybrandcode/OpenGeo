@@ -150,11 +150,12 @@
   color: var(--accent-hover);
 }
 
-.project-map-capture { position: absolute; top: 7px; right: 7px; z-index: 3; width: 29px; height: 29px; display: inline-flex; align-items: center; justify-content: center; color: #e3e7e9; background: rgba(22, 25, 27, 0.82); border: 1px solid rgba(255,255,255,0.24); border-radius: 0px; box-shadow: 0 2px 8px rgba(0,0,0,0.42); cursor: pointer; }
-.project-map-capture:hover { color: #ffffff; border-color: var(--accent-default); background: var(--bg-hover); }
-.project-map-capture:disabled { opacity: 0.64; cursor: wait; }
-.project-map-capture.busy svg { animation: opengeo-thumbnail-pulse 0.8s ease-in-out infinite alternate; }
-.project-map-capture svg { width: 15px; height: 15px; }
+.project-map-card-actions { position: absolute; top: 7px; right: 7px; z-index: 3; display: flex; align-items: center; gap: 5px; }
+.project-map-capture, .project-map-duplicate { width: 29px; height: 29px; display: inline-flex; align-items: center; justify-content: center; color: #e3e7e9; background: rgba(22, 25, 27, 0.82); border: 1px solid rgba(255,255,255,0.24); border-radius: 0px; box-shadow: 0 2px 8px rgba(0,0,0,0.42); cursor: pointer; transition: all 0.15s ease; }
+.project-map-capture:hover, .project-map-duplicate:hover { color: #ffffff; border-color: var(--accent-default); background: var(--bg-hover); }
+.project-map-capture:disabled, .project-map-duplicate:disabled { opacity: 0.64; cursor: wait; }
+.project-map-capture.busy svg, .project-map-duplicate.busy svg { animation: opengeo-thumbnail-pulse 0.8s ease-in-out infinite alternate; }
+.project-map-capture svg, .project-map-duplicate svg { width: 15px; height: 15px; }
 @keyframes opengeo-thumbnail-pulse { from { opacity: 0.35; transform: scale(0.9); } to { opacity: 1; transform: scale(1.05); } }
 .project-map-capture-status { margin-top: 5px; overflow: hidden; color: var(--accent-hover); font-size: 8px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
 .project-map-capture-status.warning { color: var(--status-warning); }

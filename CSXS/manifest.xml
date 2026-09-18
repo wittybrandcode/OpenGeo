@@ -2,10 +2,10 @@
 <ExtensionManifest
   ExtensionBundleId="com.opengeo.map"
   ExtensionBundleName="OpenGeo"
-  ExtensionBundleVersion="1.0.1"
+  ExtensionBundleVersion="1.0.2"
   Version="7.0">
   <ExtensionList>
-    <Extension Id="com.opengeo.map.panel" Version="1.0.1" />
+    <Extension Id="com.opengeo.map.panel" Version="1.0.2" />
   </ExtensionList>
   <ExecutionEnvironment>
     <HostList>

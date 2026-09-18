@@ -58,6 +58,10 @@ function createMockHostEnvironment(options = {}) {
         this.parent = new MockFolder(parentPath);
       }
     }
+    copy(targetPath) {
+      this._lastCopiedTo = targetPath;
+      return true;
+    }
   }
 
   class MockProperty {
@@ -70,6 +74,8 @@ function createMockHostEnvironment(options = {}) {
     constructor(comment, name = 'OpenGeo Controller') {
       this.comment = comment || '';
       this.name = name;
+      this.source = null;
+      this.sourceReplaced = false;
       this.properties = {
         'ADBE Effect Parade': {
           property: (propName) => {
@@ -78,14 +84,23 @@ function createMockHostEnvironment(options = {}) {
             if (propName === 'Zoom') return new MockProperty(12);
             return new MockProperty(0);
           }
-        }
+        },
+        'Anchor Point': new MockProperty([960, 540]),
+        'Scale': new MockProperty([100, 100, 100]),
+        'Position': new MockProperty([960, 540, 0])
       };
     }
     property(name) {
       return this.properties[name] || new MockProperty(0);
     }
+    replaceSource(newSource) {
+      this.source = newSource;
+      this.sourceReplaced = true;
+      return true;
+    }
   }
 
+  let nextCompId = 200;
   class MockCompItem {
     constructor(id, name, width, height, comment, isMap = true) {
       this.id = id;
@@ -104,22 +119,56 @@ function createMockHostEnvironment(options = {}) {
       return this._layers[i - 1] || null;
     }
     openInViewer() { return true; }
+    duplicate() {
+      const dupId = ++nextCompId;
+      const dup = new MockCompItem(dupId, this.name, this.width, this.height, this.comment, false);
+      dup._layers = this._layers.map(l => {
+        const ml = new MockLayer(l.comment, l.name);
+        ml.source = l.source;
+        return ml;
+      });
+      dup.numLayers = dup._layers.length;
+      if (sandbox && sandbox.app && sandbox.app.project && sandbox.app.project.items) {
+        const items = sandbox.app.project.items;
+        const nextIndex = (typeof items.length === 'number' ? items.length : 0) + 1;
+        items[nextIndex] = dup;
+        items[dupId] = dup;
+        items.length = nextIndex;
+      }
+      return dup;
+    }
   }
 
-  const itemsMap = options.items || { length: 0 };
+  let currentItems = options.items || { length: 0 };
   const activeComp = options.activeComp || null;
-
   const sandbox = {
     app: {
+      beginUndoGroup: function() {},
+      endUndoGroup: function() {},
       project: {
         file: projectFilePath ? new MockFile(projectFilePath) : null,
-        items: itemsMap,
-        activeItem: activeComp
+        activeItem: activeComp,
+        itemByID: function(id) {
+          const itms = this.items;
+          if (!itms) return null;
+          for (var i = 1; i <= itms.length; i++) {
+            var it = itms[i];
+            if (it && it.id === id) return it;
+          }
+          if (itms[id]) return itms[id];
+          return null;
+        }
       }
     },
     Folder: MockFolder,
     File: MockFile,
     CompItem: MockCompItem,
+    FolderItem: class MockFolderItem {
+      constructor(name) {
+        this.name = name;
+        this.items = { length: 0, addFolder: (n) => new MockFolderItem(n) };
+      }
+    },
     JSON: JSON,
     String: String,
     Number: Number,
@@ -127,10 +176,30 @@ function createMockHostEnvironment(options = {}) {
     Date: Date,
     Error: Error,
     isFinite: isFinite,
+    parseInt: parseInt,
     console: console,
+    withUndoGroup: (name, op) => op(),
+    opengeoOwnershipComment: (documentId, role, revision, extra) => {
+      let text = 'opengeo:v2;document=' + (documentId || 'unknown') + ';role=' + (role || 'unknown');
+      if (revision) text += ';revision=' + revision;
+      if (extra) text += ';' + extra;
+      return text;
+    },
+    opengeoInstallMapPivotExpressions: (mapPivot, containingCompName, mapcompName, compWidth, compHeight) => {
+      if (mapPivot) mapPivot.expressionsInstalled = true;
+    },
+    opengeoFindDocumentMapComp: (documentId) => {
+      if (!sandbox.app.project || !sandbox.app.project.items) return null;
+      for (let i = 1; i <= sandbox.app.project.items.length; i++) {
+        const it = sandbox.app.project.items[i];
+        if (it && it.name && it.name.indexOf(' - Map - ') !== -1) return it;
+      }
+      return null;
+    },
     opengeoReadOwnership: (comment) => {
       const match = /document=([^;]+)/.exec(String(comment || ''));
-      return { document: match ? match[1] : null };
+      const roleMatch = /role=([^;]+)/.exec(String(comment || ''));
+      return { document: match ? match[1] : null, role: roleMatch ? roleMatch[1] : null };
     },
     opengeoSanitizeIdentity: (value) => {
       return String(value || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
@@ -144,6 +213,24 @@ function createMockHostEnvironment(options = {}) {
       return null;
     }
   };
+
+  Object.defineProperty(sandbox.app.project, 'items', {
+    get() {
+      if (!currentItems.addFolder) {
+        currentItems.addFolder = function(name) {
+          const f = new sandbox.FolderItem(name);
+          const idx = (currentItems.length || 0) + 1;
+          currentItems[idx] = f;
+          currentItems.length = idx;
+          return f;
+        };
+      }
+      return currentItems;
+    },
+    set(val) {
+      currentItems = val || { length: 0 };
+    }
+  });
 
   // Load host helpers & projectMapsHost
   const helpersCode = fs.readFileSync(path.join(projectRoot, 'host/modules/helpers.jsx'), 'utf8');
@@ -395,6 +482,99 @@ function createMockHostEnvironment(options = {}) {
   assert(procSource.includes('renderFrameFromTiles'), 'ThumbnailProcessor includes renderFrameFromTiles method');
   assert(procSource.includes('savePngSequence'), 'ThumbnailProcessor includes savePngSequence method');
   assert('hasSequence' in desc, 'Descriptor exposes hasSequence boolean');
+}
+
+// ============================================================================
+// 5. TASK-6.5: Safe Composition Duplication & Identity Isolation (Corrective Fix)
+// ============================================================================
+{
+  const sandbox = createMockHostEnvironment({ isSaved: true, filesExist: true });
+  const CompItem = sandbox.CompItem;
+
+  // 5a. Name Generation: bullet-number incrementing
+  const compBullet = new CompItem(1, 'OpenGeo Map • 3016', 1920, 1080, '', true);
+  sandbox.app.project.items = { 1: compBullet, length: 1 };
+  const nextBullet = sandbox.opengeoGenerateDuplicateName('OpenGeo Map • 3016');
+  assert(nextBullet === 'OpenGeo Map • 3017', 'opengeoGenerateDuplicateName increments numeric bullet suffix (3016 -> 3017)');
+
+  // When both 3016 and 3017 exist
+  const compBullet2 = new CompItem(2, 'OpenGeo Map • 3017', 1920, 1080, '', true);
+  sandbox.app.project.items = { 1: compBullet, 2: compBullet2, length: 2 };
+  const nextBullet2 = sandbox.opengeoGenerateDuplicateName('OpenGeo Map • 3016');
+  assert(nextBullet2 === 'OpenGeo Map • 3018', 'opengeoGenerateDuplicateName scans project and picks next highest number (3018)');
+
+  // 5b. Name Generation: custom descriptive names
+  const compNamed = new CompItem(3, 'Algiers City Center', 1920, 1080, '', true);
+  sandbox.app.project.items = { 1: compNamed, length: 1 };
+  const nextNamed = sandbox.opengeoGenerateDuplicateName('Algiers City Center');
+  assert(nextNamed === 'Algiers City Center (Copy)', 'opengeoGenerateDuplicateName appends (Copy) to custom name');
+
+  const compNamedCopy = new CompItem(4, 'Algiers City Center (Copy)', 1920, 1080, '', true);
+  sandbox.app.project.items = { 1: compNamed, 2: compNamedCopy, length: 2 };
+  const nextNamedCopy2 = sandbox.opengeoGenerateDuplicateName('Algiers City Center');
+  assert(nextNamedCopy2 === 'Algiers City Center (Copy 2)', 'opengeoGenerateDuplicateName handles existing copies with (Copy 2)');
+
+  // 5c. Atomic deep-clone, replaceSource, and documentId isolation
+  const outerComp = new CompItem(10, 'OpenGeo Map • 3016 - testdoc1', 1920, 1080, JSON.stringify({
+    opengeo: { documentId: 'testdoc1', displayName: 'OpenGeo Map • 3016', source: 'esri' }
+  }), true);
+  const innerMapComp = new CompItem(11, 'OpenGeo Map • 3016 - Map - testdoc1', 1920, 1080, 'opengeo:v2;document=testdoc1;role=map-comp', false);
+  const pivotLayer = new outerComp._layers[0].constructor('opengeo:v2;document=testdoc1;role=pivot', 'MapPivot');
+  const tileLayer = new outerComp._layers[0].constructor('opengeo:v2;document=testdoc1;role=final-active', 'tile_0_0_0.png');
+  innerMapComp._layers = [pivotLayer, tileLayer];
+  innerMapComp.numLayers = 2;
+
+  // In outer comp, layer 1 is controller layer that points to innerMapComp
+  outerComp._layers[0].source = innerMapComp;
+
+  sandbox.app.project.items = { 1: outerComp, 2: innerMapComp, length: 2 };
+
+  const dupResultJson = sandbox.opengeoDuplicateProjectMap(10, 'testdoc1');
+  assert(!dupResultJson.startsWith('error:'), 'opengeoDuplicateProjectMap executes without host error');
+  const dupResult = JSON.parse(dupResultJson);
+
+  assert(dupResult.documentId && dupResult.documentId !== 'testdoc1', 'Duplicate produces distinct, non-colliding new documentId');
+  assert(dupResult.displayName === 'OpenGeo Map • 3017', 'Duplicate assigns auto-incremented display name (3017)');
+  assert(dupResult.compId !== 10, 'Duplicate compId is distinct from source comp');
+
+  // Verify outer and inner comps in project items
+  const newOuterComp = sandbox.app.project.items[dupResult.compId];
+  assert(newOuterComp && newOuterComp.name.indexOf('• 3017') !== -1, 'New outer comp created with incremented name');
+  const newNestedLayer = newOuterComp._layers[0];
+  assert(newNestedLayer.sourceReplaced === true, 'Nested map pre-comp layer has source replaced via replaceSource');
+  assert(newNestedLayer.source && newNestedLayer.source.id !== innerMapComp.id, 'Nested map pre-comp source points to newly cloned inner mapComp');
+  assert(newNestedLayer.comment.indexOf(dupResult.documentId) !== -1, 'Controller comment updated to new documentId');
+
+  // Verify inner mapComp isolation
+  const newInnerComp = newNestedLayer.source;
+  assert(newInnerComp.comment.indexOf(dupResult.documentId) !== -1, 'Inner map pre-comp comment updated to new documentId');
+  assert(newInnerComp._layers[0].comment.indexOf(dupResult.documentId) !== -1, 'MapPivot comment updated to new documentId');
+  assert(newInnerComp._layers[1].comment.indexOf(dupResult.documentId) !== -1, 'Tile layer comment updated to new documentId');
+
+  // 5d. Error handling: rejects invalid or missing compositions
+  const missingResult = sandbox.opengeoDuplicateProjectMap(999, 'nonexistent');
+  assert(missingResult.indexOf('[MAP_NOT_FOUND]') !== -1, 'Safely rejects non-existent composition');
+
+  const emptyComp = new CompItem(30, 'Empty Comp', 1920, 1080, '', false);
+  sandbox.app.project.items[30] = emptyComp;
+  const noCtrlResult = sandbox.opengeoDuplicateProjectMap(30, 'empty');
+  assert(noCtrlResult.indexOf('[MAP_CONTROLLER_MISSING]') !== -1, 'Safely rejects comp lacking OpenGeo controller');
+
+  // 5e. Dispatcher registration
+  const dispatcherSource = fs.readFileSync(path.join(projectRoot, 'host/modules/bridgeDispatcher.jsx'), 'utf8');
+  assert(dispatcherSource.includes("'project.duplicateMap'"), 'bridgeDispatcher registers project.duplicateMap route');
+
+  // 5f. Client UI: ProjectMapsPanel
+  const panelSource = fs.readFileSync(path.join(projectRoot, 'client/js/ui/ProjectMapsPanel.js'), 'utf8');
+  assert(panelSource.includes('project-map-duplicate'), 'ProjectMapsPanel creates .project-map-duplicate button');
+  assert(panelSource.includes('project-map-card-actions'), 'ProjectMapsPanel creates .project-map-card-actions container');
+  assert(panelSource.includes('_duplicateMap'), 'ProjectMapsPanel implements _duplicateMap action method');
+  assert(panelSource.includes("invoke('project.duplicateMap'"), 'ProjectMapsPanel invokes project.duplicateMap via bridge');
+
+  // 5g. CSS: 08-project-maps.css
+  const css = readAggregatedCss(path.join(projectRoot, 'client/css/style.css'));
+  assert(css.includes('.project-map-card-actions'), 'CSS includes .project-map-card-actions container');
+  assert(css.includes('.project-map-duplicate'), 'CSS includes .project-map-duplicate button styles');
 }
 
 console.log('====================================');

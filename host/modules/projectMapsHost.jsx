@@ -217,9 +217,302 @@ function opengeoPrepareProjectMapThumbnail(compId, documentId) {
   }
 }
 
+function opengeoGenerateDuplicateName(baseDisplayName) {
+  var name = String(baseDisplayName || 'OpenGeo Map').replace(/^\s+|\s+$/g, '');
+  if (!app.project || !app.project.items) return name + ' (Copy)';
+
+  // Check if baseName follows bullet-number format e.g. "OpenGeo Map • 3016"
+  var dotPattern = /^(.*?)\s*•\s*(\d+)$/;
+  var dotMatch = dotPattern.exec(name);
+  if (dotMatch) {
+    var prefix = dotMatch[1];
+    var maxNum = parseInt(dotMatch[2], 10);
+    for (var i = 1; i <= app.project.items.length; i++) {
+      try {
+        var item = app.project.items[i];
+        if (item && item instanceof CompItem) {
+          var itemDotMatch = dotPattern.exec(item.name);
+          if (itemDotMatch && itemDotMatch[1] === prefix) {
+            var n = parseInt(itemDotMatch[2], 10);
+            if (n > maxNum) maxNum = n;
+          }
+        }
+      } catch (e) {}
+    }
+    return prefix + ' • ' + (maxNum + 1);
+  }
+
+  // Handle custom display names e.g. "Algiers City Center" -> "(Copy)"
+  var cleanBase = name.replace(/\s*\(Copy(\s+\d+)?\)$/i, '');
+  var existingNames = {};
+  for (var j = 1; j <= app.project.items.length; j++) {
+    try {
+      var it = app.project.items[j];
+      if (it && it instanceof CompItem) {
+        existingNames[it.name.toLowerCase()] = true;
+      }
+    } catch (e) {}
+  }
+
+  var candidate = cleanBase + ' (Copy)';
+  if (!existingNames[candidate.toLowerCase()]) return candidate;
+
+  var copyIdx = 2;
+  while (copyIdx < 1000) {
+    candidate = cleanBase + ' (Copy ' + copyIdx + ')';
+    if (!existingNames[candidate.toLowerCase()]) return candidate;
+    copyIdx++;
+  }
+  return cleanBase + ' (Copy ' + (new Date()).getTime() + ')';
+}
+
+function opengeoDuplicateProjectMap(compId, documentId) {
+  try {
+    if (!app.project) return 'error: [PROJECT_NOT_FOUND] No active project in After Effects';
+    var sourceComp = ensureComp(compId);
+    if (!sourceComp || !(sourceComp instanceof CompItem)) {
+      return 'error: [MAP_NOT_FOUND] OpenGeo map composition was not found';
+    }
+    var sourceController = findLayerByComment(sourceComp, 'opengeo:controller');
+    if (!sourceController) {
+      return 'error: [MAP_CONTROLLER_MISSING] OpenGeo map controller is missing';
+    }
+
+    var descriptor = opengeoProjectMapDescriptor(sourceComp, sourceComp.id);
+    var oldDocId = opengeoSanitizeIdentity(descriptor && descriptor.documentId ? descriptor.documentId : '');
+    var expectedDocId = opengeoSanitizeIdentity(documentId || '');
+    if (expectedDocId && oldDocId && oldDocId !== 'unknown' && oldDocId !== expectedDocId) {
+      return 'error: [MAP_IDENTITY_MISMATCH] OpenGeo map identity does not match the requested composition';
+    }
+
+    return withUndoGroup('OpenGeo: Duplicate Map', function() {
+      // 1. Generate unique new document ID and non-colliding names
+      var timestamp = (new Date()).getTime().toString(36);
+      var rand = Math.floor(Math.random() * 1679616).toString(36);
+      var newDocumentId = opengeoSanitizeIdentity('doc_' + timestamp + '_' + rand);
+      var newIdentitySuffix = newDocumentId.length > 10 ? newDocumentId.substring(newDocumentId.length - 10) : newDocumentId;
+      var newDisplayName = opengeoGenerateDuplicateName(descriptor && descriptor.displayName ? descriptor.displayName : sourceComp.name);
+      var newContainingCompName = newDisplayName + ' - ' + newIdentitySuffix;
+      var newMapcompName = newDisplayName + ' - Map - ' + newIdentitySuffix;
+
+      // 2. Locate source inner map pre-comp
+      var sourceMapComp = null;
+      for (var lIdx = 1; lIdx <= sourceComp.numLayers; lIdx++) {
+        try {
+          var lyr = sourceComp.layer(lIdx);
+          if (lyr && lyr.source && lyr.source instanceof CompItem) {
+            var lyrOwnership = typeof opengeoReadOwnership === 'function' ? opengeoReadOwnership(lyr.source.comment) : {};
+            if (lyrOwnership.role === 'map-comp' || lyr.source.name.indexOf(' - Map - ') !== -1) {
+              sourceMapComp = lyr.source;
+              break;
+            }
+          }
+        } catch (lErr) {}
+      }
+      if (!sourceMapComp && typeof opengeoFindDocumentMapComp === 'function') {
+        sourceMapComp = opengeoFindDocumentMapComp(oldDocId);
+      }
+      if (!sourceMapComp) {
+        return 'error: [INNER_MAP_COMP_MISSING] Could not locate inner map pre-composition for duplication';
+      }
+
+      // 3. Deep-clone the inner mapComp
+      var newMapComp = sourceMapComp.duplicate();
+      newMapComp.name = newMapcompName;
+      var folders = typeof getOpenGeoFolderStructure === 'function' ? getOpenGeoFolderStructure() : null;
+      if (folders && folders.comps) {
+        try { newMapComp.parentFolder = folders.comps; } catch (fErr) {}
+      }
+
+      var sourceOwnership = typeof opengeoReadOwnership === 'function' ? opengeoReadOwnership(sourceMapComp.comment) : {};
+      var sourceProvider = descriptor && descriptor.providerId ? descriptor.providerId : (sourceOwnership.source || '');
+      newMapComp.comment = opengeoOwnershipComment(newDocumentId, 'map-comp', 'duplicate', sourceProvider ? 'source=' + sourceProvider : null);
+
+      var newMapPivot = findLayerByName(newMapComp, 'MapPivot');
+      if (newMapPivot) {
+        newMapPivot.comment = opengeoOwnershipComment(newDocumentId, 'pivot', 'duplicate');
+      }
+
+      // Re-tag tile layers in newMapComp to newDocumentId so cache cleanups stay isolated
+      for (var tileIdx = 1; tileIdx <= newMapComp.numLayers; tileIdx++) {
+        try {
+          var tLayer = newMapComp.layer(tileIdx);
+          if (tLayer && tLayer !== newMapPivot) {
+            var tComment = String(tLayer.comment || '');
+            if (tComment.indexOf('document=' + oldDocId) !== -1) {
+              tLayer.comment = tComment.replace('document=' + oldDocId, 'document=' + newDocumentId);
+            } else if (tComment.indexOf('opengeo:') === 0 && typeof opengeoReadOwnership === 'function') {
+              var tOwnership = opengeoReadOwnership(tComment);
+              tLayer.comment = opengeoOwnershipComment(newDocumentId, tOwnership.role || 'tile', tOwnership.revision || 'duplicate');
+            }
+          }
+        } catch (tErr) {}
+      }
+
+      // 4. Duplicate the outer containing composition
+      var newOuterComp = sourceComp.duplicate();
+      newOuterComp.name = newContainingCompName;
+      if (folders && folders.comps) {
+        try { newOuterComp.parentFolder = folders.comps; } catch (fErr2) {}
+      }
+
+      // 5. Replace nested pre-comp layer source in newOuterComp
+      var newControllerLayer = null;
+      for (var oIdx = 1; oIdx <= newOuterComp.numLayers; oIdx++) {
+        try {
+          var oLayer = newOuterComp.layer(oIdx);
+          if (oLayer && oLayer.source && oLayer.source.id === sourceMapComp.id) {
+            oLayer.replaceSource(newMapComp, false);
+            oLayer.name = newMapcompName;
+            oLayer.comment = opengeoOwnershipComment(newDocumentId, 'controller', null);
+            newControllerLayer = oLayer;
+          }
+        } catch (repErr) {}
+      }
+
+      if (!newControllerLayer) {
+        newControllerLayer = findLayerByComment(newOuterComp, 'opengeo:controller');
+        if (newControllerLayer) {
+          newControllerLayer.comment = opengeoOwnershipComment(newDocumentId, 'controller', null);
+        }
+      }
+
+      // 6. Re-install MapPivot expressions linking newMapPivot to newOuterComp & newMapComp
+      if (newMapPivot && typeof opengeoInstallMapPivotExpressions === 'function') {
+        opengeoInstallMapPivotExpressions(newMapPivot, newContainingCompName, newMapcompName, newOuterComp.width, newOuterComp.height);
+      }
+
+      // 7. Update camera expressions in newOuterComp if camera is present
+      var newCameraLayer = findLayerByComment(newOuterComp, 'opengeo:camera') || findLayerByName(newOuterComp, 'OpenGeo Camera');
+      if (newCameraLayer && newControllerLayer) {
+        var ctrlNameEscaped = String(newControllerLayer.name).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        var defaultZoom = 1874;
+        try {
+          if (newCameraLayer.property('Camera Options') && newCameraLayer.property('Camera Options').property('Zoom')) {
+            defaultZoom = newCameraLayer.property('Camera Options').property('Zoom').value;
+          }
+        } catch (zErr) {}
+
+        var camPoi = newCameraLayer.property('Point of Interest');
+        if (camPoi) {
+          camPoi.expression =
+            'var ctrl = null;\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
+            'if (!ctrl || !ctrl.transform || !ctrl.transform.position) {\n' +
+            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+            '    try {\n' +
+            '      var l = thisComp.layer(i);\n' +
+            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
+            '    } catch(err) {}\n' +
+            '  }\n' +
+            '}\n' +
+            'if (ctrl && ctrl.transform && ctrl.transform.position) {\n' +
+            '  [ctrl.transform.position[0], ctrl.transform.position[1], 0];\n' +
+            '} else {\n' +
+            '  [' + (newOuterComp.width / 2) + ', ' + (newOuterComp.height / 2) + ', 0];\n' +
+            '}\n';
+        }
+
+        var camPos = newCameraLayer.property('Position');
+        if (camPos) {
+          camPos.expression =
+            'var ctrl = null;\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
+            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
+            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+            '    try {\n' +
+            '      var l = thisComp.layer(i);\n' +
+            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
+            '    } catch(err) {}\n' +
+            '  }\n' +
+            '}\n' +
+            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
+            '  value;\n' +
+            '} else {\n' +
+            '  var p = 0;\n' +
+            '  try { p = ctrl.effect("Pitch")(1).value; } catch(e) {}\n' +
+            '  var rad = Math.max(0, Math.min(45, p)) * Math.PI / 180;\n' +
+            '  var d = ' + defaultZoom + ';\n' +
+            '  try { d = cameraOption("Zoom").value; } catch(err) {\n' +
+            '    try { d = cameraOption("Zoom"); } catch(err2) {\n' +
+            '      try { d = cameraOption.zoom.value; } catch(err3) {\n' +
+            '        try { d = cameraOption.zoom; } catch(err4) {}\n' +
+            '      }\n' +
+            '    }\n' +
+            '  }\n' +
+            '  var poi = [' + (newOuterComp.width / 2) + ', ' + (newOuterComp.height / 2) + ', 0];\n' +
+            '  try { poi = pointOfInterest; } catch(err) {}\n' +
+            '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
+            '}\n';
+        }
+      }
+
+      // 8. Write independent JSON metadata into newOuterComp.comment
+      var newMetadata = {};
+      try {
+        var parsedMeta = JSON.parse(sourceComp.comment || '{}');
+        if (parsedMeta && parsedMeta.opengeo && typeof parsedMeta.opengeo === 'object') {
+          for (var k in parsedMeta.opengeo) {
+            if (parsedMeta.opengeo.hasOwnProperty(k)) {
+              newMetadata[k] = parsedMeta.opengeo[k];
+            }
+          }
+        }
+      } catch (pErr) {}
+      newMetadata.documentId = newDocumentId;
+      newMetadata.displayName = newDisplayName;
+      newMetadata.lastModified = (new Date()).getTime();
+      newOuterComp.comment = JSON.stringify({ opengeo: newMetadata });
+
+      // 9. Clone thumbnail files on disk if available
+      try {
+        var projectPath = typeof getProjectPath === 'function' ? getProjectPath() : null;
+        if (projectPath && oldDocId) {
+          var thumbsDir = projectPath + '/OpenGeo_Assets/Thumbnails';
+          var srcThumb = new File(thumbsDir + '/thumb_' + oldDocId + '.png');
+          if (srcThumb.exists && typeof srcThumb.copy === 'function') {
+            srcThumb.copy(thumbsDir + '/thumb_' + newDocumentId + '.png');
+          }
+          var srcStrip = new File(thumbsDir + '/thumb_' + oldDocId + '_strip.png');
+          if (srcStrip.exists && typeof srcStrip.copy === 'function') {
+            srcStrip.copy(thumbsDir + '/thumb_' + newDocumentId + '_strip.png');
+          }
+          for (var sIdx = 0; sIdx < 60; sIdx++) {
+            var seqSrc = new File(thumbsDir + '/thumb_' + oldDocId + '_' + sIdx + '.png');
+            if (!seqSrc.exists) break;
+            if (typeof seqSrc.copy === 'function') {
+              seqSrc.copy(thumbsDir + '/thumb_' + newDocumentId + '_' + sIdx + '.png');
+            }
+          }
+        }
+      } catch (thumbCopyErr) {}
+
+      // 10. Open in viewer, reset active cache, and return descriptor
+      newOuterComp.openInViewer();
+      if (typeof OPEN_GEO_ACTIVE_STATE_CACHE !== 'undefined') {
+        OPEN_GEO_ACTIVE_STATE_CACHE.activeItemId = null;
+        OPEN_GEO_ACTIVE_STATE_CACHE.comp = null;
+        OPEN_GEO_ACTIVE_STATE_CACHE.controller = null;
+      }
+
+      var newDescriptor = opengeoProjectMapDescriptor(newOuterComp, newOuterComp.id);
+      return JSON.stringify(newDescriptor || {
+        compId: newOuterComp.id,
+        documentId: newDocumentId,
+        displayName: newDisplayName,
+        active: true
+      });
+    });
+  } catch (err) {
+    return 'error: [PROJECT_MAP_DUPLICATE_FAILED] ' + err.toString();
+  }
+}
+
 // Register project maps helpers on $._opengeo namespace
 $._opengeo.projectMaps = {
   listProjectMaps: opengeoListProjectMaps,
   openProjectMap: opengeoOpenProjectMap,
-  prepareProjectMapThumbnail: opengeoPrepareProjectMapThumbnail
+  prepareProjectMapThumbnail: opengeoPrepareProjectMapThumbnail,
+  duplicateProjectMap: opengeoDuplicateProjectMap,
+  generateDuplicateName: opengeoGenerateDuplicateName
 };

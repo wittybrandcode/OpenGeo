@@ -238,6 +238,23 @@ class ProjectMapsPanel {
       }
     }
 
+    const cardActions = document.createElement('div');
+    cardActions.className = 'project-map-card-actions';
+
+    const duplicateButton = document.createElement('button');
+    duplicateButton.type = 'button';
+    duplicateButton.className = 'project-map-duplicate';
+    duplicateButton.title = 'Duplicate this map as an independent composition with isolated layers';
+    duplicateButton.setAttribute('aria-label', duplicateButton.title);
+    const duplicateIcon = document.createElement('i');
+    duplicateIcon.setAttribute('data-lucide', 'copy');
+    duplicateButton.appendChild(duplicateIcon);
+    duplicateButton.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      this._duplicateMap(map, duplicateButton, card);
+    });
+
     const captureButton = document.createElement('button');
     captureButton.type = 'button';
     captureButton.className = 'project-map-capture';
@@ -249,6 +266,9 @@ class ProjectMapsPanel {
     captureIcon.setAttribute('data-lucide', 'camera');
     captureButton.appendChild(captureIcon);
     captureButton.disabled = map.thumbnailCaptureApiVersion !== 5 || map.thumbnailCaptureSupported !== true || !map.active;
+
+    cardActions.appendChild(duplicateButton);
+    cardActions.appendChild(captureButton);
 
     const body = document.createElement('div'); body.className = 'project-map-card-body';
     const name = document.createElement('strong'); name.textContent = map.displayName || map.compName || 'OpenGeo Map';
@@ -284,7 +304,7 @@ class ProjectMapsPanel {
     openButton.appendChild(thumbnail); openButton.appendChild(body);
     openButton.addEventListener('click', () => this._openMap(map, openButton));
     card.appendChild(openButton);
-    card.appendChild(captureButton);
+    card.appendChild(cardActions);
     return card;
   }
 
@@ -396,6 +416,57 @@ class ProjectMapsPanel {
         errorCode: code, error: message
       });
       globalEventBus.emit('toast:show', { message: 'Thumbnail capture failed: ' + error.message, type: 'error', duration: 6000 });
+    }
+  }
+
+  async _duplicateMap(map, duplicateButton, card) {
+    if (!map || !map.compId || duplicateButton.disabled) return;
+    duplicateButton.disabled = true;
+    duplicateButton.classList.add('busy');
+    if (this.app.operationLogger) {
+      this.app.operationLogger.record('project-map:duplicate', {
+        phase: 'started', compId: map.compId, documentId: map.documentId
+      });
+    }
+    try {
+      const duplicated = await this.app.aeBridge.invoke('project.duplicateMap', {
+        compId: map.compId,
+        documentId: map.documentId
+      }, { timeoutMs: 30000 });
+
+      const newName = duplicated && duplicated.displayName ? duplicated.displayName : 'Duplicated Map';
+      globalEventBus.emit('toast:show', {
+        message: `Map duplicated: ${newName}`,
+        type: 'success',
+        duration: 3500
+      });
+
+      if (this.app.operationLogger) {
+        this.app.operationLogger.record('project-map:duplicate', {
+          phase: 'completed',
+          sourceCompId: map.compId,
+          newCompId: duplicated && duplicated.compId,
+          newDocumentId: duplicated && duplicated.documentId
+        });
+      }
+
+      await this.refresh();
+    } catch (error) {
+      console.error('[ProjectMapsPanel] Duplication failed:', error);
+      duplicateButton.disabled = false;
+      duplicateButton.classList.remove('busy');
+      if (this.app.operationLogger) {
+        this.app.operationLogger.record('project-map:duplicate', {
+          phase: 'failed',
+          compId: map.compId,
+          error: error.message
+        });
+      }
+      globalEventBus.emit('toast:show', {
+        message: 'Could not duplicate map: ' + error.message,
+        type: 'error',
+        duration: 6000
+      });
     }
   }
 

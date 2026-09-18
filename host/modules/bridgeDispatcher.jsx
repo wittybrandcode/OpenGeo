@@ -32,6 +32,7 @@ var opengeoBridgeHandlers = {
   'project.listOpenGeoMaps': { kind: 'json', run: function(args) { return opengeoListProjectMaps(); } },
   'project.openOpenGeoMap': { kind: 'json', run: function(args) { return opengeoOpenProjectMap(args.compId, args.documentId); } },
   'project.prepareOpenGeoMapThumbnail': { kind: 'json', run: function(args) { return opengeoPrepareProjectMapThumbnail(args.compId, args.documentId); } },
+  'project.duplicateMap': { kind: 'json', run: function(args) { return opengeoDuplicateProjectMap(args.compId, args.documentId); } },
   'camera.getActive': { kind: 'json', run: function(args) { return opengeoGetActiveState(); } },
   'camera.update': { kind: 'json', run: function(args) { return opengeoUpdateCamera(args.compId, args.lat, args.lng, args.zoom, args.recordKeyframe === true, args.revision, args.pitch); } },
   'metadata.get': { kind: 'json', run: function(args) { return opengeoGetCompMetadata(args.compId); } },
