@@ -35,7 +35,7 @@ class CompositionController {
       if (restored && restored.camera && this.app.viewport && typeof this.app.viewport.setCenter === 'function') {
         this.app.viewport.setCenter(restored.camera.lat, restored.camera.lng);
         if (typeof this.app.viewport.setZoom === 'function' && typeof this.app.viewport.clampZoom === 'function') {
-          this.app.viewport.setZoom(this.app.viewport.clampZoom(this.app.mapState.compZoom));
+          this.app.viewport.setZoom(this.app.viewport.clampZoom(this.app.mapState.getUIZoom()));
         }
       }
       return result;

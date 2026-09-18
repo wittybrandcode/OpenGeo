@@ -286,15 +286,14 @@ class ThumbnailProcessor {
 
     for (let i = 0; i < count; i++) {
       const progress = count > 1 ? i / (count - 1) : 0;
-      // Smooth sinusoidal orbital pan & zoom (100% to 108% scale)
-      const zoomFactor = 1.0 + 0.07 * Math.sin(progress * Math.PI);
-      const panOffsetX = (progress - 0.5) * (sourceWidth * 0.04);
-      const panOffsetY = (Math.sin(progress * Math.PI * 2) * 0.5) * (sourceHeight * 0.02);
+      // 1:1 Faithful composition crop - zero zoom inflation
+      const panOffsetX = (progress - 0.5) * (sourceWidth * 0.012);
+      const panOffsetY = (Math.sin(progress * Math.PI * 2) * 0.5) * (sourceHeight * 0.006);
 
-      const cropW = sourceWidth / zoomFactor;
-      const cropH = sourceHeight / zoomFactor;
-      const cropX = Math.max(0, Math.min(sourceCanvas.width - cropW, sourceX + (sourceWidth - cropW) / 2 + panOffsetX));
-      const cropY = Math.max(0, Math.min(sourceCanvas.height - cropH, sourceY + (sourceHeight - cropH) / 2 + panOffsetY));
+      const cropW = sourceWidth;
+      const cropH = sourceHeight;
+      const cropX = Math.max(0, Math.min(sourceCanvas.width - cropW, sourceX + panOffsetX));
+      const cropY = Math.max(0, Math.min(sourceCanvas.height - cropH, sourceY + panOffsetY));
 
       const frameCanvas = document.createElement('canvas');
       frameCanvas.width = outW;

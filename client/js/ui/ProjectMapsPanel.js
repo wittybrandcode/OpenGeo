@@ -184,7 +184,12 @@ class ProjectMapsPanel {
 
         if (!isSequence) {
           stripImg.style.width = `${frameCount * 100}%`;
+          stripImg.style.objectFit = 'cover';
+          stripImg.style.padding = '0';
         } else {
+          stripImg.style.width = '100%';
+          stripImg.style.objectFit = 'contain';
+          stripImg.style.padding = '4px';
           // Preload sequence frames in browser cache for instant 60fps frame swapping
           for (let sIdx = 0; sIdx < sequenceUrls.length; sIdx++) {
             const pre = new Image();
@@ -200,6 +205,7 @@ class ProjectMapsPanel {
           const clamped = Math.max(0, Math.min(frameCount - 1, idx));
           if (isSequence && sequenceUrls[clamped]) {
             image.src = sequenceUrls[clamped];
+            if (stripImg) stripImg.src = sequenceUrls[clamped];
           } else if (stripImg) {
             const offsetPct = (clamped / frameCount) * 100;
             stripImg.style.transform = `translateX(-${offsetPct}%)`;
@@ -414,6 +420,10 @@ class ProjectMapsPanel {
         const missingPreview = new Error('The OpenGeo map preview is unavailable.');
         missingPreview.code = 'THUMBNAIL_PREVIEW_UNAVAILABLE';
         throw missingPreview;
+      }
+      if (map.width && map.height && this.app.mapState &&
+          (this.app.mapState.compWidth !== map.width || this.app.mapState.compHeight !== map.height)) {
+        this.app.mapState.setCompSize(map.width, map.height);
       }
       const captureOptions = {
         viewportWidth: this.app.viewport && this.app.viewport.width,
