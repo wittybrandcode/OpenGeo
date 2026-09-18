@@ -9,6 +9,15 @@ class FinalizeController {
     this._commitState = 'idle';
     this._activeTransaction = null;
     this._cancelledRunId = null;
+    this.fsm = typeof FinalizeStateMachine !== 'undefined'
+      ? new FinalizeStateMachine({
+          onStateChange: (newState, oldState, record) => {
+            if (typeof globalEventBus !== 'undefined' && globalEventBus && typeof globalEventBus.emit === 'function') {
+              globalEventBus.emit('finalize:stateChange', { newState, oldState, record });
+            }
+          }
+        })
+      : null;
   }
 
   /**
@@ -16,12 +25,13 @@ class FinalizeController {
    * Transforms timeline data into high-resolution local assets.
    */
   async finalize(options = {}) {
-    if (this.isFinalizing) {
+    if (this.isFinalizing || (this.fsm && this.fsm.isBusy)) {
       globalEventBus.emit('toast:show', { message: 'Finalize is already running.', type: 'warning' });
       return false;
     }
 
     this.isFinalizing = true;
+    if (this.fsm && this.fsm.canTransition('VALIDATING')) this.fsm.transition('VALIDATING');
     const runId = ++this._runId;
     const operationGeneration = this.app.session.beginOperation('finalize');
     this._operationGeneration = operationGeneration;
@@ -58,6 +68,7 @@ class FinalizeController {
       this._activeTransaction = transaction;
 
       // 2. Planning Phase
+      if (this.fsm && this.fsm.canTransition('PLANNING')) this.fsm.transition('PLANNING');
       const { trajectory, plan } = await this.scanTimeline(activeCompId, snapshot);
       this._assertCurrentRun(runId, activeCompId, documentId, snapshot);
 
@@ -75,8 +86,10 @@ class FinalizeController {
       this._assertCurrentRun(runId, activeCompId, documentId, snapshot);
 
       // 3. Execution Phase (Download & Stitch)
+      if (this.fsm && this.fsm.canTransition('DOWNLOADING_TILES')) this.fsm.transition('DOWNLOADING_TILES');
       const assets = await this.downloadTiles(plan, snapshot);
       this._assertCurrentRun(runId, activeCompId, documentId, snapshot);
+      if (this.fsm && this.fsm.canTransition('STITCHING_MEGATILES')) this.fsm.transition('STITCHING_MEGATILES');
       const stitched = await this.stitchTiles(assets, projectPath, activeCompId, snapshot, transaction);
       this._validateStitchedAssetIds(stitched.tiles, stitched.coverage);
       this._assertCurrentRun(runId, activeCompId, documentId, snapshot);
@@ -86,6 +99,7 @@ class FinalizeController {
       transaction.state = 'preparing';
       transaction.hostPrepareStarted = true;
       this._commitState = 'preparing';
+      if (this.fsm && this.fsm.canTransition('HOST_PREPARING')) this.fsm.transition('HOST_PREPARING');
       const prepareResult = await this.prepareComposition(
         stitched.tiles, activeCompId, snapshot, transaction.revisionId
       );
@@ -96,6 +110,7 @@ class FinalizeController {
 
       transaction.state = 'commit-in-progress';
       this._commitState = 'commit-in-progress';
+      if (this.fsm && this.fsm.canTransition('HOST_COMMITTING')) this.fsm.transition('HOST_COMMITTING');
       const commitResult = await this.commitComposition(
         stitched.tiles.length, activeCompId, snapshot, transaction.revisionId
       );
@@ -129,6 +144,7 @@ class FinalizeController {
         this._cleanupPreviousRevision(projectPath, snapshot.documentId, commitResult.previousRevision, transaction.revisionId);
       }
       transaction.revisionDir = null;
+      if (this.fsm && this.fsm.canTransition('FINALIZED')) this.fsm.transition('FINALIZED');
       this.closeProgressUI();
       globalEventBus.emit('toast:show', { message: 'Finalize completed successfully!', type: 'success' });
 
@@ -205,7 +221,9 @@ class FinalizeController {
         }
       } else if (transaction && transaction.state !== 'committed' &&
           transaction.state !== 'reconciliation-required') {
+        if (this.fsm && this.fsm.canTransition('ROLLING_BACK')) this.fsm.transition('ROLLING_BACK');
         await this._rollbackTransaction(transaction);
+        if (this.fsm && this.fsm.canTransition('ROLLED_BACK')) this.fsm.transition('ROLLED_BACK');
       }
       if (error && error.code === 'OPEN_GEO_FINALIZE_CANCELLED') return false;
       if (runId !== this._runId) return false;
@@ -213,6 +231,7 @@ class FinalizeController {
       this.handleFinalizeError(error);
       return false;
     } finally {
+      if (this.fsm) this.fsm.reset();
       const ownsCancellationCleanup = runId === this._cancelledRunId;
       if (runId === this._runId || ownsCancellationCleanup) this.isFinalizing = false;
       if (runId === this._runId) this._operationGeneration = null;
@@ -226,7 +245,7 @@ class FinalizeController {
 
   cancel() {
     if (!this.isFinalizing) return false;
-    if (this._commitState === 'commit-in-progress') {
+    if (this._commitState === 'commit-in-progress' || (this.fsm && !this.fsm.canCancel)) {
       globalEventBus.emit('ui:status', { message: 'Finalize commit is already in progress.', isError: false });
       globalEventBus.emit('toast:show', {
         message: 'After Effects is committing the new revision. This final step cannot be cancelled safely.',
@@ -245,12 +264,17 @@ class FinalizeController {
       transaction.cancelRequested = true;
       transaction.state = 'cancelled-before-commit';
     }
+    if (this.fsm && this.fsm.canTransition('ROLLING_BACK')) {
+      this.fsm.transition('ROLLING_BACK');
+    }
     this._commitState = 'cancelled-before-commit';
-    globalEventBus.emit('ui:status', { message: 'Finalize cancelled before commit.', isError: false });
-    globalEventBus.emit('toast:show', {
-      message: 'Finalize cancelled. The active Final revision remains unchanged.',
-      type: 'info'
-    });
+    if (typeof globalEventBus !== 'undefined' && globalEventBus.emit) {
+      globalEventBus.emit('ui:status', { message: 'Finalize cancelled before commit.', isError: false });
+      globalEventBus.emit('toast:show', {
+        message: 'Finalize cancelled. The active Final revision remains unchanged.',
+        type: 'info'
+      });
+    }
     this.closeProgressUI();
     return true;
   }

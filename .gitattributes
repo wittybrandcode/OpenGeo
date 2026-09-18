@@ -1,0 +1,9 @@
+# Force LF line endings for deterministic manifests and json baselines
+* text=auto
+*.json text eol=lf
+package-lock.json text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.md text eol=lf

@@ -17,3 +17,4 @@ Thumbs.db
 *.log
 *.zip
 .debug
+.agents/

@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Metadata & Sync Modules
 // ==========================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoIsValidObject(obj) {
   if (!obj) return false;
   try {
@@ -433,3 +436,12 @@ function opengeoSetCameraControlValue(property, time, value, recordKeyframe) {
     }
   }
 }
+
+// Register metadata & sync methods on $._opengeo namespace
+$._opengeo.metadata = {
+  getCompMetadata: opengeoGetCompMetadata,
+  setCompMetadata: opengeoSetCompMetadata,
+  getActiveState: opengeoGetActiveState,
+  updateCamera: opengeoUpdateCamera,
+  cache: OPEN_GEO_ACTIVE_STATE_CACHE
+};

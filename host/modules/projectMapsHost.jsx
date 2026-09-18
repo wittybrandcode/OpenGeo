@@ -2,6 +2,9 @@
 // OpenGeo Project Maps — read-only project index and explicit map activation
 // ============================================================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoIsValidObject(obj) {
   if (!obj) return false;
   try {
@@ -213,3 +216,10 @@ function opengeoPrepareProjectMapThumbnail(compId, documentId) {
     return 'error: [PROJECT_MAP_THUMBNAIL_PREPARE_FAILED] ' + error.toString();
   }
 }
+
+// Register project maps helpers on $._opengeo namespace
+$._opengeo.projectMaps = {
+  listProjectMaps: opengeoListProjectMaps,
+  openProjectMap: opengeoOpenProjectMap,
+  prepareProjectMapThumbnail: opengeoPrepareProjectMapThumbnail
+};

@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Tile footage import and placement
 // ============================================================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoTilePlacementIdentity(tile, fallbackIndex) {
   if (tile && tile.placementKey) return String(tile.placementKey);
   if (tile && tile.key) {
@@ -63,3 +66,9 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
   }
   return importedCount;
 }
+
+// Register tile import helpers on $._opengeo namespace
+$._opengeo.tiles = {
+  tilePlacementIdentity: opengeoTilePlacementIdentity,
+  importCompositionTiles: opengeoImportCompositionTiles
+};

@@ -27,7 +27,9 @@ const OpenGeoEvents = Object.freeze({
   OPERATION_PROGRESS: 'operation:progress',
   OPERATION_RESULT: 'operation:result',
   ERROR_REPORT: 'error:report',
-  PROJECT_MAPS_THUMBNAIL_UPDATED: 'project-maps:thumbnail-updated'
+  PROJECT_MAPS_THUMBNAIL_UPDATED: 'project-maps:thumbnail-updated',
+  FINALIZE_STATE_CHANGE: 'finalize:stateChange',
+  SYNC_STATE_CHANGE: 'sync:stateChange'
 });
 
 const isObject = value => !!value && typeof value === 'object';
@@ -63,7 +65,9 @@ const OpenGeoEventCatalog = Object.freeze({
   'operation:progress': { owner: 'OperationManager', mode: 'sync', publishers: ['LongRunningOperation'], subscribers: ['OperationPresenter', 'OperationLogger'], validate: value => isObject(value) && typeof value.operationId === 'string' && typeof value.phase === 'string' },
   'operation:result': { owner: 'OperationManager', mode: 'sync', publishers: ['LongRunningOperation'], subscribers: ['OperationPresenter', 'OperationLogger'], validate: value => isObject(value) && typeof value.operationId === 'string' && typeof value.ok === 'boolean' },
   'error:report': { owner: 'ErrorBoundary', mode: 'sync', publishers: ['Application'], subscribers: ['OperationLogger'], validate: value => isObject(value) && typeof value.code === 'string' },
-  'project-maps:thumbnail-updated': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: ['ProjectMapsPanel'], validate: value => isObject(value) && typeof value.documentId === 'string' }
+  'project-maps:thumbnail-updated': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: ['ProjectMapsPanel'], validate: value => isObject(value) && typeof value.documentId === 'string' },
+  'finalize:stateChange': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: [], validate: anyPayload },
+  'sync:stateChange': { owner: 'SyncManager', mode: 'sync', publishers: ['SyncManager'], subscribers: [], validate: anyPayload }
 });
 
 const OpenGeoEventContracts = {

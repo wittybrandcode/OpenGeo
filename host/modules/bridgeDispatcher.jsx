@@ -2,7 +2,10 @@
 // OpenGeo Bridge Protocol v2
 // ============================================================================
 
-var OPENGEO_BRIDGE_PROTOCOL_VERSION = '2.0.0';
+var $ = typeof $ !== 'undefined' ? $ : {},
+    OPENGEO_BRIDGE_PROTOCOL_VERSION = '2.0.0';
+$._opengeo = $._opengeo || {};
+$._opengeo.PROTOCOL_VERSION = OPENGEO_BRIDGE_PROTOCOL_VERSION;
 
 function opengeoBridgeOk(data, requestId, command) {
   return JSON.stringify({
@@ -96,3 +99,11 @@ function opengeoDispatch(requestJson) {
     return opengeoBridgeError('HOST_EXCEPTION', error.toString(), requestId, command, { line: error.line || null });
   }
 }
+
+// Register bridge dispatcher on $._opengeo namespace
+$._opengeo.dispatcher = {
+  dispatch: opengeoDispatch,
+  ok: opengeoBridgeOk,
+  error: opengeoBridgeError,
+  handlers: opengeoBridgeHandlers
+};

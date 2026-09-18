@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Composition and asset ownership helpers
 // ============================================================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoFindCompositionByName(name) {
   for (var itemIndex = 1; itemIndex <= app.project.items.length; itemIndex++) {
     var item = app.project.items[itemIndex];
@@ -72,3 +75,13 @@ function opengeoClearMapLayers(mapComp, removeFinal, documentId) {
     if (isPreview || (removeFinal && isFinal)) layer.remove();
   }
 }
+
+// Register composition asset helpers on $._opengeo namespace
+$._opengeo.assets = {
+  findCompositionByName: opengeoFindCompositionByName,
+  ensureComposition: opengeoEnsureComposition,
+  findDocumentMapComp: opengeoFindDocumentMapComp,
+  findDocumentOuterComp: opengeoFindDocumentOuterComp,
+  removeDocumentAssets: opengeoRemoveDocumentAssets,
+  clearMapLayers: opengeoClearMapLayers
+};

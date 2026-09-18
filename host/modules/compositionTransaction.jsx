@@ -3,6 +3,9 @@
 // revision, or roll the prepared revision back without touching the active one.
 // ============================================================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoIsValidObject(obj) {
   if (!obj) return false;
   try {
@@ -269,6 +272,8 @@ function opengeoPrepareCompositionRevision(jsonData) {
         createdLayers.push(tileLayer);
         result.imported++;
         result.assetIds.push(tileKey);
+        footageItem = null;
+        tileLayer = null;
       } catch (importError) {
         result.failed.push({ key: tileKey, code: 'IMPORT_FAILED', message: importError.toString() });
         break;
@@ -508,3 +513,11 @@ function opengeoGetCompositionRevision(args) {
     return JSON.stringify({ ok: false, documentId: documentId, activeRevision: null, commitState: 'unknown', warnings: [revisionError.toString()] });
   }
 }
+
+// Register transaction helpers on $._opengeo namespace
+$._opengeo.transaction = {
+  prepareCompositionRevision: opengeoPrepareCompositionRevision,
+  commitCompositionRevision: opengeoCommitCompositionRevision,
+  rollbackCompositionRevision: opengeoRollbackCompositionRevision,
+  getCompositionRevision: opengeoGetCompositionRevision
+};

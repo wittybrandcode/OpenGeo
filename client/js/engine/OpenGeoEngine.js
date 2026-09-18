@@ -1,11 +1,12 @@
 /**
  * OpenGeo Engine v2 — Pure JavaScript IIFE bundle for CEP.
  * Contains: GeoMath, Camera, TileGrid, TileDownloader, Engine
+ * Acts as Façade delegating to TilePipelineSession and EngineSyncBridge.
  */
 var OpenGeo = (function () {
 
   // ============================
-  // GeoMath
+  // GeoMath (Delegates to Functional Core MercatorMath / TileMath)
   // ============================
   var TILE_SIZE = 256;
 
@@ -13,25 +14,31 @@ var OpenGeo = (function () {
     TILE_SIZE: TILE_SIZE,
 
     lon2tile: function (lon, zoom) {
+      if (typeof TileMath !== 'undefined') return TileMath.latLngToTile(0, lon, zoom).x;
       return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
     },
     lat2tile: function (lat, zoom) {
+      if (typeof TileMath !== 'undefined') return TileMath.latLngToTile(lat, 0, zoom).y;
       return Math.floor(
         ((1 - Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) / 2) *
           Math.pow(2, zoom)
       );
     },
     tile2lon: function (x, z) {
+      if (typeof TileMath !== 'undefined') return TileMath.tileToLatLng(x, 0, z).lng;
       return (x / Math.pow(2, z)) * 360 - 180;
     },
     tile2lat: function (y, z) {
+      if (typeof TileMath !== 'undefined') return TileMath.tileToLatLng(0, y, z).lat;
       var n = Math.PI - (2 * Math.PI * y) / Math.pow(2, z);
       return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
     },
     lonToWorldPixel: function (lon, zoom) {
+      if (typeof MercatorMath !== 'undefined') return MercatorMath.latLngToWorldPoint(0, lon, zoom, TILE_SIZE).x;
       return ((lon + 180) / 360) * TILE_SIZE * Math.pow(2, zoom);
     },
     latToWorldPixel: function (lat, zoom) {
+      if (typeof MercatorMath !== 'undefined') return MercatorMath.latLngToWorldPoint(lat, 0, zoom, TILE_SIZE).y;
       var latRad = (lat * Math.PI) / 180;
       var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));
       return ((1 - mercN / Math.PI) / 2) * TILE_SIZE * Math.pow(2, zoom);
@@ -142,6 +149,10 @@ var OpenGeo = (function () {
   };
 
   TileDownloader.prototype.setCacheNamespace = function (namespace) {
+    if (typeof EngineSyncBridge !== 'undefined' && EngineSyncBridge.normalizeNamespace) {
+      this._cacheNamespace = EngineSyncBridge.normalizeNamespace(namespace);
+      return;
+    }
     this._cacheNamespace = CachePolicy.sanitizeNamespace(namespace);
   };
 
@@ -330,6 +341,10 @@ var OpenGeo = (function () {
   };
 
   Engine.prototype.sync = function (onProgress, qualityOffset) {
+    if (typeof TilePipelineSession !== 'undefined' && TilePipelineSession.executeSync) {
+      return TilePipelineSession.executeSync(this, onProgress, qualityOffset);
+    }
+
     var cam = this._camera.getState();
     var offset = (qualityOffset !== undefined) ? qualityOffset : -2;
     var downloadZoom = Math.max(0, Math.min(19, Math.floor(cam.zoom + offset)));

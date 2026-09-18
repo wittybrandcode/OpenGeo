@@ -1,17 +1,37 @@
+/**
+ * OpenGeo — MercatorProjection (Façade)
+ *
+ * Provides backward-compatible cartographic projection interface.
+ * Delegates pure mathematical formulas to Functional Core (MercatorMath)
+ * with inline deterministic fallbacks.
+ */
+
 class MercatorProjection {
   static clampLat(lat) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.clampLat) {
+      return MercatorMath.clampLat(lat);
+    }
     return Math.max(-85.05112878, Math.min(85.05112878, Number(lat) || 0));
   }
 
   static normalizeLng(lng) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.normalizeLng) {
+      return MercatorMath.normalizeLng(lng);
+    }
     return ((((Number(lng) || 0) + 180) % 360) + 360) % 360 - 180;
   }
 
   static getWorldSize(zoom, tileSize = 256) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.getWorldSize) {
+      return MercatorMath.getWorldSize(zoom, tileSize);
+    }
     return Math.pow(2, zoom) * tileSize;
   }
 
   static latLngToWorldPoint(lat, lng, zoom, tileSize = 256) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.latLngToWorldPoint) {
+      return MercatorMath.latLngToWorldPoint(lat, lng, zoom, tileSize);
+    }
     const size = this.getWorldSize(zoom, tileSize);
     const safeLat = this.clampLat(lat) * Math.PI / 180;
     const sinLat = Math.sin(safeLat);
@@ -23,6 +43,9 @@ class MercatorProjection {
   }
 
   static worldPointToLatLng(px, py, zoom, tileSize = 256) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.worldPointToLatLng) {
+      return MercatorMath.worldPointToLatLng(px, py, zoom, tileSize);
+    }
     const size = this.getWorldSize(zoom, tileSize);
     const lng = this.normalizeLng((px / size) * 360 - 180);
     const safeY = Math.max(0, Math.min(size, py));
@@ -31,11 +54,17 @@ class MercatorProjection {
   }
 
   static getMetersPerPixel(lat, zoom) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.getMetersPerPixel) {
+      return MercatorMath.getMetersPerPixel(lat, zoom);
+    }
     const latRad = this.clampLat(lat) * Math.PI / 180;
     return 156543.03392 * Math.cos(latRad) / Math.pow(2, zoom);
   }
 
   static cameraPixelDistance(first, second, zoom, tileSize = 256) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.cameraPixelDistance) {
+      return MercatorMath.cameraPixelDistance(first, second, zoom, tileSize);
+    }
     if (!first || !second) return Infinity;
     const comparisonZoom = isFinite(Number(zoom))
       ? Number(zoom)
@@ -50,6 +79,9 @@ class MercatorProjection {
   }
 
   static camerasEquivalent(first, second, options = {}) {
+    if (typeof MercatorMath !== 'undefined' && MercatorMath.camerasEquivalent) {
+      return MercatorMath.camerasEquivalent(first, second, options);
+    }
     if (!first || !second) return false;
     const zoomTolerance = options.zoomTolerance === undefined ? 0.001 : options.zoomTolerance;
     if (Math.abs((Number(first.zoom) || 0) - (Number(second.zoom) || 0)) > zoomTolerance) return false;
@@ -57,4 +89,11 @@ class MercatorProjection {
     const zoom = Math.max(Number(first.zoom) || 0, Number(second.zoom) || 0);
     return this.cameraPixelDistance(first, second, zoom, options.tileSize || 256) <= pixelTolerance;
   }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = MercatorProjection;
+}
+if (typeof window !== 'undefined') {
+  window.MercatorProjection = MercatorProjection;
 }

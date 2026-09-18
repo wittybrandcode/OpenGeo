@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Trajectory & Baking Module
 // ==========================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
   try {
     var comp = ensureComp(compId);
@@ -169,3 +172,10 @@ function opengeoClearCameraKeyframes(compId) {
     }
   });
 }
+
+// Register trajectory helpers on $._opengeo namespace
+$._opengeo.trajectory = {
+  getTimelineTrajectory: opengeoGetTimelineTrajectory,
+  addKeyframe: opengeoAddKeyframe,
+  clearCameraKeyframes: opengeoClearCameraKeyframes
+};

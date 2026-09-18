@@ -2,6 +2,10 @@
 // OpenGeo ExtendScript Host: Layered Vector Map Synthesis Engine
 // ==========================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+$._opengeo.vector = $._opengeo.vector || {};
+
 function opengeoVectorEscapeExpressionString(value) {
   var str = String(value || '').replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '').replace(/\n/g, ' ');
   return str.replace(/[\u007f-\uffff]/g, function(c) {
@@ -816,3 +820,17 @@ function opengeoFeatureDelete(compId, featureId) {
     return JSON.stringify({ featureId: opengeoVectorNormalizeFeatureId(featureId), removed: removed });
   });
 }
+
+// Register vector host dispatcher & engine on $._opengeo namespace
+$._opengeo.vector.host = {
+  importVectorMapFromFile: opengeoImportVectorMapFromFile,
+  featureList: opengeoFeatureList,
+  featureSetVisibility: opengeoFeatureSetVisibility,
+  featureDelete: opengeoFeatureDelete,
+  normalizeVectorFeatureControls: opengeoNormalizeVectorFeatureControls,
+  bindToMap: opengeoVectorBindToMap,
+  createController: opengeoVectorCreateController,
+  createShapeLayer: opengeoVectorCreateShapeLayer,
+  createLabelLayer: opengeoVectorCreateLabelLayer,
+  escapeExpressionString: opengeoVectorEscapeExpressionString
+};

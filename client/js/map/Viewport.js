@@ -1,3 +1,11 @@
+/**
+ * OpenGeo — Viewport (Façade & Session Orchestrator)
+ *
+ * Coordinates camera state, session commits, and interaction events.
+ * Delegates pure spatial transformations and focus anchoring to
+ * ViewportTransform and ViewportAnchor.
+ */
+
 class Viewport {
   constructor(stateOwner, options = {}) {
     this.session = stateOwner && stateOwner.mapState && typeof stateOwner.setCamera === 'function' ? stateOwner : null;
@@ -9,8 +17,7 @@ class Viewport {
     // Initial values
     if (options.centerLat !== undefined || options.centerLng !== undefined) {
       this._commitCamera({
-        lat:
-        options.centerLat === undefined ? 25.2048 : options.centerLat,
+        lat: options.centerLat === undefined ? 25.2048 : options.centerLat,
         lng: options.centerLng === undefined ? 55.2708 : options.centerLng
       }, 'bootstrap');
     }
@@ -42,9 +49,9 @@ class Viewport {
   }
 
   _getSafeMinZoom() {
-    // Keep a full tile guard band beyond each side of the visible panel. This
-    // prevents the first render from exposing an empty edge while priority
-    // requests are still resolving, without imposing a fixed resolution.
+    if (typeof ViewportAnchor !== 'undefined' && ViewportAnchor.calculateSafeMinZoom) {
+      return ViewportAnchor.calculateSafeMinZoom(this.width, this.tileSize, this.minZoom, this.maxZoom);
+    }
     const panelWidth = Math.max(1, this.width || 0);
     const guardBandPixels = this.tileSize * 2;
     const coverageZoom = Math.log2((panelWidth + guardBandPixels) / this.tileSize);
@@ -84,11 +91,23 @@ class Viewport {
     const targetZoom = this.clampZoom(newZoom);
     if (targetZoom === this.zoom) return;
 
-    const focusWorld = MercatorProjection.latLngToWorldPoint(geoLat, geoLng, targetZoom, this.tileSize);
-    const centerWorldX = focusWorld.x - (px - this.width / 2);
-    const centerWorldY = focusWorld.y - (py - this.height / 2);
+    let newCenter;
+    if (typeof ViewportAnchor !== 'undefined' && ViewportAnchor.calculateZoomAtGeoPoint) {
+      newCenter = ViewportAnchor.calculateZoomAtGeoPoint(targetZoom, geoLat, geoLng, px, py, this.width, this.height, this.tileSize);
+    } else {
+      const toWorld = typeof MercatorMath !== 'undefined'
+        ? (la, ln, z, ts) => MercatorMath.latLngToWorldPoint(la, ln, z, ts)
+        : (la, ln, z, ts) => MercatorProjection.latLngToWorldPoint(la, ln, z, ts);
+      const toLatLng = typeof MercatorMath !== 'undefined'
+        ? (x, y, z, ts) => MercatorMath.worldPointToLatLng(x, y, z, ts)
+        : (x, y, z, ts) => MercatorProjection.worldPointToLatLng(x, y, z, ts);
 
-    const newCenter = MercatorProjection.worldPointToLatLng(centerWorldX, centerWorldY, targetZoom, this.tileSize);
+      const focusWorld = toWorld(geoLat, geoLng, targetZoom, this.tileSize);
+      const centerWorldX = focusWorld.x - (px - this.width / 2);
+      const centerWorldY = focusWorld.y - (py - this.height / 2);
+      newCenter = toLatLng(centerWorldX, centerWorldY, targetZoom, this.tileSize);
+    }
+
     this._commitCamera({ lat: newCenter.lat, lng: newCenter.lng, uiZoom: targetZoom });
     this._emitChanged();
   }
@@ -100,16 +119,32 @@ class Viewport {
 
   pan(dx, dy) {
     if (!dx && !dy) return;
-    const newCenter = this.screenToLatLng(this.width / 2 - dx, this.height / 2 - dy);
+    let newCenter;
+    if (typeof ViewportAnchor !== 'undefined' && ViewportAnchor.calculatePanCenter) {
+      newCenter = ViewportAnchor.calculatePanCenter(dx, dy, this.centerLat, this.centerLng, this.zoom, this.width, this.height, this.tileSize);
+    } else {
+      newCenter = this.screenToLatLng(this.width / 2 - dx, this.height / 2 - dy);
+    }
     this._commitCamera({ lat: newCenter.lat, lng: newCenter.lng });
     this._emitChanged();
   }
 
   _effectiveCenterWorld() {
+    if (typeof ViewportTransform !== 'undefined' && ViewportTransform.effectiveCenterWorld) {
+      return ViewportTransform.effectiveCenterWorld(this.centerLat, this.centerLng, this.zoom, this.tileSize);
+    }
     return MercatorProjection.latLngToWorldPoint(this.centerLat, this.centerLng, this.zoom, this.tileSize);
   }
 
   fitBounds(south, north, west, east, padding = 60) {
+    if (typeof ViewportTransform !== 'undefined' && ViewportTransform.fitBounds) {
+      const fitted = ViewportTransform.fitBounds(south, north, west, east, this.width, this.height, this.minZoom, this.maxZoom, this.tileSize, padding);
+      this._commitCamera({ lat: fitted.centerLat, lng: fitted.centerLng, uiZoom: fitted.zoom });
+      this._emitChanged();
+      return;
+    }
+
+    // Direct fallback
     const southLat = parseFloat(south);
     const northLat = parseFloat(north);
     let wLng = parseFloat(west);
@@ -142,8 +177,6 @@ class Viewport {
       }
     }
     
-    // Web Mercator is non-linear in latitude. Centering in projected space
-    // gives north/south bounds equal visual margins, including high latitudes.
     const southWorld = MercatorProjection.latLngToWorldPoint(southLat, centerLng, 0, this.tileSize);
     const northWorld = MercatorProjection.latLngToWorldPoint(northLat, centerLng, 0, this.tileSize);
     const centerLat = MercatorProjection.worldPointToLatLng(southWorld.x, (southWorld.y + northWorld.y) / 2, 0, this.tileSize).lat;
@@ -152,6 +185,9 @@ class Viewport {
   }
 
   latLngToScreen(lat, lng) {
+    if (typeof ViewportTransform !== 'undefined' && ViewportTransform.latLngToScreen) {
+      return ViewportTransform.latLngToScreen(lat, lng, this.centerLat, this.centerLng, this.zoom, this.width, this.height, this.tileSize);
+    }
     const point = MercatorProjection.latLngToWorldPoint(lat, lng, this.zoom, this.tileSize);
     const center = this._effectiveCenterWorld();
     const size = MercatorProjection.getWorldSize(this.zoom, this.tileSize);
@@ -165,6 +201,9 @@ class Viewport {
   }
 
   screenToLatLng(px, py) {
+    if (typeof ViewportTransform !== 'undefined' && ViewportTransform.screenToLatLng) {
+      return ViewportTransform.screenToLatLng(px, py, this.centerLat, this.centerLng, this.zoom, this.width, this.height, this.tileSize);
+    }
     const center = this._effectiveCenterWorld();
     const size = MercatorProjection.getWorldSize(this.zoom, this.tileSize);
     let targetWorldX = center.x + px - this.width / 2;
@@ -195,4 +234,11 @@ class Viewport {
       globalEventBus.emit(eventName, this.getCenterCoords());
     }
   }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = Viewport;
+}
+if (typeof window !== 'undefined') {
+  window.Viewport = Viewport;
 }

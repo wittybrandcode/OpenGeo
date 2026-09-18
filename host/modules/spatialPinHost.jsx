@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Spatial Pin & Boundaries Module
 // ==========================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoParseRgbColor(color, defaultRgb) {
   if (color && typeof color === 'object' && color.length >= 3) {
     return [
@@ -274,3 +277,9 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
     }
   });
 }
+
+// Register spatial pin helpers on $._opengeo namespace
+$._opengeo.spatialPin = {
+  parseRgbColor: opengeoParseRgbColor,
+  addSpatialPin: opengeoAddSpatialPin
+};

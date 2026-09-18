@@ -12,6 +12,7 @@ const projectRoot = path.resolve(__dirname, '..');
 
 const suites = [
   { name: 'Smoke, Security & Regression Suite', script: 'scripts/test.js' },
+  { name: 'Functional Core: Pure Math & Geometry Suite', script: 'scripts/tests/geometry/pure-math.test.js' },
   { name: '4K Tile Pipeline & Fault-Injection Suite', script: 'scripts/tests/tile-pipeline/fault-injection.test.js' },
   { name: 'Viewport Resize & Camera Event Suite', script: 'scripts/tests/map/viewport-resize.test.js' },
   { name: 'Vector Rigging & Expression Architecture Suite', script: 'scripts/tests/vector/vector-rigging.test.js' },
@@ -20,7 +21,8 @@ const suites = [
   { name: 'Download Telemetry HUD Suite', script: 'scripts/tests/ui/download-telemetry.test.js' },
   { name: 'Tooltip Manager & Z-Index Suite', script: 'scripts/tests/ui/tooltip-manager.test.js' },
   { name: '3D Map Pitch & Horizon Architecture Suite', script: 'scripts/tests/map/pitch-3d.test.js' },
-  { name: 'End-to-End Production Stress Suite', script: 'scripts/tests/e2e/production-stress.test.js' }
+  { name: 'End-to-End Production Stress Suite', script: 'scripts/tests/e2e/production-stress.test.js' },
+  { name: 'FSM Governance & Lifecycle Safety Suite', script: 'scripts/tests/fsm/fsm-lifecycle.test.js' }
 ];
 
 console.log('================================================================');

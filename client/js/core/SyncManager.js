@@ -9,6 +9,18 @@ class SyncManager {
     this._trajectoryDownloadSession = null;
     this._previewStitcher = null;
     this.maxTrajectoryPreviewTiles = 2500;
+    this.fsm = (typeof SyncStateMachine !== 'undefined')
+      ? new SyncStateMachine({
+          onStateChange: (to, from) => {
+            if (typeof globalEventBus !== 'undefined' && globalEventBus.emit) {
+              globalEventBus.emit('sync:stateChange', { from, to });
+            }
+          }
+        })
+      : null;
+    if (this.fsm && this.app && this.app.activeCompId) {
+      this.fsm.transition(SyncState.ATTACHED_IDLE);
+    }
   }
 
   queueAutoExport() {
@@ -36,6 +48,15 @@ class SyncManager {
       }
     }
 
+    if (this.fsm) {
+      if (!this.fsm.isAttached && this.app.activeCompId) {
+        this.fsm.transition(SyncState.ATTACHED_IDLE);
+      }
+      if (this.fsm.canTransition(SyncState.QUEUEING_EXPORT)) {
+        this.fsm.transition(SyncState.QUEUEING_EXPORT);
+      }
+    }
+
     clearTimeout(this.exportTimer);
     this.exportTimer = setTimeout(() => this.exportToAE(false, true), 700);
   }
@@ -44,6 +65,16 @@ class SyncManager {
     if (!this.app.activeCompId) return;
     if (this.app.finalizeController && this.app.finalizeController.isFinalizing) return;
     if (this.app.session && this.app.session.isFinalized && !this.app.isKeyframeRecording) return;
+
+    if (this.fsm) {
+      if (!this.fsm.isAttached && this.app.activeCompId) {
+        this.fsm.transition(SyncState.ATTACHED_IDLE);
+      }
+      if (this.fsm.canTransition(SyncState.QUEUEING_EXPORT)) {
+        this.fsm.transition(SyncState.QUEUEING_EXPORT);
+      }
+    }
+
     this._trajectoryRunId += 1;
     const runId = this._trajectoryRunId;
     if (this._trajectoryDownloadSession) this._trajectoryDownloadSession.cancel();
@@ -81,6 +112,13 @@ class SyncManager {
     this._supersedeOperation('sync');
     this._supersedeOperation('preview');
     this._trajectoryOperationGeneration = null;
+
+    if (this.fsm) {
+      const target = (this.app && this.app.activeCompId) ? SyncState.ATTACHED_IDLE : SyncState.DETACHED;
+      if (this.fsm.canTransition(target)) {
+        this.fsm.transition(target);
+      }
+    }
   }
 
   _supersedeOperation(kind) {
@@ -109,6 +147,10 @@ class SyncManager {
     if (this._trajectoryDownloadSession) this._trajectoryDownloadSession.cancel();
     if (this._previewStitcher) this._previewStitcher.destroy();
     this._previewStitcher = null;
+
+    if (this.fsm && this.fsm.canTransition(SyncState.RECORDING_KEYFRAMES)) {
+      this.fsm.transition(SyncState.RECORDING_KEYFRAMES);
+    }
 
     if (this._trajectoryOperationGeneration !== null) {
       this.app.session.cancelOperation('preview', this._trajectoryOperationGeneration);
@@ -226,6 +268,10 @@ class SyncManager {
     if (!compId || !isCurrent()) return;
 
     try {
+      if (this.fsm && this.fsm.canTransition(SyncState.CAPTURING_TRAJECTORY)) {
+        this.fsm.transition(SyncState.CAPTURING_TRAJECTORY);
+      }
+
       const trajectory = await this.app.aeBridge.invoke(
         'trajectory.scan', { compId, sampleStep: 6 }, { timeoutMs: 30000 }
       );
@@ -305,6 +351,9 @@ class SyncManager {
       if (result && result.compId) this.app.activeCompId = result.compId;
       this.app.session.completeOperation('preview', previewGeneration);
       this._trajectoryOperationGeneration = null;
+      if (this.fsm && this.fsm.canTransition(SyncState.ATTACHED_IDLE)) {
+        this.fsm.transition(SyncState.ATTACHED_IDLE);
+      }
       globalEventBus.emit('ui:status', { message: 'Path preview ready.', isError: false });
     } catch (error) {
       if (isCurrent()) {
@@ -327,11 +376,25 @@ class SyncManager {
         this.app.session.cancelOperation('preview', snapshot.generation);
         this._trajectoryOperationGeneration = null;
       }
+      if (this.fsm && this.fsm.state === SyncState.CAPTURING_TRAJECTORY) {
+        const target = (this.app && this.app.activeCompId) ? SyncState.ATTACHED_IDLE : SyncState.DETACHED;
+        if (this.fsm.canTransition(target)) {
+          this.fsm.transition(target);
+        }
+      }
     }
   }
 
   queueAutoExportFromAE() {
     if (!this.app.activeCompId) return;
+    if (this.fsm) {
+      if (this.fsm.canTransition(SyncState.SCRUBBING_CTI)) {
+        this.fsm.transition(SyncState.SCRUBBING_CTI);
+      }
+      if (this.fsm.canTransition(SyncState.ATTACHED_IDLE)) {
+        this.fsm.transition(SyncState.ATTACHED_IDLE);
+      }
+    }
     // We do NOT auto-export tiles to AE when the timeline cursor moves.
     // This function was disabled previously to fix the "timeline scrub preview tile bug".
     // We keep it empty to satisfy any event emitters.
@@ -358,6 +421,10 @@ class SyncManager {
 
     if (!quiet) globalEventBus.emit('ui:status', { message: 'Preparing tile export…', isError: false });
     
+    if (this.fsm && this.fsm.canTransition(SyncState.EXPORTING_PREVIEW)) {
+      this.fsm.transition(SyncState.EXPORTING_PREVIEW);
+    }
+
     try {
       snapshot = OperationSnapshot.capture(this.app, {
         kind: 'sync',
@@ -443,6 +510,9 @@ class SyncManager {
       if (!snapshot.isCurrent(this.app) || this.app.activeCompId !== builtCompId) return;
       await this.app.metadataManager.saveToComp(builtCompId, this.app.viewport, this.app.tileManager, this.app.session);
       this.app.session.completeOperation('sync', currentGeneration);
+      if (this.fsm && this.fsm.canTransition(SyncState.ATTACHED_IDLE)) {
+        this.fsm.transition(SyncState.ATTACHED_IDLE);
+      }
 
     } catch (error) {
       if (currentGeneration !== this.app.session.generations.sync) return;
@@ -468,6 +538,12 @@ class SyncManager {
       if (downloadSession && this._syncDownloadSession === downloadSession) {
         this._syncDownloadSession = null;
       }
+      if (this.fsm && this.fsm.state === SyncState.EXPORTING_PREVIEW) {
+        const target = (this.app && this.app.activeCompId) ? SyncState.ATTACHED_IDLE : SyncState.DETACHED;
+        if (this.fsm.canTransition(target)) {
+          this.fsm.transition(target);
+        }
+      }
     }
   }
 
@@ -478,6 +554,9 @@ class SyncManager {
     this.trajectoryTimer = null;
     this._trajectoryRunId += 1;
     this.invalidateBackgroundWork();
+    if (this.fsm && this.fsm.canTransition(SyncState.DETACHED)) {
+      this.fsm.transition(SyncState.DETACHED);
+    }
   }
 }
 

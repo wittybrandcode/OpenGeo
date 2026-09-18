@@ -16,10 +16,13 @@ class CoveragePlanner {
     const halfWidth = (viewport.width / (2 * tileScale)) * overscanX;
     const halfHeight = (viewport.height / (2 * tileScale)) * overscanY;
     
-    // Gutter buffers: generous side margins plus extra horizon buffer for 3D tilt
-    const gutterX = pitch > 0 ? 3 : 1;
-    const gutterY = pitch > 0 ? 3 : 1;
-    const horizonGutter = pitch > 0 ? 3 : 0;
+    // Gutter buffers: delegate to FrustumMath with safe fallback
+    const overscan = (typeof FrustumMath !== 'undefined' && FrustumMath.calculatePitchOverscan)
+      ? FrustumMath.calculatePitchOverscan(pitch)
+      : { gutterX: pitch > 0 ? 3 : 1, gutterY: pitch > 0 ? 3 : 1, horizonGutter: pitch > 0 ? 3 : 0 };
+    const gutterX = overscan.gutterX;
+    const gutterY = overscan.gutterY;
+    const horizonGutter = overscan.horizonGutter;
     
     const minX = Math.floor((center.x - halfWidth) / viewport.tileSize) - gutterX;
     const maxX = Math.floor((center.x + halfWidth) / viewport.tileSize) + gutterX;

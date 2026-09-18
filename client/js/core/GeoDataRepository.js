@@ -1,3 +1,12 @@
+/**
+ * OpenGeo — GeoDataRepository (Façade)
+ *
+ * Provides high-level vector dataset queries, spatial index lookups,
+ * and Arabic text normalization.
+ * Delegates low-level file I/O to ChunkedFileReader and in-memory caching
+ * to GeometryMemoryCache while preserving all public interfaces.
+ */
+
 class GeoDataRepository {
   constructor() {
     try {
@@ -7,26 +16,39 @@ class GeoDataRepository {
       this.fs = null;
       this.path = null;
     }
-    this.cache = new Map();
-    this.cacheMeta = new Map();
-    this.pendingLoads = new Map();
+
+    this._memCache = typeof GeometryMemoryCache !== 'undefined' ? new GeometryMemoryCache() : null;
+    this.cache = this._memCache ? this._memCache.cache : new Map();
+    this.cacheMeta = this._memCache ? this._memCache.cacheMeta : new Map();
+    this.pendingLoads = this._memCache ? this._memCache.pendingLoads : new Map();
     this.dataDir = this._getDataDir();
   }
 
   _getDataDir() {
+    if (typeof ChunkedFileReader !== 'undefined' && ChunkedFileReader.resolveDataDir) {
+      return ChunkedFileReader.resolveDataDir(this.path);
+    }
     if (!this.path) return null;
     try {
-      const cs = typeof CSInterface !== 'undefined' ? new CSInterface() : new window.CSInterface();
-      const extUri = cs.getSystemPath(window.SystemPath.EXTENSION);
-      let extPath = extUri.replace(/^file:\/{2,3}/, '');
-      extPath = decodeURIComponent(extPath);
-      return this.path.join(extPath, 'client', 'assets', 'data').replace(/\\/g, '/');
-    } catch(e) {
+      const cs = typeof CSInterface !== 'undefined' ? new CSInterface() : (typeof window !== 'undefined' && window.CSInterface ? new window.CSInterface() : null);
+      if (cs && typeof window !== 'undefined' && window.SystemPath) {
+        const extUri = cs.getSystemPath(window.SystemPath.EXTENSION);
+        let extPath = extUri.replace(/^file:\/{2,3}/, '');
+        extPath = decodeURIComponent(extPath);
+        return this.path.join(extPath, 'client', 'assets', 'data').replace(/\\/g, '/');
+      }
+    } catch(e) {}
+    try {
       return this.path.resolve(__dirname, '../../assets/data').replace(/\\/g, '/');
+    } catch (ex) {
+      return null;
     }
   }
 
   _resolveDataFile(filename) {
+    if (typeof ChunkedFileReader !== 'undefined' && ChunkedFileReader.resolveDataFile) {
+      return ChunkedFileReader.resolveDataFile(filename, this.path, this.dataDir);
+    }
     if (!filename || !this.path || !this.dataDir) return null;
     const root = this.path.resolve(this.dataDir);
     const candidate = this.path.resolve(root, filename);
@@ -49,6 +71,17 @@ class GeoDataRepository {
       console.error(`[GeoDataRepository] Rejected unsafe dataset path: ${filename}`);
       return null;
     }
+
+    if (typeof ChunkedFileReader !== 'undefined' && ChunkedFileReader.readJsonSync) {
+      const res = ChunkedFileReader.readJsonSync(fullPath, this.fs);
+      if (res && res.data) {
+        this.cache.set(filename, res.data);
+        this.cacheMeta.set(filename, { bytes: res.bytes, loadedAt: Date.now(), lastAccess: Date.now() });
+        return res.data;
+      }
+      return null;
+    }
+
     if (!this.fs.existsSync(fullPath)) {
       console.error(`[GeoDataRepository] Dataset not found: ${fullPath}`);
       return null;
@@ -83,38 +116,50 @@ class GeoDataRepository {
     const fullPath = this._resolveDataFile(filename);
     if (!fullPath) return Promise.resolve(null);
     const maxBytes = Number(options.maxBytes) || 4 * 1024 * 1024;
-    const promise = new Promise(resolve => {
-      this.fs.stat(fullPath, (statError, stats) => {
-        if (statError || !stats || !stats.isFile() || stats.size > maxBytes) {
-          if (stats && stats.size > maxBytes) console.warn(`[GeoDataRepository] Dataset chunk exceeds ${maxBytes} bytes: ${filename}`);
-          resolve(null);
-          return;
-        }
-        this.fs.readFile(fullPath, 'utf8', (readError, dataStr) => {
-          if (readError) {
-            console.error(`[GeoDataRepository] Failed to read ${filename}:`, readError);
-            resolve(null);
-            return;
+
+    const readPromise = (typeof ChunkedFileReader !== 'undefined' && ChunkedFileReader.readJsonAsync)
+      ? ChunkedFileReader.readJsonAsync(fullPath, this.fs, maxBytes).then(res => {
+          if (res && res.data) {
+            this.cache.set(filename, res.data);
+            this.cacheMeta.set(filename, { bytes: res.bytes, loadedAt: Date.now(), lastAccess: Date.now() });
+            return res.data;
           }
-          try {
-            const data = JSON.parse(dataStr);
-            this.cache.set(filename, data);
-            this.cacheMeta.set(filename, { bytes: stats.size, loadedAt: Date.now(), lastAccess: Date.now() });
-            resolve(data);
-          } catch (parseError) {
-            console.error(`[GeoDataRepository] Failed to parse ${filename}:`, parseError);
-            resolve(null);
-          }
+          return null;
+        })
+      : new Promise(resolve => {
+          this.fs.stat(fullPath, (statError, stats) => {
+            if (statError || !stats || !stats.isFile() || stats.size > maxBytes) {
+              if (stats && stats.size > maxBytes) console.warn(`[GeoDataRepository] Dataset chunk exceeds ${maxBytes} bytes: ${filename}`);
+              resolve(null);
+              return;
+            }
+            this.fs.readFile(fullPath, 'utf8', (readError, dataStr) => {
+              if (readError) {
+                console.error(`[GeoDataRepository] Failed to read ${filename}:`, readError);
+                resolve(null);
+                return;
+              }
+              try {
+                const data = JSON.parse(dataStr);
+                this.cache.set(filename, data);
+                this.cacheMeta.set(filename, { bytes: stats.size, loadedAt: Date.now(), lastAccess: Date.now() });
+                resolve(data);
+              } catch (parseError) {
+                console.error(`[GeoDataRepository] Failed to parse ${filename}:`, parseError);
+                resolve(null);
+              }
+            });
+          });
         });
-      });
-    });
-    const trackedPromise = promise.then(value => {
+
+    const trackedPromise = readPromise.then(value => {
       this.pendingLoads.delete(filename);
       return value;
     }, error => {
       this.pendingLoads.delete(filename);
       throw error;
     });
+
     this.pendingLoads.set(filename, trackedPromise);
     return trackedPromise;
   }

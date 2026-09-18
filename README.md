@@ -1,6 +1,6 @@
 # OpenGeo — Geospatial Engine for Adobe After Effects
 
-![Version](https://img.shields.io/badge/version-1.0.0-emerald)
+![Version](https://img.shields.io/badge/version-1.0.1-emerald)
 ![Tests](https://img.shields.io/badge/tests-162%2F162%20passed-brightgreen)
 ![Adobe CEP](https://img.shields.io/badge/Adobe%20CEP-10%2B%20%7C%2011%2B%20%7C%2012%2B-blue)
 ![After Effects](https://img.shields.io/badge/After%20Effects-2022--2025%2B-purple)
@@ -35,7 +35,7 @@
 ## 🚀 Installation
 
 ### Option 1: Automated Release ZIP
-1. Download the latest `OpenGeo-v1.0.0.zip` from [Releases](https://github.com/wittybrandcode/OpenGeo/releases).
+1. Download the latest `OpenGeo-v1.0.1.zip` from [Releases](https://github.com/wittybrandcode/OpenGeo/releases).
 2. Extract the archive directly into your Adobe CEP extensions folder:
    * **Windows:** `C:\Program Files (x86)\Common Files\Adobe\CEP\extensions\OpenGeo`
      *(or `%APPDATA%\Adobe\CEP\extensions\OpenGeo`)*

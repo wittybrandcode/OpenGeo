@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Map controller rig and expressions
 // ============================================================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWidth, compHeight, camera, documentId) {
   var mapLayer = findLayerByComment(containingComp, 'opengeo:controller') || findLayerByName(containingComp, mapcompName);
   if (!mapLayer) {
@@ -224,3 +227,11 @@ function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcomp
   try { mapPivot.property('Position').expression = ''; } catch (ignoreExpression) {}
   mapPivot.property('Position').setValue([compWidth / 2, compHeight / 2, 0]);
 }
+
+// Register rig helpers on $._opengeo namespace
+$._opengeo.rig = {
+  ensureMapController: opengeoEnsureMapController,
+  synchronizeControllerCamera: opengeoSynchronizeControllerCamera,
+  escapeExpressionString: opengeoEscapeExpressionString,
+  installMapPivotExpressions: opengeoInstallMapPivotExpressions
+};

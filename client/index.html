@@ -648,13 +648,18 @@
   <script src="js/core/ApplicationCoordinator.js?v=2"></script>
   <script src="js/core/PreviewController.js?v=1"></script>
   <script src="js/core/CompositionController.js?v=5"></script>
-  <script src="js/map/MercatorProjection.js?v=2"></script>
+  <script src="js/core/geometry/MercatorMath.js?v=1"></script>
+  <script src="js/core/geometry/FrustumMath.js?v=1"></script>
+  <script src="js/core/geometry/TileMath.js?v=1"></script>
+  <script src="js/map/MercatorProjection.js?v=3"></script>
   <script src="js/tiles/TileAddress.js?v=2"></script>
   <script src="js/tiles/PlacementExpander.js?v=2"></script>
   <script src="js/tiles/CoverageContract.js?v=1"></script>
   <script src="js/tiles/CachePolicy.js?v=1"></script>
   <script src="js/tiles/CoveragePlanner.js?v=2"></script>
-  <script src="js/map/Viewport.js?v=3"></script>
+  <script src="js/map/core/ViewportTransform.js?v=1"></script>
+  <script src="js/map/core/ViewportAnchor.js?v=1"></script>
+  <script src="js/map/Viewport.js?v=4"></script>
   <script src="js/map/TileGrid.js?v=5"></script>
   <script src="js/map/MapRenderer.js"></script>
   <script src="js/overlays/VectorPreviewLayer.js?v=6"></script>
@@ -681,7 +686,9 @@
   <script src="js/ui/ToolbarController.js?v=9"></script>
   <script src="js/ui/LocationHudController.js?v=1"></script>
   <script src="js/core/AEBridge.js?v=2"></script>
-  <script src="js/core/GeoDataRepository.js?v=7"></script>
+  <script src="js/core/repository/ChunkedFileReader.js?v=1"></script>
+  <script src="js/core/repository/GeometryMemoryCache.js?v=1"></script>
+  <script src="js/core/GeoDataRepository.js?v=8"></script>
   <script src="js/core/CartographyPolicy.js?v=1"></script>
   <script src="js/core/JobManager.js?v=1"></script>
   <script src="js/core/ProviderManager.js?v=2"></script>
@@ -689,12 +696,17 @@
   <script src="js/ae/AESyncEngine.js?v=7"></script>
   <script src="js/ae/SpatialPin.js?v=2"></script>
   <!-- OpenGeo Engine v2 (IIFE bundle) -->
-    <script src="js/engine/OpenGeoEngine.js?v=9"></script>
+  <script src="js/engine/pipeline/EngineSyncBridge.js?v=1"></script>
+  <script src="js/engine/pipeline/TilePipelineSession.js?v=1"></script>
+  <script src="js/engine/OpenGeoEngine.js?v=10"></script>
   <script src="js/core/OperationSnapshot.js?v=6"></script>
     <script src="js/engine/DownloadSession.js?v=3"></script>
     <script src="js/engine/MegaTileArtifactStore.js?v=1"></script>
     <script src="js/engine/MegaTileStitcher.js?v=7"></script>
     <script src="js/engine/TilePlanner.js?v=8"></script>
+    <!-- State Machine Governance Layer -->
+    <script src="js/core/fsm/FinalizeStateMachine.js?v=1"></script>
+    <script src="js/core/fsm/SyncStateMachine.js?v=1"></script>
     <script src="js/core/SyncManager.js?v=9"></script>
     <script src="js/core/FinalizeController.js?v=14"></script>
   <script src="js/core/VectorMapManager.js?v=12"></script>

@@ -2,10 +2,20 @@
 // OpenGeo ExtendScript Host: Helpers & Utilities
 // ==========================================
 
-var MAP_SIZE = 262144;         // Core Mercator World Size at Zoom 0
-var TILE_REF_SIZE = 256;       // Reference tile size for scale calculation
-var MAX_ZOOM = 23;             // Maximum allowed zoom level
-var OVERSHOOT_PERCENT = 5;     // Extra % to scale tiles to fix seams
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
+// Core Mercator & Tile Constants (Encapsulated on $._opengeo namespace)
+$._opengeo.MAP_SIZE = 262144;         // Core Mercator World Size at Zoom 0
+$._opengeo.TILE_REF_SIZE = 256;       // Reference tile size for scale calculation
+$._opengeo.MAX_ZOOM = 23;             // Maximum allowed zoom level
+$._opengeo.OVERSHOOT_PERCENT = 5;     // Extra % to scale tiles to fix seams
+
+// Global aliases for backward-compatibility across host includes (single combined declaration)
+var MAP_SIZE = $._opengeo.MAP_SIZE,
+    TILE_REF_SIZE = $._opengeo.TILE_REF_SIZE,
+    MAX_ZOOM = $._opengeo.MAX_ZOOM,
+    OVERSHOOT_PERCENT = $._opengeo.OVERSHOOT_PERCENT;
 
 function hLog(msg) {
   try { $.writeln('[OpenGeo] ' + msg); } catch (e) {}
@@ -183,3 +193,21 @@ function opengeoCheckProjectState() {
     return JSON.stringify({ isSaved: false, projectName: projectName });
   }
 }
+
+// Register helpers on $._opengeo namespace
+$._opengeo.helpers = {
+  hLog: hLog,
+  hError: hError,
+  withUndoGroup: withUndoGroup,
+  opengeoIsManagedPayloadFile: opengeoIsManagedPayloadFile,
+  opengeoIsValidObject: opengeoIsValidObject,
+  ensureComp: ensureComp,
+  findLayerByName: findLayerByName,
+  hasEffect: hasEffect,
+  findLayerByComment: findLayerByComment,
+  resolveOpenGeoMapComp: resolveOpenGeoMapComp,
+  getOrCreateFolder: getOrCreateFolder,
+  getOpenGeoFolderStructure: getOpenGeoFolderStructure,
+  getProjectPath: getProjectPath,
+  opengeoCheckProjectState: opengeoCheckProjectState
+};

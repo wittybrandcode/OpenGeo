@@ -2,6 +2,9 @@
 // OpenGeo ExtendScript Host: Composition Builder Module
 // ==========================================
 
+var $ = typeof $ !== 'undefined' ? $ : {};
+$._opengeo = $._opengeo || {};
+
 function opengeoBuildComposition(jsonData) {
   hLog('opengeoBuildComposition called');
   try {
@@ -122,3 +125,9 @@ function opengeoReadPayloadFile(filePath) {
     file.close();
   }
 }
+
+// Register composition builder helpers on $._opengeo namespace
+$._opengeo.builder = {
+  buildComposition: opengeoBuildComposition,
+  readPayloadFile: opengeoReadPayloadFile
+};
