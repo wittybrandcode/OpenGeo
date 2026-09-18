@@ -72,35 +72,45 @@
 }
 
 .splash-logo {
-  width: 88px;
-  height: 88px;
+  width: 140px;
+  height: auto;
+  max-width: 80%;
   cursor: pointer;
-  transition: transform 0.15s ease;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
   user-select: none;
+  filter: drop-shadow(0 4px 20px rgba(57, 181, 74, 0.25));
 }
 
 .splash-logo:hover {
-  transform: scale(1.02);
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 28px rgba(57, 181, 74, 0.45));
 }
 
 .splash-logo:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
 }
 
 .splash-text {
-  margin-top: 18px;
+  margin-top: 20px;
   font-size: 15px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   color: var(--text-primary);
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
 }
 
 .splash-brand {
-  font-weight: 600;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ffffff 40%, #6ee7b7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .splash-tagline {
-  opacity: 0.6;
+  color: #888888;
   font-weight: 400;
 }
 

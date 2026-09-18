@@ -1,22 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
-  <!-- Outer glowing ring -->
-  <circle cx="100" cy="100" r="90" fill="none" stroke="#1473e6" stroke-width="4" opacity="0.3" />
-  <circle cx="100" cy="100" r="75" fill="none" stroke="#1473e6" stroke-width="2" stroke-dasharray="8 8" opacity="0.6" />
-  
-  <!-- Planet Core -->
-  <circle cx="100" cy="100" r="60" fill="url(#globeGrad)" />
-  
-  <!-- Simple continents/abstract geometry -->
-  <path d="M 60,100 C 60,70 140,70 140,100 C 140,130 60,130 60,100" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8" />
-  <path d="M 100,40 C 70,70 70,130 100,160 C 130,130 130,70 100,40" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.8" />
-  
-  <circle cx="100" cy="100" r="8" fill="#ffffff" />
-  <circle cx="100" cy="100" r="16" fill="none" stroke="#ffffff" stroke-width="2" />
-  
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="opengeo-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 468 260.74" width="100%" height="100%">
   <defs>
-    <linearGradient id="globeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2c8cff" />
-      <stop offset="100%" stop-color="#0d47a1" />
-    </linearGradient>
+    <style>
+      .og-brand-fill {
+        fill: #39b54a;
+        stroke-width: 0px;
+      }
+    </style>
   </defs>
+  <g id="opengeo-mark">
+    <!-- G with Location Pin Integration -->
+    <path class="og-brand-fill" d="m468,108c0-29.83-12.09-56.82-31.64-76.37S389.83,0,360,0c-29.83,0-56.82,12.09-76.37,31.64-19.54,19.54-31.64,46.54-31.64,76.37,0,29.83,12.09,56.82,31.64,76.37l76.37,76.37,63.64-63.64,25.46-25.46-1.06-1.06-24.4-24.4-1.61-1.61-36.57-36.57-25.46,25.46,36.57,36.57,1.61,1.61-38.18,38.18-50.91-50.91c-13.02-13.02-21.09-31.03-21.09-50.91,0-19.88,8.06-37.89,21.09-50.91s31.03-21.09,50.91-21.09h0s0,0,0,0h0c19.88,0,37.89,8.06,50.91,21.09,13.02,13.02,21.09,31.03,21.09,50.91h0s36.01,0,36.01,0Z"/>
+    <!-- O for Open & Globe -->
+    <path class="og-brand-fill" d="m108,0C48.35,0,0,48.35,0,108s48.35,108,108,108,108-48.35,108-108S167.65,0,108,0Zm0,180c-39.76,0-72-32.24-72-72S68.24,36,108,36s72,32.24,72,72-32.24,72-72,72Z"/>
+  </g>
 </svg>

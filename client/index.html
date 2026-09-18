@@ -19,9 +19,9 @@
 
   <div id="app">
     <div class="toolbar">
-      <!-- Dedicated Header Brand / Logo Container (Ready for SVG) -->
+      <!-- Dedicated Header Brand / Logo Container -->
       <div class="header-brand" id="header-brand" title="OpenGeo Map Engine">
-        <span class="header-brand-logo" id="header-brand-logo" aria-hidden="true"></span>
+        <span class="header-brand-logo" id="header-brand-logo" aria-hidden="true"><img src="assets/logos/opengeo-logo.svg" alt="OG" class="header-brand-img"></span>
         <span class="header-brand-title" id="header-brand-title">OpenGeo</span>
       </div>
 
@@ -279,7 +279,9 @@
     <div class="download-panel">
       <div class="download-header">
         <div class="download-header-left">
-          <i data-lucide="cloud-download" class="download-icon" id="dl-icon"></i>
+          <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(57, 181, 74, 0.12); border: 1px solid rgba(57, 181, 74, 0.25); display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+            <img src="assets/logos/opengeo-logo.svg" alt="OG" style="width: 22px; height: auto;">
+          </div>
           <div>
             <div class="download-title" id="dl-title">Downloading Tiles</div>
             <div class="download-subtitle" id="dl-subtitle">High-Resolution Map Finalize</div>
@@ -342,7 +344,10 @@
   <div id="project-maps-modal" class="project-maps-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="project-maps-title">
     <section class="project-maps-panel">
       <header class="project-maps-header">
-        <div><strong id="project-maps-title">Project Maps</strong><span>OpenGeo maps in the current After Effects project</span></div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/logos/opengeo-logo.svg" alt="OG" style="height: 18px; width: auto; filter: drop-shadow(0 1px 4px rgba(57, 181, 74, 0.3));">
+          <div><strong id="project-maps-title">Project Maps</strong><span>OpenGeo maps in the current After Effects project</span></div>
+        </div>
         <div class="project-maps-header-actions">
           <button id="project-maps-refresh" class="feature-layer-action" type="button" title="Refresh maps"><i data-lucide="refresh-cw"></i></button>
           <button id="project-maps-close" class="feature-layer-action" type="button" title="Close"><i data-lucide="x"></i></button>
@@ -356,7 +361,9 @@
     <div class="opengeo-dialog-panel">
       <div class="opengeo-dialog-accent"></div>
       <div class="opengeo-dialog-header">
-        <div class="opengeo-dialog-symbol"><i data-lucide="sparkles"></i></div>
+        <div class="opengeo-dialog-symbol" style="background: rgba(57, 181, 74, 0.12); border: 1px solid rgba(57, 181, 74, 0.25);">
+          <img src="assets/logos/opengeo-logo.svg" alt="OG" style="width: 20px; height: auto;">
+        </div>
         <div class="opengeo-dialog-heading">
           <strong id="opengeo-dialog-title">Confirm action</strong>
           <span>OpenGeo</span>
@@ -381,12 +388,8 @@
       <!-- Modal Header -->
       <div class="comp-modal-header">
         <div class="comp-modal-title-group">
-          <div class="comp-modal-icon-badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="comp-header-icon">
-              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
-              <polyline points="2 17 12 22 22 17"></polyline>
-              <polyline points="2 12 12 17 22 12"></polyline>
-            </svg>
+          <div class="comp-modal-icon-badge" style="background: rgba(57, 181, 74, 0.12); border: 1px solid rgba(57, 181, 74, 0.25);">
+            <img src="assets/logos/opengeo-logo.svg" alt="OG" style="width: 20px; height: auto;">
           </div>
           <div>
             <h3 class="comp-modal-title">New Composition</h3>
@@ -496,8 +499,11 @@
 
   <div class="settings-overlay" id="provider-settings-modal" style="display: none;">
     <div class="settings-panel" style="width: 380px; display: flex; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); height: auto; border: 1px solid var(--border-color); border-radius: var(--border-radius-sm); box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-      <div class="settings-header">
-        OpenGeo Settings
+      <div class="settings-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <img src="assets/logos/opengeo-logo.svg" alt="OG" style="height: 16px; width: auto;">
+          <span>OpenGeo Settings</span>
+        </div>
         <button class="settings-close" id="provider-settings-close" title="Close provider settings" aria-label="Close provider settings" style="display: flex; align-items: center; justify-content: center;">
           <i data-lucide="x" style="width: 14px; height: 14px;"></i>
         </button>
