@@ -260,6 +260,57 @@ class ThumbnailProcessor {
   }
 
   /**
+   * Generates a high-quality multi-frame cinematic motion sequence from a source canvas.
+   * Produces 8-12 crisp supersampled frames with subtle orbital/zoom drift so that every
+   * map card exhibits a stunning, alive, smooth hover preview.
+   */
+  generateCinematicFrames(sourceCanvas, frameCount = 10, options = {}) {
+    if (!sourceCanvas || !sourceCanvas.width || !sourceCanvas.height) return [];
+    const logicalWidth = Math.max(1, Number(options.viewportWidth) || sourceCanvas.clientWidth || sourceCanvas.width);
+    const logicalHeight = Math.max(1, Number(options.viewportHeight) || sourceCanvas.clientHeight || sourceCanvas.height);
+    const frameWidth = Math.max(1, Math.min(logicalWidth, Number(options.frameWidth) || logicalWidth));
+    const frameHeight = Math.max(1, Math.min(logicalHeight, Number(options.frameHeight) || logicalHeight));
+    const pixelScaleX = sourceCanvas.width / logicalWidth;
+    const pixelScaleY = sourceCanvas.height / logicalHeight;
+    const sourceWidth = Math.max(1, frameWidth * pixelScaleX);
+    const sourceHeight = Math.max(1, frameHeight * pixelScaleY);
+    const sourceX = Math.max(0, (sourceCanvas.width - sourceWidth) / 2);
+    const sourceY = Math.max(0, (sourceCanvas.height - sourceHeight) / 2);
+
+    const outW = Math.max(160, Math.min(640, Number(options.outWidth) || 480));
+    const aspect = (frameWidth && frameHeight) ? (frameWidth / frameHeight) : (16 / 9);
+    const outH = Math.max(90, Math.round(outW / (aspect > 0 ? aspect : (16 / 9))));
+
+    const frames = [];
+    const count = Math.max(4, Math.min(16, frameCount));
+
+    for (let i = 0; i < count; i++) {
+      const progress = count > 1 ? i / (count - 1) : 0;
+      // Smooth sinusoidal orbital pan & zoom (100% to 108% scale)
+      const zoomFactor = 1.0 + 0.07 * Math.sin(progress * Math.PI);
+      const panOffsetX = (progress - 0.5) * (sourceWidth * 0.04);
+      const panOffsetY = (Math.sin(progress * Math.PI * 2) * 0.5) * (sourceHeight * 0.02);
+
+      const cropW = sourceWidth / zoomFactor;
+      const cropH = sourceHeight / zoomFactor;
+      const cropX = Math.max(0, Math.min(sourceCanvas.width - cropW, sourceX + (sourceWidth - cropW) / 2 + panOffsetX));
+      const cropY = Math.max(0, Math.min(sourceCanvas.height - cropH, sourceY + (sourceHeight - cropH) / 2 + panOffsetY));
+
+      const frameCanvas = document.createElement('canvas');
+      frameCanvas.width = outW;
+      frameCanvas.height = outH;
+      const ctx = frameCanvas.getContext('2d', { alpha: false });
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(sourceCanvas, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+      }
+      frames.push(frameCanvas);
+    }
+    return frames;
+  }
+
+  /**
    * Renders a real map frame for a given camera position using downloaded tile assets.
    */
   async renderFrameFromTiles(camera, assets, width, height, options = {}) {

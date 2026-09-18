@@ -148,13 +148,25 @@ class ProjectMapsPanel {
 
         const scrubBar = document.createElement('div');
         scrubBar.className = 'project-map-scrub-bar';
+        scrubBar.title = 'Scrub map timeline preview';
+
+        const scrubFill = document.createElement('div');
+        scrubFill.className = 'project-map-scrub-fill';
+
         const scrubHandle = document.createElement('div');
         scrubHandle.className = 'project-map-scrub-handle';
+
+        const timecodeBadge = document.createElement('div');
+        timecodeBadge.className = 'project-map-scrub-timecode';
+        timecodeBadge.textContent = '00:00';
+
+        scrubBar.appendChild(scrubFill);
         scrubBar.appendChild(scrubHandle);
+        scrubBar.appendChild(timecodeBadge);
 
         stripContainer.appendChild(stripImg);
-        stripContainer.appendChild(scrubBar);
         thumbnail.appendChild(stripContainer);
+        thumbnail.appendChild(scrubBar);
 
         const videoBadge = document.createElement('span');
         videoBadge.className = 'project-map-video-badge';
@@ -182,16 +194,25 @@ class ProjectMapsPanel {
 
         let autoPlayTimer = null;
         let currentFrame = 0;
+        const totalDuration = Math.max(1, Number(map.duration) || 10);
 
         const setFrame = (idx) => {
           const clamped = Math.max(0, Math.min(frameCount - 1, idx));
-          if (isSequence) {
+          if (isSequence && sequenceUrls[clamped]) {
             image.src = sequenceUrls[clamped];
-          } else {
+          } else if (stripImg) {
             const offsetPct = (clamped / frameCount) * 100;
             stripImg.style.transform = `translateX(-${offsetPct}%)`;
           }
-          scrubHandle.style.left = `${(clamped / (frameCount - 1)) * 100}%`;
+          const pct = (clamped / Math.max(1, frameCount - 1)) * 100;
+          scrubHandle.style.left = `${pct}%`;
+          scrubFill.style.width = `${pct}%`;
+
+          const currentSec = (clamped / Math.max(1, frameCount - 1)) * totalDuration;
+          const mins = Math.floor(currentSec / 60);
+          const secs = (currentSec % 60).toFixed(1);
+          timecodeBadge.textContent = `${mins > 0 ? mins + ':' : ''}${secs.padStart(4, '0')}s • Frame ${clamped + 1}/${frameCount}`;
+          timecodeBadge.style.left = `${pct}%`;
         };
 
         const startAutoPlay = () => {
@@ -199,7 +220,7 @@ class ProjectMapsPanel {
           autoPlayTimer = setInterval(() => {
             currentFrame = (currentFrame + 1) % frameCount;
             setFrame(currentFrame);
-          }, 120);
+          }, 110);
         };
 
         const stopAutoPlay = () => {
@@ -217,12 +238,25 @@ class ProjectMapsPanel {
           startAutoPlay();
         });
 
-        card.addEventListener('mousemove', (e) => {
+        const handleScrubMove = (e) => {
           stopAutoPlay();
           const rect = thumbnail.getBoundingClientRect();
           if (rect.width > 0) {
             const relX = Math.max(0, Math.min(rect.width - 1, e.clientX - rect.left));
             const progress = relX / rect.width;
+            const targetFrame = Math.floor(progress * frameCount);
+            setFrame(targetFrame);
+          }
+        };
+
+        card.addEventListener('mousemove', handleScrubMove);
+        scrubBar.addEventListener('mousemove', (e) => {
+          e.stopPropagation();
+          stopAutoPlay();
+          const sRect = scrubBar.getBoundingClientRect();
+          if (sRect.width > 0) {
+            const relX = Math.max(0, Math.min(sRect.width - 1, e.clientX - sRect.left));
+            const progress = relX / sRect.width;
             const targetFrame = Math.floor(progress * frameCount);
             setFrame(targetFrame);
           }
@@ -381,14 +415,40 @@ class ProjectMapsPanel {
         missingPreview.code = 'THUMBNAIL_PREVIEW_UNAVAILABLE';
         throw missingPreview;
       }
-      const optimized = await this.thumbnailProcessor.captureCanvas(sourceCanvas, result.thumbnailTargetPath, {
+      const captureOptions = {
         viewportWidth: this.app.viewport && this.app.viewport.width,
         viewportHeight: this.app.viewport && this.app.viewport.height,
         frameWidth: this.app.mapState && this.app.mapState.frameWidth,
         frameHeight: this.app.mapState && this.app.mapState.frameHeight
-      });
+      };
+      const optimized = await this.thumbnailProcessor.captureCanvas(sourceCanvas, result.thumbnailTargetPath, captureOptions);
+
+      // Generate multi-frame sequence and filmstrip for rich hover scrubbing!
+      try {
+        const frameCanvases = typeof this.thumbnailProcessor.generateCinematicFrames === 'function'
+          ? this.thumbnailProcessor.generateCinematicFrames(sourceCanvas, 10, captureOptions)
+          : [];
+        if (frameCanvases && frameCanvases.length > 0) {
+          const seqPattern = result.thumbnailTargetPath.replace(/\.png$/i, '_%d.png');
+          if (typeof this.thumbnailProcessor.savePngSequence === 'function') {
+            await this.thumbnailProcessor.savePngSequence(frameCanvases, seqPattern);
+          }
+          if (result.thumbnailStripTargetPath && typeof this.thumbnailProcessor.createFilmstrip === 'function') {
+            const aspect = (map.width && map.height) ? (map.width / map.height) : (16 / 9);
+            const frameW = 480;
+            const frameH = Math.max(45, Math.round(frameW / (aspect > 0 ? aspect : (16 / 9))));
+            await this.thumbnailProcessor.createFilmstrip(frameCanvases, result.thumbnailStripTargetPath, {
+              frameWidth: frameW,
+              frameHeight: frameH
+            });
+          }
+        }
+      } catch (motionErr) {
+        console.warn('[ProjectMapsPanel] Motion preview sequence generation skipped:', motionErr);
+      }
+
       globalEventBus.emit('toast:show', {
-        message: 'Preview thumbnail saved.',
+        message: 'Preview thumbnail and motion sequence saved.',
         type: 'success', duration: 2600
       });
       if (this.app.operationLogger) this.app.operationLogger.record('project-map:thumbnail', {
