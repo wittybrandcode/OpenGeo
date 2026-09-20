@@ -242,6 +242,14 @@ function opengeoPrepareCompositionRevision(jsonData) {
     }
     mapPivot.threeDLayer = true;
 
+    if (tiles instanceof Array && tiles.length > 1) {
+      tiles.sort(function(a, b) {
+        var za = (a && a.sourceZoom !== undefined ? a.sourceZoom : (a ? a.z : 0)) || 0;
+        var zb = (b && b.sourceZoom !== undefined ? b.sourceZoom : (b ? b.z : 0)) || 0;
+        return za - zb;
+      });
+    }
+
     for (var tileIndex = 0; tileIndex < tiles.length; tileIndex++) {
       var tile = tiles[tileIndex];
       var tileKey = opengeoTilePlacementIdentity(tile, tileIndex);
@@ -267,8 +275,43 @@ function opengeoPrepareCompositionRevision(jsonData) {
         tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100, 100]);
         try {
           tileLayer.quality = LayerQuality.BEST;
-          tileLayer.blendingMode = BlendingMode.ALPHA_ADD;
+          tileLayer.blendingMode = BlendingMode.NORMAL;
         } catch (qualityError) {}
+
+        // Apply smooth solid-base opacity transitions (eliminates crossfade darkening dip / alpha hole)
+        if (data.zoomTransitions && data.zoomTransitions.length > 0) {
+          try {
+            var opacityProp = tileLayer.property('Opacity') || (tileLayer.property('ADBE Transform Group') && tileLayer.property('ADBE Transform Group').property('ADBE Opacity'));
+            if (opacityProp && typeof opacityProp.setValueAtTime === 'function') {
+              var effectiveZ = (tile.sourceZoom !== undefined ? tile.sourceZoom : tile.z);
+              for (var trIdx = 0; trIdx < data.zoomTransitions.length; trIdx++) {
+                var tr = data.zoomTransitions[trIdx];
+                var isZoomIn = tr.toZoom > tr.fromZoom;
+                var lowerZ = Math.min(tr.fromZoom, tr.toZoom);
+                var higherZ = Math.max(tr.fromZoom, tr.toZoom);
+
+                if (effectiveZ === higherZ) {
+                  // Higher zoom layer sits on TOP: animate its opacity across the transition
+                  if (isZoomIn) {
+                    // Zoom-in: higher detail dissolves IN (0% -> 100%) over solid lower layer
+                    opacityProp.setValueAtTime(tr.startTime, 0);
+                    opacityProp.setValueAtTime(tr.endTime, 100);
+                  } else {
+                    // Zoom-out: higher detail dissolves OUT (100% -> 0%) revealing solid lower layer
+                    opacityProp.setValueAtTime(tr.startTime, 100);
+                    opacityProp.setValueAtTime(tr.endTime, 0);
+                  }
+                } else if (effectiveZ === lowerZ) {
+                  // Lower zoom layer sits UNDERNEATH: MUST REMAIN 100% SOLID throughout transition window!
+                  // This eliminates any alpha hole or darkness dip (sum of alpha is always 100%).
+                  opacityProp.setValueAtTime(tr.startTime, 100);
+                  opacityProp.setValueAtTime(tr.endTime, 100);
+                }
+              }
+            }
+          } catch (opacityError) {}
+        }
+
         createdLayers.push(tileLayer);
         result.imported++;
         result.assetIds.push(tileKey);
@@ -403,6 +446,25 @@ function opengeoCommitCompositionRevision(args) {
           );
         } catch (rigError) { result.warnings.push('RIG_UPDATE_WARNING'); }
       }
+      try {
+        var existingBalance = findLayerByName(resolved.mapComp, 'OpenGeo Color Balance');
+        if (!existingBalance && resolved.mapComp.layers && typeof resolved.mapComp.layers.addSolid === 'function') {
+          var balLayer = resolved.mapComp.layers.addSolid(
+            [1, 1, 1],
+            'OpenGeo Color Balance',
+            resolved.mapComp.width,
+            resolved.mapComp.height,
+            resolved.mapComp.pixelAspect || 1,
+            resolved.mapComp.duration
+          );
+          balLayer.adjustmentLayer = true;
+          balLayer.guideLayer = false;
+          balLayer.comment = opengeoOwnershipComment(documentId, 'color-balance', operationId);
+          if (typeof balLayer.moveToBeginning === 'function') {
+            balLayer.moveToBeginning();
+          }
+        }
+      } catch (colorBalanceError) {}
       try { resolved.controller.comment = opengeoOwnershipComment(documentId, 'controller', null); } catch (controllerTagError) {}
       try { resolved.mapComp.comment = opengeoOwnershipComment(documentId, 'map-comp', operationId, 'source=' + String(data.source || '')); } catch (mapTagError) {}
       try {

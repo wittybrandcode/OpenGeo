@@ -101,7 +101,7 @@ class FinalizeController {
       this._commitState = 'preparing';
       if (this.fsm && this.fsm.canTransition('HOST_PREPARING')) this.fsm.transition('HOST_PREPARING');
       const prepareResult = await this.prepareComposition(
-        stitched.tiles, activeCompId, snapshot, transaction.revisionId
+        stitched.tiles, activeCompId, snapshot, transaction.revisionId, plan.zoomTransitions
       );
       this._assertTypedImportResult(prepareResult, stitched.tiles.length, transaction.revisionId, 'prepare', expectedAssetIds);
       transaction.state = 'prepared';
@@ -353,7 +353,8 @@ class FinalizeController {
       fetchWidth,
       fetchHeight,
       gutterTiles: 1,
-      includeBaseCoverage: false
+      includeBaseCoverage: false,
+      blendDuration: (typeof TilePlanner !== 'undefined' && TilePlanner.DEFAULT_BLEND_DURATION) || 0.25
     };
 
     if (!this.tilePlanner) this.tilePlanner = new TilePlanner(this.app);
@@ -613,7 +614,7 @@ class FinalizeController {
     }
   }
 
-  async prepareComposition(megaTiles, activeCompId, snapshot, revisionId) {
+  async prepareComposition(megaTiles, activeCompId, snapshot, revisionId, zoomTransitions) {
     globalEventBus.emit('ui:status', { message: `Finalize: Preparing ${megaTiles.length} hidden AE layers...`, isError: false });
     const payloadObject = {
       operationId: revisionId,
@@ -621,6 +622,7 @@ class FinalizeController {
       source: snapshot.sourceKey,
       documentId: snapshot.documentId,
       compId: activeCompId,
+      zoomTransitions: zoomTransitions || [],
       compSettings: {
         width: snapshot.composition.width,
         height: snapshot.composition.height

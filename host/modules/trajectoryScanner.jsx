@@ -67,12 +67,12 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
       var lon = lonProp.valueAtTime(sampleTime, false);
       var zoom = zoomProp.valueAtTime(sampleTime, false);
       var pitch = pitchProp ? pitchProp.valueAtTime(sampleTime, false) : 0;
-      frames.push('{"lat":' + lat + ',"lon":' + lon + ',"zoom":' + zoom + ',"pitch":' + pitch + '}');
+      frames.push('{"lat":' + lat + ',"lon":' + lon + ',"zoom":' + zoom + ',"pitch":' + pitch + ',"time":' + sampleTime + '}');
       lastSampleTime = sampleTime;
     }
     if (lastSampleTime === null || Math.abs(lastSampleTime - end) >= 0.000001) {
       var endPitch = pitchProp ? pitchProp.valueAtTime(end, false) : 0;
-      frames.push('{"lat":' + latProp.valueAtTime(end, false) + ',"lon":' + lonProp.valueAtTime(end, false) + ',"zoom":' + zoomProp.valueAtTime(end, false) + ',"pitch":' + endPitch + '}');
+      frames.push('{"lat":' + latProp.valueAtTime(end, false) + ',"lon":' + lonProp.valueAtTime(end, false) + ',"zoom":' + zoomProp.valueAtTime(end, false) + ',"pitch":' + endPitch + ',"time":' + end + '}');
     }
     
     return '{"frames":[' + frames.join(',') + ']}';

@@ -60,7 +60,7 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100, 100]);
     try {
       tileLayer.quality = LayerQuality.BEST;
-      tileLayer.blendingMode = BlendingMode.ALPHA_ADD;
+      tileLayer.blendingMode = BlendingMode.NORMAL;
     } catch (qualityError) {}
     importedCount++;
   }

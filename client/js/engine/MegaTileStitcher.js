@@ -98,6 +98,7 @@ class MegaTileStitcher {
       sourcePlacementKeys: [tile.placementKey || `legacy-placement/${tile.z}/${tile.x}/${tile.y}`],
       filePath: tile.filePath,
       z: tile.z,
+      sourceZoom: tile.z,
       x: tile.x,
       y: tile.y
     };
@@ -110,6 +111,7 @@ class MegaTileStitcher {
       sourcePlacementKeys: group.children.map(child => child.placementKey || `legacy-placement/${child.z}/${child.x}/${child.y}`),
       filePath,
       z: group.z,
+      sourceZoom: group.children && group.children[0] ? group.children[0].z : group.z,
       x: group.x,
       y: group.y
     };
