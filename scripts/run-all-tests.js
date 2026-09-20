@@ -23,7 +23,8 @@ const suites = [
   { name: '3D Map Pitch & Horizon Architecture Suite', script: 'scripts/tests/map/pitch-3d.test.js' },
   { name: 'End-to-End Production Stress Suite', script: 'scripts/tests/e2e/production-stress.test.js' },
   { name: 'FSM Governance & Lifecycle Safety Suite', script: 'scripts/tests/fsm/fsm-lifecycle.test.js' },
-  { name: 'Tile Zoom Blending & Color Discrepancy Suite', script: 'scripts/tests/tile-pipeline/tile-blending.test.js' }
+  { name: 'Tile Zoom Blending & Color Discrepancy Suite', script: 'scripts/tests/tile-pipeline/tile-blending.test.js' },
+  { name: 'Navigation Drift & Screen-Space Velocity Suite', script: 'scripts/tests/map/navigation-drift.test.js' }
 ];
 
 console.log('================================================================');

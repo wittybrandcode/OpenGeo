@@ -173,9 +173,64 @@ function opengeoClearCameraKeyframes(compId) {
   });
 }
 
+function opengeoSynchronizeKeyframeEasing(compId, easingType, customInfluence) {
+  return withUndoGroup("OpenGeo: Synchronize Camera Easing", function() {
+    try {
+      var comp = ensureComp(compId);
+      if (!comp) return 'error: comp not found';
+
+      var controller = findLayerByComment(comp, 'opengeo:controller');
+      if (!controller) return 'error: controller not found';
+
+      var effects = controller.property("ADBE Effect Parade");
+      var latProp = effects.property('Latitude').property(1);
+      var lonProp = effects.property('Longitude').property(1);
+      var zoomProp = effects.property('Zoom').property(1);
+      var pitchEffect = effects.property('Pitch');
+      var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
+      var properties = [latProp, lonProp, zoomProp];
+      if (pitchProp) properties.push(pitchProp);
+
+      var influence = (customInfluence !== undefined && customInfluence !== null && isFinite(Number(customInfluence)))
+        ? Math.max(0.1, Math.min(100, Number(customInfluence)))
+        : 33.333333;
+
+      var type = String(easingType || 'EASY_EASE').toUpperCase();
+
+      for (var pIdx = 0; pIdx < properties.length; pIdx++) {
+        var prop = properties[pIdx];
+        if (!prop || prop.numKeys < 1) continue;
+
+        for (var k = 1; k <= prop.numKeys; k++) {
+          try {
+            if (type === 'LINEAR') {
+              prop.setInterpolationTypeAtKey(k, KeyframeInterpolationType.LINEAR, KeyframeInterpolationType.LINEAR);
+            } else {
+              var inEase = new KeyframeEase(0, (type === 'EASE_OUT' ? 0.1 : influence));
+              var outEase = new KeyframeEase(0, (type === 'EASE_IN' ? 0.1 : influence));
+              prop.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
+              prop.setTemporalEaseAtKey(k, [inEase], [outEase]);
+            }
+          } catch (easeErr) {}
+        }
+      }
+
+      return JSON.stringify({
+        status: 'success',
+        easingType: type,
+        influence: influence
+      });
+    } catch (e) {
+      var errStr = e.toString().replace(/"/g, '\\"').replace(/\n/g, '\\n');
+      return 'error: ' + errStr;
+    }
+  });
+}
+
 // Register trajectory helpers on $._opengeo namespace
 $._opengeo.trajectory = {
   getTimelineTrajectory: opengeoGetTimelineTrajectory,
   addKeyframe: opengeoAddKeyframe,
-  clearCameraKeyframes: opengeoClearCameraKeyframes
+  clearCameraKeyframes: opengeoClearCameraKeyframes,
+  synchronizeKeyframeEasing: opengeoSynchronizeKeyframeEasing
 };
