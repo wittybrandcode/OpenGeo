@@ -219,7 +219,7 @@ var OpenGeo = (function () {
   TileDownloader.prototype.cancelAll = function () {
     this._cancelled = true;
     for (var i = 0; i < this._activeRequests.length; i++) {
-      try { this._activeRequests[i].abort(); } catch (ignoreAbort) {}
+      try { this._activeRequests[i].abort(); } catch (ignoreAbort) { /* request already settled or aborted */ }
     }
     this._activeRequests = [];
     this._flush();
@@ -258,7 +258,9 @@ var OpenGeo = (function () {
         var cepFs = window.cep && window.cep.fs;
         if (cepFs && cepFs.stat(dir).err !== 0) cepFs.makedir(dir);
       }
-    } catch (e) {}
+    } catch (mkdirErr) {
+      /* directory exists or permission handled upstream */
+    }
   };
 
   TileDownloader.prototype._exists = function (fp) {
@@ -283,7 +285,9 @@ var OpenGeo = (function () {
                 fs.unlinkSync(fp);
                 return false;
               }
-            } catch (ex) {}
+            } catch (ex) {
+              /* header inspection fallback */
+            }
           }
           return true;
         }
@@ -308,7 +312,9 @@ var OpenGeo = (function () {
                 cepFs.deleteFile(fp);
                 return false;
               }
-            } catch (ex) {}
+            } catch (ex) {
+              /* header inspection fallback */
+            }
           }
         }
         return true;

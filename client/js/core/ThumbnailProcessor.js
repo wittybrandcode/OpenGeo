@@ -158,7 +158,12 @@ class ThumbnailProcessor {
     try {
       await fs.promises.writeFile(temporary, output, { flag: 'wx' });
       let targetExists = false;
-      try { await fs.promises.access(target); targetExists = true; } catch (_missingTargetError) {}
+      try {
+        await fs.promises.access(target);
+        targetExists = true;
+      } catch (_missingTargetError) {
+        targetExists = false;
+      }
       if (targetExists) {
         await fs.promises.copyFile(target, backup);
         hasBackup = true;
@@ -172,14 +177,28 @@ class ThumbnailProcessor {
     } catch (error) {
       try {
         if (hasBackup) {
-          try { await fs.promises.unlink(target); } catch (_unlinkTargetError) {}
+          try {
+            await fs.promises.unlink(target);
+          } catch (_unlinkTargetError) {
+            /* target was not present or already removed */
+          }
           await fs.promises.copyFile(backup, target);
         }
-      } catch (_restoreError) {}
+      } catch (_restoreError) {
+        console.warn('[ThumbnailProcessor] Rollback restore failed:', _restoreError);
+      }
       throw this._error('THUMBNAIL_COMMIT_FAILED', 'The display-ready thumbnail could not be committed: ' + error.message);
     } finally {
-      try { await fs.promises.unlink(temporary); } catch (_temporaryCleanupError) {}
-      try { await fs.promises.unlink(backup); } catch (_backupCleanupError) {}
+      try {
+        await fs.promises.unlink(temporary);
+      } catch (_temporaryCleanupError) {
+        /* temporary file already cleaned up */
+      }
+      try {
+        await fs.promises.unlink(backup);
+      } catch (_backupCleanupError) {
+        /* backup file already cleaned up */
+      }
     }
   }
 
@@ -376,10 +395,14 @@ class ThumbnailProcessor {
               loadedImages.set(filePath, img);
             }
             ctx.drawImage(img, t.screenX, t.screenY, t.drawSize, t.drawSize);
-          } catch (_) {}
+          } catch (tileDrawErr) {
+            /* tile decode or draw error fallback */
+          }
         }
       }
-    } catch (_) {}
+    } catch (frameRenderErr) {
+      /* canvas rendering fallback */
+    }
 
     return canvas;
   }

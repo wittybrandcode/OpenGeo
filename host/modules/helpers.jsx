@@ -18,11 +18,20 @@ var MAP_SIZE = $._opengeo.MAP_SIZE,
     OVERSHOOT_PERCENT = $._opengeo.OVERSHOOT_PERCENT;
 
 function hLog(msg) {
-  try { $.writeln('[OpenGeo] ' + msg); } catch (e) {}
+  try { $.writeln('[OpenGeo] ' + msg); } catch (e) { /* ExtendScript logging fallback */ }
 }
 
 function hError(msg) {
-  try { $.writeln('[OpenGeo ERROR] ' + msg); } catch (e) {}
+  try { $.writeln('[OpenGeo ERROR] ' + msg); } catch (e) { /* ExtendScript error logging fallback */ }
+}
+
+function opengeoSafeCall(fn, contextName, fallbackValue) {
+  try {
+    return { ok: true, value: fn() };
+  } catch (err) {
+    hError('[' + (contextName || 'Anonymous') + '] Handled error: ' + (err.message || String(err)));
+    return { ok: false, error: (err.message || String(err)), value: fallbackValue };
+  }
 }
 
 // Centralized mutation boundary: every host write that uses this helper closes
@@ -84,9 +93,13 @@ function findLayerByName(comp, name) {
       try {
         var layer = comp.layer(i);
         if (layer && opengeoIsValidObject(layer) && layer.name === name) return layer;
-      } catch (e) {}
+      } catch (e) {
+        /* layer index out of bounds or transient layer error */
+      }
     }
-  } catch (compError) {}
+  } catch (compError) {
+    /* composition access error */
+  }
   return null;
 }
 
@@ -99,7 +112,9 @@ function hasEffect(layer, effectName) {
     for (var i = 1; i <= effects.numProperties; i++) {
       if (effects.property(i).name === effectName) return true;
     }
-  } catch (e) {}
+  } catch (e) {
+    /* effect parade access fallback */
+  }
   return false;
 }
 
@@ -113,9 +128,13 @@ function findLayerByComment(comp, comment) {
         var layerComment = String(layer.comment || '');
         if (layerComment === comment || layerComment.indexOf(comment + ';') === 0) return layer;
         if (comment === 'opengeo:controller' && layerComment.indexOf('opengeo:v2;') === 0 && layerComment.indexOf(';role=controller') !== -1) return layer;
-      } catch (e) {}
+      } catch (e) {
+        /* transient layer comment error */
+      }
     }
-  } catch (compError) {}
+  } catch (compError) {
+    /* composition access error */
+  }
   return null;
 }
 
@@ -134,11 +153,17 @@ function resolveOpenGeoMapComp(candidate) {
             var layer = outer.layer(layerIndex);
             if (!layer || !opengeoIsValidObject(layer)) continue;
             if ((layer.comment === 'opengeo:controller' || String(layer.comment || '').indexOf('opengeo:controller;') === 0 || String(layer.comment || '').indexOf('opengeo:v2;') === 0 && String(layer.comment || '').indexOf(';role=controller') !== -1) && layer.source && layer.source.id === candidate.id) return outer;
-          } catch (ignoreLayer) {}
+          } catch (ignoreLayer) {
+            /* layer access fallback */
+          }
         }
-      } catch (ignoreOuter) {}
+      } catch (ignoreOuter) {
+        /* project item access fallback */
+      }
     }
-  } catch (ignoreCandidate) {}
+  } catch (ignoreCandidate) {
+    /* candidate resolution fallback */
+  }
   return candidate;
 }
 
@@ -186,7 +211,9 @@ function opengeoCheckProjectState() {
     if (app.project && app.project.file) {
       projectName = String(app.project.file.displayName || app.project.file.name || '');
     }
-  } catch (nameError) {}
+  } catch (nameError) {
+    /* project file is unsaved or name unavailable */
+  }
   if (path) {
     return JSON.stringify({ isSaved: true, path: path, projectName: projectName });
   } else {

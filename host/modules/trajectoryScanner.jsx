@@ -211,7 +211,9 @@ function opengeoSynchronizeKeyframeEasing(compId, easingType, customInfluence) {
               prop.setInterpolationTypeAtKey(k, KeyframeInterpolationType.BEZIER, KeyframeInterpolationType.BEZIER);
               prop.setTemporalEaseAtKey(k, [inEase], [outEase]);
             }
-          } catch (easeErr) {}
+          } catch (easeErr) {
+            hError('Failed to apply keyframe ease at key ' + k + ': ' + easeErr);
+          }
         }
       }
 

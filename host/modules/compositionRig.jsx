@@ -56,23 +56,18 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
           if (cameraLayer.property('Camera Options') && cameraLayer.property('Camera Options').property('Zoom')) {
             defaultZoom = cameraLayer.property('Camera Options').property('Zoom').value;
           }
-        } catch(zErr) {}
+        } catch(zErr) {
+          /* camera zoom property lookup fallback */
+        }
 
         var camPoi = cameraLayer.property('Point of Interest');
         if (camPoi) {
           camPoi.expression =
             'var ctrl = null;\n' +
-            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
-            'if (!ctrl || !ctrl.transform || !ctrl.transform.position) {\n' +
-            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-            '    try {\n' +
-            '      var l = thisComp.layer(i);\n' +
-            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
-            '    } catch(err) {}\n' +
-            '  }\n' +
-            '}\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) { /* layer lookup fallback */ }\n' +
             'if (ctrl && ctrl.transform && ctrl.transform.position) {\n' +
-            '  [ctrl.transform.position[0], ctrl.transform.position[1], 0];\n' +
+            '  var p = ctrl.transform.position;\n' +
+            '  [p[0], p[1], 0];\n' +
             '} else {\n' +
             '  [' + (compWidth / 2) + ', ' + (compHeight / 2) + ', 0];\n' +
             '}\n';
@@ -82,36 +77,24 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
         if (camPos) {
           camPos.expression =
             'var ctrl = null;\n' +
-            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
-            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
-            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-            '    try {\n' +
-            '      var l = thisComp.layer(i);\n' +
-            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
-            '    } catch(err) {}\n' +
-            '  }\n' +
-            '}\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) { /* layer lookup fallback */ }\n' +
             'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
             '  value;\n' +
             '} else {\n' +
-            '  var p = 0;\n' +
-            '  try { p = ctrl.effect("Pitch")(1).value; } catch(e) {}\n' +
-            '  var rad = Math.max(0, Math.min(45, p)) * Math.PI / 180;\n' +
+            '  var p = ctrl.effect("Pitch")(1).value;\n' +
+            '  var rad = Math.max(0, Math.min(45, p)) * 0.017453292519943295;\n' +
             '  var d = ' + defaultZoom + ';\n' +
-            '  try { d = cameraOption("Zoom").value; } catch(err) {\n' +
-            '    try { d = cameraOption("Zoom"); } catch(err2) {\n' +
-            '      try { d = cameraOption.zoom.value; } catch(err3) {\n' +
-            '        try { d = cameraOption.zoom; } catch(err4) {}\n' +
-            '      }\n' +
-            '    }\n' +
+            '  try { d = cameraOption.zoom.value; } catch(err) {\n' +
+            '    try { d = cameraOption.zoom; } catch(err2) { /* zoom option fallback */ }\n' +
             '  }\n' +
-            '  var poi = [' + (compWidth / 2) + ', ' + (compHeight / 2) + ', 0];\n' +
-            '  try { poi = pointOfInterest; } catch(err) {}\n' +
+            '  var poi = pointOfInterest;\n' +
             '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
             '}\n';
         }
       }
-    } catch(camErr) {}
+    } catch(camErr) {
+      hError('Camera setup failed: ' + camErr);
+    }
   }
 
   try {
@@ -123,11 +106,13 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
       } else {
         xRot.expression =
           'var p = 0;\n' +
-          'try { p = effect("Pitch")(1).value; } catch(e) {}\n' +
+          'try { p = effect("Pitch")(1).value; } catch(e) { /* pitch effect fallback */ }\n' +
           'p;\n';
       }
     }
-  } catch(ignoreXRot) {}
+  } catch(ignoreXRot) {
+    /* xRot property fallback */
+  }
   // A composition rebuild may be the first operation after a restored panel
   // or a provider switch. Synchronize its controller now rather than relying
   // on a later polling round-trip, otherwise CEP and AE can show different
@@ -183,7 +168,7 @@ function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcomp
 
   var preamble =
     'var ctrl = null;\n' +
-    'try { ctrl = comp(\'' + safeContainingComp + '\').layer(\'' + safeMapcompName + '\'); } catch(e) {}\n';
+    'try { ctrl = comp(\'' + safeContainingComp + '\').layer(\'' + safeMapcompName + '\'); } catch(e) { /* mapcomp lookup fallback */ }\n';
 
   var scaleExpr =
     preamble +
@@ -273,7 +258,11 @@ function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcomp
     '}';
   mapPivot.property('Anchor Point').expression = anchorExpr;
   mapPivot.threeDLayer = true;
-  try { mapPivot.property('Position').expression = ''; } catch (ignoreExpression) {}
+  try {
+    mapPivot.property('Position').expression = '';
+  } catch (ignoreExpression) {
+    /* expression clear fallback */
+  }
   mapPivot.property('Position').setValue([compWidth / 2, compHeight / 2, 0]);
 }
 

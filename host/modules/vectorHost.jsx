@@ -31,30 +31,26 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
 
   layer.property("Position").expression =
     resolveMapPreamble +
-    'if (map) { var p = map.transform.position; [p[0], p[1], p[2] - 1]; } else { value; }';
+    'if (map && map.transform) { var p = map.transform.position; [p[0], p[1], p[2] - 1]; } else { value; }';
 
   layer.property("Anchor Point").expression =
     resolveMapPreamble +
-    'if (!map) { value; } else {\n' +
-    '  try {\n' +
-    '    var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-    '    var lon = map.effect("Longitude")(1).value;\n' +
-    '    var latRad = lat * Math.PI / 180;\n' +
-    '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-    '    var camX = ((lon + 180) / 360) * 262144;\n' +
-    '    var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-    '    [camX / 32, camY / 32, 0];\n' +
-    '  } catch(anchorErr) { value; }\n' +
+    'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
+    '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
+    '  var lon = map.effect("Longitude")(1).value;\n' +
+    '  var latRad = lat * 0.017453292519943295;\n' +
+    '  var mercN = Math.log(Math.tan(0.7853981633974483 + latRad * 0.5));\n' +
+    '  var camX = ((lon + 180) / 360) * 8192;\n' +
+    '  var camY = ((1 - mercN * 0.3183098861837907) * 0.5) * 8192;\n' +
+    '  [camX, camY, 0];\n' +
     '}';
 
   layer.property("Scale").expression =
     resolveMapPreamble +
-    'if (!map) { value; } else {\n' +
-    '  try {\n' +
-    '    var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-    '    var s = (100 * Math.pow(2, zoom) * 256) / 262144;\n' +
-    '    [s * 32, s * 32, s * 32];\n' +
-    '  } catch(scaleErr) { value; }\n' +
+    'if (!map || !map.effect || !map.effect("Zoom")) { value; } else {\n' +
+    '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
+    '  var s = 3.125 * Math.pow(2, zoom);\n' +
+    '  [s, s, s];\n' +
     '}';
 }
 

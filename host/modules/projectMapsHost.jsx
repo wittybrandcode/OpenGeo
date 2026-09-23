@@ -37,7 +37,9 @@ function opengeoProjectThumbnailInfo(documentId) {
       try {
         var m = seqFile.modified ? seqFile.modified.getTime() : seqFile.length;
         if (m > seqRevision) seqRevision = m;
-      } catch (seqM) {}
+      } catch (seqM) {
+        /* sequence file stat fallback */
+      }
     }
     var hasSequence = seqFrames.length > 1;
 
@@ -99,7 +101,9 @@ function opengeoProjectMapDescriptor(comp, activeCompId) {
       lng: Number(effects.property('Longitude').property(1).valueAtTime(comp.time, false)),
       zoom: Number(effects.property('Zoom').property(1).valueAtTime(comp.time, false))
     };
-  } catch (cameraError) {}
+  } catch (cameraError) {
+    /* camera effect property lookup fallback */
+  }
   var displayName = String(metadata.displayName || comp.name || 'OpenGeo Map').substring(0, 80);
   var documentId = String(metadata.documentId || ownership.document || '');
   var thumbnail = opengeoProjectThumbnailInfo(documentId);
@@ -152,7 +156,9 @@ function opengeoListProjectMaps() {
         if (!descriptor) continue;
         if (maps.length >= maxMaps) { truncated = true; skippedCount++; continue; }
         maps.push(descriptor);
-      } catch (itemError) {}
+      } catch (itemError) {
+        /* item inspection error fallback */
+      }
     }
     maps.sort(function(left, right) {
       if (left.active !== right.active) return left.active ? -1 : 1;
@@ -237,7 +243,9 @@ function opengeoGenerateDuplicateName(baseDisplayName) {
             if (n > maxNum) maxNum = n;
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        /* item inspection fallback */
+      }
     }
     return prefix + ' • ' + (maxNum + 1);
   }
@@ -251,7 +259,9 @@ function opengeoGenerateDuplicateName(baseDisplayName) {
       if (it && it instanceof CompItem) {
         existingNames[it.name.toLowerCase()] = true;
       }
-    } catch (e) {}
+    } catch (e) {
+      /* item name reading fallback */
+    }
   }
 
   var candidate = cleanBase + ' (Copy)';
@@ -307,7 +317,9 @@ function opengeoDuplicateProjectMap(compId, documentId) {
               break;
             }
           }
-        } catch (lErr) {}
+        } catch (lErr) {
+          /* inner layer inspection fallback */
+        }
       }
       if (!sourceMapComp && typeof opengeoFindDocumentMapComp === 'function') {
         sourceMapComp = opengeoFindDocumentMapComp(oldDocId);
@@ -321,7 +333,11 @@ function opengeoDuplicateProjectMap(compId, documentId) {
       newMapComp.name = newMapcompName;
       var folders = typeof getOpenGeoFolderStructure === 'function' ? getOpenGeoFolderStructure() : null;
       if (folders && folders.comps) {
-        try { newMapComp.parentFolder = folders.comps; } catch (fErr) {}
+        try {
+          newMapComp.parentFolder = folders.comps;
+        } catch (fErr) {
+          /* folder move fallback */
+        }
       }
 
       var sourceOwnership = typeof opengeoReadOwnership === 'function' ? opengeoReadOwnership(sourceMapComp.comment) : {};
@@ -346,14 +362,20 @@ function opengeoDuplicateProjectMap(compId, documentId) {
               tLayer.comment = opengeoOwnershipComment(newDocumentId, tOwnership.role || 'tile', tOwnership.revision || 'duplicate');
             }
           }
-        } catch (tErr) {}
+        } catch (tErr) {
+          /* tile layer tag update fallback */
+        }
       }
 
       // 4. Duplicate the outer containing composition
       var newOuterComp = sourceComp.duplicate();
       newOuterComp.name = newContainingCompName;
       if (folders && folders.comps) {
-        try { newOuterComp.parentFolder = folders.comps; } catch (fErr2) {}
+        try {
+          newOuterComp.parentFolder = folders.comps;
+        } catch (fErr2) {
+          /* folder move fallback */
+        }
       }
 
       // 5. Replace nested pre-comp layer source in newOuterComp
@@ -367,7 +389,9 @@ function opengeoDuplicateProjectMap(compId, documentId) {
             oLayer.comment = opengeoOwnershipComment(newDocumentId, 'controller', null);
             newControllerLayer = oLayer;
           }
-        } catch (repErr) {}
+        } catch (repErr) {
+          /* replace source fallback */
+        }
       }
 
       if (!newControllerLayer) {
@@ -391,23 +415,18 @@ function opengeoDuplicateProjectMap(compId, documentId) {
           if (newCameraLayer.property('Camera Options') && newCameraLayer.property('Camera Options').property('Zoom')) {
             defaultZoom = newCameraLayer.property('Camera Options').property('Zoom').value;
           }
-        } catch (zErr) {}
+        } catch (zErr) {
+          /* camera zoom option fallback */
+        }
 
         var camPoi = newCameraLayer.property('Point of Interest');
         if (camPoi) {
           camPoi.expression =
             'var ctrl = null;\n' +
-            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
-            'if (!ctrl || !ctrl.transform || !ctrl.transform.position) {\n' +
-            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-            '    try {\n' +
-            '      var l = thisComp.layer(i);\n' +
-            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
-            '    } catch(err) {}\n' +
-            '  }\n' +
-            '}\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) { /* ctrl layer fallback */ }\n' +
             'if (ctrl && ctrl.transform && ctrl.transform.position) {\n' +
-            '  [ctrl.transform.position[0], ctrl.transform.position[1], 0];\n' +
+            '  var p = ctrl.transform.position;\n' +
+            '  [p[0], p[1], 0];\n' +
             '} else {\n' +
             '  [' + (newOuterComp.width / 2) + ', ' + (newOuterComp.height / 2) + ', 0];\n' +
             '}\n';
@@ -417,31 +436,17 @@ function opengeoDuplicateProjectMap(compId, documentId) {
         if (camPos) {
           camPos.expression =
             'var ctrl = null;\n' +
-            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) {}\n' +
-            'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
-            '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-            '    try {\n' +
-            '      var l = thisComp.layer(i);\n' +
-            '      if (l.effect && l.effect("Pitch")) { ctrl = l; break; }\n' +
-            '    } catch(err) {}\n' +
-            '  }\n' +
-            '}\n' +
+            'try { ctrl = thisComp.layer("' + ctrlNameEscaped + '"); } catch(e) { /* ctrl layer fallback */ }\n' +
             'if (!ctrl || !ctrl.effect || !ctrl.effect("Pitch")) {\n' +
             '  value;\n' +
             '} else {\n' +
-            '  var p = 0;\n' +
-            '  try { p = ctrl.effect("Pitch")(1).value; } catch(e) {}\n' +
-            '  var rad = Math.max(0, Math.min(45, p)) * Math.PI / 180;\n' +
+            '  var p = ctrl.effect("Pitch")(1).value;\n' +
+            '  var rad = Math.max(0, Math.min(45, p)) * 0.017453292519943295;\n' +
             '  var d = ' + defaultZoom + ';\n' +
-            '  try { d = cameraOption("Zoom").value; } catch(err) {\n' +
-            '    try { d = cameraOption("Zoom"); } catch(err2) {\n' +
-            '      try { d = cameraOption.zoom.value; } catch(err3) {\n' +
-            '        try { d = cameraOption.zoom; } catch(err4) {}\n' +
-            '      }\n' +
-            '    }\n' +
+            '  try { d = cameraOption.zoom.value; } catch(err) {\n' +
+            '    try { d = cameraOption.zoom; } catch(err2) { /* camera zoom query fallback */ }\n' +
             '  }\n' +
-            '  var poi = [' + (newOuterComp.width / 2) + ', ' + (newOuterComp.height / 2) + ', 0];\n' +
-            '  try { poi = pointOfInterest; } catch(err) {}\n' +
+            '  var poi = pointOfInterest;\n' +
             '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
             '}\n';
         }
@@ -458,7 +463,9 @@ function opengeoDuplicateProjectMap(compId, documentId) {
             }
           }
         }
-      } catch (pErr) {}
+      } catch (pErr) {
+        /* source metadata parse fallback */
+      }
       newMetadata.documentId = newDocumentId;
       newMetadata.displayName = newDisplayName;
       newMetadata.lastModified = (new Date()).getTime();
@@ -485,7 +492,9 @@ function opengeoDuplicateProjectMap(compId, documentId) {
             }
           }
         }
-      } catch (thumbCopyErr) {}
+      } catch (thumbCopyErr) {
+        /* thumbnail file clone fallback */
+      }
 
       // 10. Open in viewer, reset active cache, and return descriptor
       newOuterComp.openInViewer();

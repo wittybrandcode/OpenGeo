@@ -39,7 +39,9 @@ class OperationLogger {
         const userData = cs.getSystemPath(SystemPath.USER_DATA);
         if (userData) return this.path.join(decodeURIComponent(userData).replace(/^file:\/{2,3}/, ''), 'OpenGeo', 'logs');
       }
-    } catch (ignoreCepPath) {}
+    } catch (ignoreCepPath) {
+      /* CEP interface unavailable, fallback to process.env */
+    }
     const appData = typeof process !== 'undefined' && process.env && process.env.APPDATA;
     return appData ? this.path.join(appData, 'OpenGeo', 'logs') : null;
   }
@@ -157,7 +159,9 @@ class OperationLogger {
           try {
             const entry = JSON.parse(line);
             if (entry.operationId === operationId) entries.push(entry);
-          } catch (_e) {}
+          } catch (_parseErr) {
+            /* skip malformed JSONL line */
+          }
         }
       }
       if (!entries.length) return null;
@@ -223,7 +227,9 @@ class OperationLogger {
               });
               if (errors.length >= limit) break;
             }
-          } catch (_e) {}
+          } catch (_parseErr) {
+            /* skip malformed JSONL line */
+          }
         }
         if (errors.length >= limit) break;
       }

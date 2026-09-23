@@ -99,12 +99,12 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
         '  var lonEff = null;\n' +
         '  try { lonEff = effect("Longitude"); } catch(e) {}\n' +
         '  var pinLng = (lonEff && lonEff.numProperties > 0) ? lonEff(1).value : ' + lng + ';\n' +
-        '  var sinLat = Math.sin(pinLat * Math.PI / 180);\n' +
+        '  var sinLat = Math.sin(pinLat * 0.017453292519943295);\n' +
         '  var worldX = ((pinLng + 180) / 360) * 262144;\n' +
         '  var worldY = ((1 - Math.log((1 + sinLat) / (1 - sinLat)) / (2 * Math.PI)) / 2) * 262144;\n' +
         '  var camLat = Math.max(-85.05112878, Math.min(85.05112878, ctrl.effect("Latitude")(1).value));\n' +
         '  var camLng = ctrl.effect("Longitude")(1).value;\n' +
-        '  var camSin = Math.sin(camLat * Math.PI / 180);\n' +
+        '  var camSin = Math.sin(camLat * 0.017453292519943295);\n' +
         '  var camX = ((camLng + 180) / 360) * 262144;\n' +
         '  var camY = ((1 - Math.log((1 + camSin) / (1 - camSin)) / (2 * Math.PI)) / 2) * 262144;\n' +
         '  var zoom = Math.max(0, Math.min(22, ctrl.effect("Zoom")(1).value));\n' +
@@ -121,7 +121,9 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
         if (mapLayer.effect && mapLayer.effect('Zoom')) {
           baseZoom = Math.round(mapLayer.effect('Zoom')(1).value);
         }
-      } catch (zErr) {}
+      } catch (zErr) {
+        /* zoom effect lookup fallback */
+      }
 
       pin.property('Scale').expression =
         'var baseScale = 100;\n' +
@@ -241,7 +243,11 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
             textDoc.fontSize = 30;
             textDoc.fillColor = [1, 1, 1];
             textDoc.applyFill = true;
-            try { textDoc.justification = ParagraphJustification.CENTER_JUSTIFY; } catch (jErr) {}
+            try {
+              textDoc.justification = ParagraphJustification.CENTER_JUSTIFY;
+            } catch (jErr) {
+              /* text justification property fallback */
+            }
             sourceText.setValue(textDoc);
           }
         } catch (textErr) {

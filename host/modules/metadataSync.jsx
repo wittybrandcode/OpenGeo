@@ -37,7 +37,9 @@ function opengeoGetCachedActiveMapState() {
       try {
         var cachedLayer = cache.comp.layer(cache.controller.index);
         if (cachedLayer === cache.controller) return cache;
-      } catch (ignoreCachedState) {}
+      } catch (ignoreCachedState) {
+        /* cached layer reference invalidated */
+      }
     }
     // If cache is not populated (e.g. extension restarted/reloaded), look for
     // any existing OpenGeo map composition in the project.
@@ -54,7 +56,9 @@ function opengeoGetCachedActiveMapState() {
               return cache;
             }
           }
-        } catch (ignoreItem) {}
+        } catch (ignoreItem) {
+          /* item access fallback */
+        }
       }
     }
     return null;
@@ -73,7 +77,9 @@ function opengeoGetCachedActiveMapState() {
         var cachedLayer = cache.comp.layer(cache.controller.index);
         if (cachedLayer === cache.controller) return cache;
       }
-    } catch (ignoreCachedState) {}
+    } catch (ignoreCachedState) {
+      /* cached layer index fallback */
+    }
   }
 
   var comp = resolveOpenGeoMapComp(activeItem);
@@ -162,7 +168,9 @@ function opengeoGetCompMetadata(compId) {
             if (metadata.opengeo.zoom === undefined) metadata.opengeo.zoom = zoomProp.property(1).valueAtTime(comp.time, false);
           }
         }
-      } catch (cameraErr) {}
+      } catch (cameraErr) {
+        /* camera effect query fallback */
+      }
       if (metadata.opengeo.source === undefined && controller.source && controller.source.comment) {
         var ownership = opengeoReadOwnership(controller.source.comment);
         if (ownership && ownership.source) metadata.opengeo.source = ownership.source;
@@ -222,7 +230,9 @@ function opengeoGetActiveState() {
               }
             }
           }
-        } catch (cErr) {}
+        } catch (cErr) {
+          /* POI / Position derivation fallback */
+        }
       }
       pitch = Math.max(0, Math.min(45, pitch));
 
@@ -269,7 +279,9 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
             if (innerLayer && !innerLayer.threeDLayer) {
               innerLayer.threeDLayer = true;
             }
-          } catch (innerLayerErr) {}
+          } catch (innerLayerErr) {
+            /* inner layer 3D upgrade fallback */
+          }
         }
       }
       for (var cIdx = 1; cIdx <= comp.numLayers; cIdx++) {
@@ -280,9 +292,13 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
               cLayer.threeDLayer = true;
             }
           }
-        } catch (cLayerErr) {}
+        } catch (cLayerErr) {
+          /* comp layer 3D upgrade fallback */
+        }
       }
-    } catch (upgradeErr) {}
+    } catch (upgradeErr) {
+      /* 3D layer upgrade fallback */
+    }
 
     var effects = controller.property("ADBE Effect Parade");
     if (!effects || !opengeoIsValidObject(effects)) {
@@ -302,7 +318,9 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
         pitchEffect = effects.addProperty('ADBE Angle Control');
         pitchEffect.name = 'Pitch';
         pitchEffect.property(1).setValue(0);
-      } catch (addPitchErr) {}
+      } catch (addPitchErr) {
+        /* pitch effect creation fallback */
+      }
     }
 
     if (!latEffect || !lngEffect || !zoomEffect) {
@@ -351,7 +369,9 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
           cameraLayer = comp.layers.addCamera('OpenGeo Camera', [comp.width / 2, comp.height / 2]);
           cameraLayer.comment = 'opengeo:camera';
           cameraLayer.moveToBeginning();
-        } catch (addCamErr) {}
+        } catch (addCamErr) {
+          /* camera creation fallback */
+        }
       }
 
       if (cameraLayer && opengeoIsValidObject(cameraLayer)) {
@@ -362,19 +382,27 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
           if (cameraLayer.property('Camera Options') && cameraLayer.property('Camera Options').property('Zoom')) {
             dZoom = cameraLayer.property('Camera Options').property('Zoom').value;
           }
-        } catch (zErr) {}
+        } catch (zErr) {
+          /* zoom property query fallback */
+        }
 
         var pVal = pitchProperty ? pitchProperty.valueAtTime(comp.time, false) : (pitch || 0);
         var pRad = Math.max(0, Math.min(45, pVal)) * Math.PI / 180;
         var curPoi = [comp.width / 2, comp.height / 2, 0];
         if (camPoi) {
-          try { curPoi = camPoi.value; } catch (poiErr) {}
+          try {
+            curPoi = camPoi.value;
+          } catch (poiErr) {
+            /* curPoi value fallback */
+          }
         }
         if (camPos && camPos.numKeys === 0) {
           camPos.setValue([curPoi[0], curPoi[1] + dZoom * Math.sin(pRad), -dZoom * Math.cos(pRad)]);
         }
       }
-    } catch (camSyncErr) {}
+    } catch (camSyncErr) {
+      /* camera sync fallback */
+    }
 
     var appliedRevision = canApplyCamera
       ? opengeoSetSyncRevision(effects, revision)
