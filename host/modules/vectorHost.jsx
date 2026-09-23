@@ -17,7 +17,17 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
   layer.threeDLayer = true;
   var safeMapLayerName = opengeoVectorEscapeExpressionString(mapLayerName);
   var resolveMapPreamble =
-    'var map = thisComp.layer("' + safeMapLayerName + '");\n';
+    'var map = null;\n' +
+    'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) {}\n' +
+    'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
+    '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+    '    try {\n' +
+    '      var l = thisComp.layer(i);\n' +
+    '      if (l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
+    '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
+    '    } catch(err) {}\n' +
+    '  }\n' +
+    '}\n';
 
   layer.property("Position").expression =
     resolveMapPreamble +

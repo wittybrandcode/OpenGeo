@@ -82,8 +82,17 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
       // Generate the position expression referencing the map controller and Pin's own controls
       pin.property('Position').expression =
         'var ctrl = null;\n' +
-        'if (thisComp.layer("' + mapLayerName + '")) { ctrl = thisComp.layer("' + mapLayerName + '"); }\n' +
-        'if (!ctrl || !ctrl.effect || !ctrl.effect("Latitude")) { value; } else {\n' +
+        'try { ctrl = thisComp.layer("' + mapLayerName + '"); } catch(e) {}\n' +
+        'if (!ctrl || !ctrl.effect || !ctrl.effect("Latitude")) {\n' +
+        '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+        '    try {\n' +
+        '      var l = thisComp.layer(i);\n' +
+        '      if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { ctrl = l; break; }\n' +
+        '      if (l.comment && l.comment.indexOf("opengeo:") === 0 && (l.comment.indexOf("controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { ctrl = l; break; }\n' +
+        '    } catch(err) {}\n' +
+        '  }\n' +
+        '}\n' +
+        'if (!ctrl) { value; } else {\n' +
         '  var latEff = effect("Latitude");\n' +
         '  var pinLat = (latEff && latEff.numProperties > 0) ? latEff(1).value : ' + lat + ';\n' +
         '  var lonEff = effect("Longitude");\n' +
@@ -202,7 +211,7 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
           textLayer.parent = pin;
           textLayer.threeDLayer = true;
           textLayer.property('Position').expression =
-            'parent.effect && parent.effect("Label Offset") ? parent.effect("Label Offset")(1).value : [0, -45, 0];';
+            'try { parent.effect("Label Offset")(1).value; } catch(e) { [0, -45, 0]; }';
 
           var sourceText = textLayer.property("Source Text");
           if (sourceText) {
