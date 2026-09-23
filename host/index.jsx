@@ -3,6 +3,7 @@
 // ============================================================================
 
 #include "modules/helpers.jsx"
+#include "modules/safeExecution.jsx"
 #include "modules/metadataSync.jsx"
 #include "modules/compositionAssets.jsx"
 #include "modules/compositionTiles.jsx"

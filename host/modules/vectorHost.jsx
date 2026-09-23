@@ -17,17 +17,7 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
   layer.threeDLayer = true;
   var safeMapLayerName = opengeoVectorEscapeExpressionString(mapLayerName);
   var resolveMapPreamble =
-    'var map = null;\n' +
-    'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) {}\n' +
-    'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
-    '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-    '    try {\n' +
-    '      var l = thisComp.layer(i);\n' +
-    '      if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
-    '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
-    '    } catch(err) {}\n' +
-    '  }\n' +
-    '}\n';
+    'var map = thisComp.layer("' + safeMapLayerName + '");\n';
 
   layer.property("Position").expression =
     resolveMapPreamble +
@@ -106,7 +96,9 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
   controller.threeDLayer = true;
   try {
     controller.property('Anchor Point').setValue([0, 0]);
-  } catch (anchorErr) {}
+  } catch (anchorErr) {
+    /* anchor point fallback */
+  }
   var anchor = payload.anchor || {};
   var point = anchor.point instanceof Array ? anchor.point : null;
   if (point && point.length >= 2) {
@@ -114,33 +106,21 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
     var ptX = Number(point[0]) || 0;
     var ptY = Number(point[1]) || 0;
     var resolveMapPreamble =
-      'var map = null;\n' +
-      'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) {}\n' +
-      'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
-      '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-      '    try {\n' +
-      '      var l = thisComp.layer(i);\n' +
-      '      if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
-      '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
-      '    } catch(err) {}\n' +
-      '  }\n' +
-      '}\n';
+      'var map = thisComp.layer("' + safeMapLayerName + '");\n';
     controller.property('Position').expression =
       resolveMapPreamble +
-      'if (!map) { value; } else {\n' +
-      '  try {\n' +
-      '    var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-      '    var lon = map.effect("Longitude")(1).value;\n' +
-      '    var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-      '    var latRad = lat * Math.PI / 180;\n' +
-      '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-      '    var camX = ((lon + 180) / 360) * 262144;\n' +
-      '    var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-      '    var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
-      '    var pt = [' + ptX + ', ' + ptY + '];\n' +
-      '    var mapPos = map.transform.position;\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
-      '  } catch(posErr) { value; }\n' +
+      'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
+      '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
+      '  var lon = map.effect("Longitude")(1).value;\n' +
+      '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
+      '  var latRad = lat * Math.PI / 180;\n' +
+      '  var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
+      '  var camX = ((lon + 180) / 360) * 262144;\n' +
+      '  var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
+      '  var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
+      '  var pt = [' + ptX + ', ' + ptY + '];\n' +
+      '  var mapPos = map.transform.position;\n' +
+      '  [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
       '}';
   }
   try {
@@ -148,7 +128,9 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
     marker.chapter = String(payload.sourceId || payload.sourceName || '');
     marker.cuePointName = featureId;
     controller.property('Marker').setValueAtTime(0, marker);
-  } catch (markerError) {}
+  } catch (markerError) {
+    /* marker creation fallback */
+  }
   return controller;
 }
 
@@ -285,7 +267,9 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
     document.fillColor = payload.labelColor || [0.86, 0.93, 0.97];
     document.justification = ParagraphJustification.CENTER_JUSTIFY;
     sourceText.setValue(document);
-  } catch (textStyleError) {}
+  } catch (textStyleError) {
+    /* text styling fallback */
+  }
 
   if (controller) {
     textLayer.parent = controller;
@@ -295,118 +279,85 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
       var safeShapeName = opengeoVectorEscapeExpressionString(visibilityLayerName);
       var safeMapName = opengeoVectorEscapeExpressionString(mapLayerName);
       textLayer.property("Position").expression =
-        'try {\n' +
-        '  var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        'var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        'if (shp && shp.effect && shp.effect("Label Offset X") && shp.effect("Label Offset Y")) {\n' +
         '  var ox = shp.effect("Label Offset X")("Slider");\n' +
         '  var oy = shp.effect("Label Offset Y")("Slider");\n' +
         '  [ox, oy];\n' +
-        '} catch (e) { value; }';
+        '} else { value; }';
 
       textLayer.property("Orientation").expression =
-        'try {\n' +
-        '  var shp = thisComp.layer("' + safeShapeName + '");\n' +
-        '  var autoOrient = (!shp.effect("Auto-Orient Label to Camera")) ? 1 : (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0);\n' +
-        '  if (autoOrient == 1) {\n' +
-        '    var cam = null;\n' +
-        '    try { cam = thisComp.activeCamera; } catch(ce) {}\n' +
-        '    if (cam && cam.hasVideo) {\n' +
-        '      lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
-        '    } else { value; }\n' +
+        'var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        'var autoOrient = (shp && shp.effect && shp.effect("Auto-Orient Label to Camera")) ? (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0) : 1;\n' +
+        'if (autoOrient == 1) {\n' +
+        '  var cam = thisComp.activeCamera;\n' +
+        '  if (cam && cam.hasVideo) {\n' +
+        '    lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
         '  } else { value; }\n' +
-        '} catch (e) { value; }';
+        '} else { value; }';
 
       textLayer.property("Scale").expression =
-        'try {\n' +
-        '  var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        'var shp = thisComp.layer("' + safeShapeName + '");\n' +
+        'if (!shp || !shp.effect || !shp.effect("Label Size")) { value; } else {\n' +
         '  var baseSize = shp.effect("Label Size")("Slider");\n' +
-        '  var scaleWithZoom = shp.effect("Scale with Zoom")("Checkbox") == 1;\n' +
+        '  var scaleWithZoom = shp.effect("Scale with Zoom") && shp.effect("Scale with Zoom")("Checkbox") == 1;\n' +
         '  if (!scaleWithZoom) {\n' +
         '    [baseSize, baseSize];\n' +
         '  } else {\n' +
-        '    var refZoom = shp.effect("Reference Zoom")("Slider");\n' +
-        '    var minS = shp.effect("Min Zoom Scale")("Slider") / 100;\n' +
-        '    var maxS = shp.effect("Max Zoom Scale")("Slider") / 100;\n' +
-        '    var curZoom = refZoom;\n' +
-        '    var map = null;\n' +
-        '    try { map = thisComp.layer("' + safeMapName + '"); } catch(e) {}\n' +
-        '    if (!map || !map.effect || !map.effect("Zoom")) {\n' +
-        '      for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-        '        try {\n' +
-        '          var l = thisComp.layer(i);\n' +
-        '          if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
-        '          if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
-        '        } catch(err) {}\n' +
-        '      }\n' +
-        '    }\n' +
-        '    if (map && map.effect && map.effect("Zoom")) {\n' +
-        '      curZoom = map.effect("Zoom")(1).value;\n' +
-        '    }\n' +
+        '    var refZoom = shp.effect("Reference Zoom") ? shp.effect("Reference Zoom")("Slider") : 10;\n' +
+        '    var minS = shp.effect("Min Zoom Scale") ? shp.effect("Min Zoom Scale")("Slider") / 100 : 0.25;\n' +
+        '    var maxS = shp.effect("Max Zoom Scale") ? shp.effect("Max Zoom Scale")("Slider") / 100 : 4;\n' +
+        '    var map = thisComp.layer("' + safeMapName + '");\n' +
+        '    var curZoom = (map && map.effect && map.effect("Zoom")) ? map.effect("Zoom")(1).value : refZoom;\n' +
         '    var factor = Math.max(minS, Math.min(maxS, Math.pow(2, curZoom - refZoom)));\n' +
         '    var finalS = baseSize * factor;\n' +
         '    [finalS, finalS];\n' +
         '  }\n' +
-        '} catch (e) { value; }';
+        '}';
     }
   } else {
     var safeMapLayerName = opengeoVectorEscapeExpressionString(mapLayerName);
     var x = Number(label.point[0]) || 0;
     var y = Number(label.point[1]) || 0;
     var resolveMapPreamble =
-      'var map = null;\n' +
-      'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) {}\n' +
-      'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
-      '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-      '    try {\n' +
-      '      var l = thisComp.layer(i);\n' +
-      '      if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
-      '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
-      '    } catch(err) {}\n' +
-      '  }\n' +
-      '}\n';
+      'var map = thisComp.layer("' + safeMapLayerName + '");\n';
     textLayer.property("Position").expression =
       resolveMapPreamble +
-      'if (!map) { value; } else {\n' +
-      '  try {\n' +
-      '    var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-      '    var lon = map.effect("Longitude")(1).value;\n' +
-      '    var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-      '    var latRad = lat * Math.PI / 180;\n' +
-      '    var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-      '    var camX = ((lon + 180) / 360) * 262144;\n' +
-      '    var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-      '    var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
-      '    var pt = [' + x + ', ' + y + '];\n' +
-      '    var mapPos = map.transform.position;\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
-      '  } catch(posErr) { value; }\n' +
+      'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
+      '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
+      '  var lon = map.effect("Longitude")(1).value;\n' +
+      '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
+      '  var latRad = lat * Math.PI / 180;\n' +
+      '  var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
+      '  var camX = ((lon + 180) / 360) * 262144;\n' +
+      '  var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
+      '  var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
+      '  var pt = [' + x + ', ' + y + '];\n' +
+      '  var mapPos = map.transform.position;\n' +
+      '  [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
       '}';
     textLayer.property("Scale").setValue([100, 100]);
     if (visibilityLayerName) {
       var safeShapeName2 = opengeoVectorEscapeExpressionString(visibilityLayerName);
       textLayer.property("Orientation").expression =
-        'try {\n' +
-        '  var shp = thisComp.layer("' + safeShapeName2 + '");\n' +
-        '  var autoOrient = (!shp.effect("Auto-Orient Label to Camera")) ? 1 : (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0);\n' +
-        '  if (autoOrient == 1) {\n' +
-        '    var cam = null;\n' +
-        '    try { cam = thisComp.activeCamera; } catch(ce) {}\n' +
-        '    if (cam && cam.hasVideo) {\n' +
-        '      lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
-        '    } else { value; }\n' +
+        'var shp = thisComp.layer("' + safeShapeName2 + '");\n' +
+        'var autoOrient = (shp && shp.effect && shp.effect("Auto-Orient Label to Camera")) ? (shp.effect("Auto-Orient Label to Camera")("Checkbox") == 1 ? 1 : 0) : 1;\n' +
+        'if (autoOrient == 1) {\n' +
+        '  var cam = thisComp.activeCamera;\n' +
+        '  if (cam && cam.hasVideo) {\n' +
+        '    lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
         '  } else { value; }\n' +
-        '} catch (e) { value; }';
+        '} else { value; }';
     }
   }
   if (visibilityLayerName) {
     var safeVisibilityLayerName = opengeoVectorEscapeExpressionString(visibilityLayerName);
     textLayer.property('Opacity').expression =
-      'try {\n' +
-      '  var shp = thisComp.layer("' + safeVisibilityLayerName + '");\n' +
+      'var shp = thisComp.layer("' + safeVisibilityLayerName + '");\n' +
+      'if (!shp || !shp.effect || !shp.effect("Visible")) { value; } else {\n' +
       '  var vis = shp.effect("Visible")("Checkbox") == 1;\n' +
       '  var showLbl = (!shp.effect("Show Label")) ? true : (shp.effect("Show Label")("Checkbox") == 1);\n' +
       '  (vis && showLbl) ? 100 : 0;\n' +
-      '} catch (e) {\n' +
-      '  try { thisComp.layer("' + safeVisibilityLayerName + '").effect("Visible")("Checkbox") == 1 ? 100 : 0; } catch (e2) { value; }\n' +
       '}';
   }
   return textLayer;
@@ -603,7 +554,9 @@ function opengeoVectorEnsureShapeControl(layer, name, kind, value) {
     var valueProperty = effect.property(1);
     if (valueProperty.expression) valueProperty.expression = '';
     valueProperty.setValue(value);
-  } catch (setError) {}
+  } catch (setError) {
+    /* control value assignment fallback */
+  }
   return effect;
 }
 
@@ -622,7 +575,9 @@ function opengeoVectorOrderShapeControls(layer) {
     try {
       var effect = effects.property(order[index]);
       if (effect && typeof effect.moveTo === 'function') effect.moveTo(1);
-    } catch (moveError) {}
+    } catch (moveError) {
+      /* effect reorder fallback */
+    }
   }
 }
 
@@ -651,7 +606,9 @@ function opengeoVectorFeatureNeedsControlNormalization(group) {
   try {
     var controllerEffects = group.controller && group.controller.property('ADBE Effect Parade');
     if (controllerEffects && controllerEffects.numProperties > 0) return true;
-  } catch (controllerError) {}
+  } catch (controllerError) {
+    /* controller effect detection fallback */
+  }
   for (var shapeIndex = 0; shapeIndex < group.shapes.length; shapeIndex++) {
     var shape = group.shapes[shapeIndex];
     if (!opengeoVectorFindEffect(shape, 'Visible')) return true;
@@ -661,7 +618,9 @@ function opengeoVectorFeatureNeedsControlNormalization(group) {
         var effect = opengeoVectorFindEffect(shape, names[nameIndex]);
         var expression = effect && effect.property(1) ? String(effect.property(1).expression || '') : '';
         if (expression.indexOf('thisComp.layer') !== -1) return true;
-      } catch (expressionError) {}
+      } catch (expressionError) {
+        /* expression detection fallback */
+      }
     }
   }
   return false;
@@ -684,7 +643,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
       var group = pending[groupIndex];
       var controller = group.controller;
       if (controller) {
-        try { controller.threeDLayer = true; } catch (ctrl3dErr) {}
+        try { controller.threeDLayer = true; } catch (ctrl3dErr) { /* controller 3d setting fallback */ }
       }
       var firstShape = group.shapes[0];
       var visible = Number(opengeoVectorReadEffectValue(controller, 'Visible', opengeoVectorReadEffectValue(firstShape, 'Visible', 1))) === 0 ? 0 : 1;
@@ -697,7 +656,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
 
       for (var shapeIndex = 0; shapeIndex < group.shapes.length; shapeIndex++) {
         var shape = group.shapes[shapeIndex];
-        try { shape.threeDLayer = true; } catch (s3dErr) {}
+        try { shape.threeDLayer = true; } catch (s3dErr) { /* shape 3d setting fallback */ }
         opengeoVectorEnsureShapeControl(shape, 'Visible', 'checkbox', visible);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Latitude', 'slider', anchorLatitude);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Longitude', 'slider', anchorLongitude);
@@ -714,7 +673,7 @@ function opengeoNormalizeVectorFeatureControls(compId) {
         opengeoVectorEnsureShapeControl(shape, 'Reference Zoom', 'slider', 6);
         opengeoVectorEnsureShapeControl(shape, 'Min Zoom Scale', 'slider', 25);
         opengeoVectorEnsureShapeControl(shape, 'Max Zoom Scale', 'slider', 400);
-        try { shape.property('Opacity').expression = 'effect("Visible")("Checkbox") == 1 ? 100 : 0'; } catch (opacityError) {}
+        try { shape.property('Opacity').expression = 'effect("Visible")("Checkbox") == 1 ? 100 : 0'; } catch (opacityError) { /* opacity expression fallback */ }
         shape.enabled = true;
         opengeoVectorOrderShapeControls(shape);
       }
@@ -725,7 +684,9 @@ function opengeoNormalizeVectorFeatureControls(compId) {
           group.labels[labelIndex].threeDLayer = true;
           group.labels[labelIndex].property('Opacity').expression = 'thisComp.layer("' + safeShapeName + '").effect("Visible")("Checkbox") == 1 ? 100 : 0';
           group.labels[labelIndex].enabled = true;
-        } catch (labelError) {}
+        } catch (labelError) {
+          /* label opacity expression fallback */
+        }
       }
 
       try {
@@ -733,7 +694,9 @@ function opengeoNormalizeVectorFeatureControls(compId) {
         if (controllerEffects) {
           for (var effectIndex = controllerEffects.numProperties; effectIndex >= 1; effectIndex--) controllerEffects.property(effectIndex).remove();
         }
-      } catch (removeControlsError) {}
+      } catch (removeControlsError) {
+        /* controller effect cleanup fallback */
+      }
       normalized++;
     }
     return JSON.stringify({ normalized: normalized, controlsVersion: 2 });
@@ -759,7 +722,7 @@ function opengeoFeatureList(compId) {
     if (role === 'controller') {
       features[id].name = String(layer.name || id).replace(/^OG [•\-] /, '').replace(/ [•\-] CTRL$/, '');
       features[id].controllerId = layer.index;
-      try { features[id].legacyControllerVisible = layer.property('ADBE Effect Parade').property('Visible').property(1).value === 1; } catch (visibilityError) {}
+      try { features[id].legacyControllerVisible = layer.property('ADBE Effect Parade').property('Visible').property(1).value === 1; } catch (visibilityError) { /* legacy controller lookup fallback */ }
     } else if (role.indexOf('shape:') === 0) {
       try {
         var shapeVisible = layer.property('ADBE Effect Parade').property('Visible').property(1).value === 1;
@@ -791,10 +754,10 @@ function opengeoFeatureSetVisibility(compId, featureId, visible) {
       if (role === 'controller') {
         // Spatial reference only. Legacy controllers retain fallback support
         // until the one-time control normalization removes their effects.
-        try { layer.property('ADBE Effect Parade').property('Visible').property(1).setValue(visible ? 1 : 0); } catch (visibilityError) {}
+        try { layer.property('ADBE Effect Parade').property('Visible').property(1).setValue(visible ? 1 : 0); } catch (visibilityError) { /* legacy visibility fallback */ }
         layer.enabled = true;
       } else if (role.indexOf('shape:') === 0) {
-        try { layer.property('ADBE Effect Parade').property('Visible').property(1).setValue(visible ? 1 : 0); } catch (shapeVisibilityError) {}
+        try { layer.property('ADBE Effect Parade').property('Visible').property(1).setValue(visible ? 1 : 0); } catch (shapeVisibilityError) { /* shape visibility fallback */ }
         layer.enabled = true;
       } else layer.enabled = visible === true;
       changed++;

@@ -82,22 +82,11 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
       // Generate the position expression referencing the map controller and Pin's own controls
       pin.property('Position').expression =
         'var ctrl = null;\n' +
-        'try { ctrl = thisComp.layer("' + mapLayerName + '"); } catch(e) {}\n' +
-        'if (!ctrl || !ctrl.effect || !ctrl.effect("Latitude")) {\n' +
-        '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-        '    try {\n' +
-        '      var l = thisComp.layer(i);\n' +
-        '      if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { ctrl = l; break; }\n' +
-        '      if (l.comment && l.comment.indexOf("opengeo:") === 0 && (l.comment.indexOf("controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { ctrl = l; break; }\n' +
-        '    } catch(err) {}\n' +
-        '  }\n' +
-        '}\n' +
-        'if (!ctrl) { value; } else {\n' +
-        '  var latEff = null;\n' +
-        '  try { latEff = effect("Latitude"); } catch(e) {}\n' +
+        'if (thisComp.layer("' + mapLayerName + '")) { ctrl = thisComp.layer("' + mapLayerName + '"); }\n' +
+        'if (!ctrl || !ctrl.effect || !ctrl.effect("Latitude")) { value; } else {\n' +
+        '  var latEff = effect("Latitude");\n' +
         '  var pinLat = (latEff && latEff.numProperties > 0) ? latEff(1).value : ' + lat + ';\n' +
-        '  var lonEff = null;\n' +
-        '  try { lonEff = effect("Longitude"); } catch(e) {}\n' +
+        '  var lonEff = effect("Longitude");\n' +
         '  var pinLng = (lonEff && lonEff.numProperties > 0) ? lonEff(1).value : ' + lng + ';\n' +
         '  var sinLat = Math.sin(pinLat * 0.017453292519943295);\n' +
         '  var worldX = ((pinLng + 180) / 360) * 262144;\n' +
@@ -110,8 +99,7 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
         '  var zoom = Math.max(0, Math.min(22, ctrl.effect("Zoom")(1).value));\n' +
         '  var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
         '  var ctrlPos = ctrl.transform.position;\n' +
-        '  var alt = 0;\n' +
-        '  try { alt = effect("Altitude (Z)")(1).value; } catch(e) {}\n' +
+        '  var alt = (effect("Altitude (Z)") && effect("Altitude (Z)").numProperties > 0) ? effect("Altitude (Z)")(1).value : 0;\n' +
         '  [ctrlPos[0] + (worldX - camX) * s, ctrlPos[1] + (worldY - camY) * s, -(alt !== 0 ? alt : 2)];\n' +
         '}';
 
@@ -126,42 +114,23 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
       }
 
       pin.property('Scale').expression =
-        'var baseScale = 100;\n' +
-        'try { baseScale = effect("Size")(1).value; } catch(e) {}\n' +
-        'var maintain = 1;\n' +
-        'try { maintain = effect("Maintain Screen Size")(1).value; } catch(e) {}\n' +
+        'var baseScale = effect("Size") ? effect("Size")(1).value : 100;\n' +
+        'var maintain = effect("Maintain Screen Size") ? effect("Maintain Screen Size")(1).value : 1;\n' +
         'if (maintain == 1) {\n' +
-        '  var cam = null;\n' +
-        '  try { cam = thisComp.activeCamera; } catch(e) {}\n' +
+        '  var cam = thisComp.activeCamera;\n' +
         '  if (cam && cam.hasVideo) {\n' +
-        '    try {\n' +
-        '      var camPos = cam.toWorld([0,0,0]);\n' +
-        '      var myPos = toWorld(anchorPoint);\n' +
-        '      var dist = length(myPos, camPos);\n' +
-        '      var refDist = 1874;\n' +
-        '      try { refDist = cam.cameraOption.zoom; } catch(z1) {\n' +
-        '        try { refDist = cam.zoom; } catch(z2) {\n' +
-        '          try { refDist = cam.cameraOption("Zoom").value; } catch(z3) {}\n' +
-        '        }\n' +
-        '      }\n' +
-        '      var mult = dist / Math.max(1, refDist);\n' +
-        '      var sc = baseScale * mult;\n' +
-        '      [sc, sc, sc];\n' +
-        '    } catch(err) { [baseScale, baseScale, baseScale]; }\n' +
+        '    var camPos = cam.toWorld([0,0,0]);\n' +
+        '    var myPos = toWorld(anchorPoint);\n' +
+        '    var dist = length(myPos, camPos);\n' +
+        '    var refDist = (cam.cameraOption && cam.cameraOption.zoom) ? cam.cameraOption.zoom : 1874;\n' +
+        '    var mult = dist / Math.max(1, refDist);\n' +
+        '    var sc = baseScale * mult;\n' +
+        '    [sc, sc, sc];\n' +
         '  } else {\n' +
         '    [baseScale, baseScale, baseScale];\n' +
         '  }\n' +
         '} else {\n' +
-        '  var ctrl = null;\n' +
-        '  try { ctrl = thisComp.layer("' + mapLayerName + '"); } catch(e) {}\n' +
-        '  if (!ctrl || !ctrl.effect || !ctrl.effect("Zoom")) {\n' +
-        '    for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
-        '      try {\n' +
-        '        var l = thisComp.layer(i);\n' +
-        '        if (l.effect && l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { ctrl = l; break; }\n' +
-        '      } catch(err) {}\n' +
-        '    }\n' +
-        '  }\n' +
+        '  var ctrl = thisComp.layer("' + mapLayerName + '");\n' +
         '  if (!ctrl || !ctrl.effect || !ctrl.effect("Zoom")) {\n' +
         '    [baseScale, baseScale, baseScale];\n' +
         '  } else {\n' +
@@ -174,13 +143,11 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
 
       // Orientation expression for 3D Camera Billboarding
       pin.property('Orientation').expression =
-        'var autoOrient = 0;\n' +
-        'try { autoOrient = effect("Auto-Orient to Camera")(1).value; } catch(e) {}\n' +
+        'var autoOrient = effect("Auto-Orient to Camera") ? effect("Auto-Orient to Camera")(1).value : 0;\n' +
         'if (autoOrient == 1) {\n' +
-        '  var cam = null;\n' +
-        '  try { cam = thisComp.activeCamera; } catch(e) {}\n' +
+        '  var cam = thisComp.activeCamera;\n' +
         '  if (cam && cam.hasVideo) {\n' +
-        '    try { lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0])); } catch(err) { value; }\n' +
+        '    lookAt(toWorld(anchorPoint), cam.toWorld([0,0,0]));\n' +
         '  } else { value; }\n' +
         '} else { value; }';
 
@@ -235,7 +202,7 @@ function opengeoAddSpatialPin(compId, lat, lng, name, options) {
           textLayer.parent = pin;
           textLayer.threeDLayer = true;
           textLayer.property('Position').expression =
-            'try { parent.effect("Label Offset")(1).value; } catch(e) { [0, -45, 0]; }';
+            'parent.effect && parent.effect("Label Offset") ? parent.effect("Label Offset")(1).value : [0, -45, 0];';
 
           var sourceText = textLayer.property("Source Text");
           if (sourceText) {

@@ -58,7 +58,9 @@ function opengeoRemoveDocumentAssets(folder, documentAssetComment) {
       var isStructuredOwner = typeof opengeoOwnershipMatches === 'function' &&
         opengeoOwnershipMatches(asset.comment, documentId, null, null);
       if (asset.comment === documentAssetComment || isStructuredOwner) asset.remove();
-    } catch (ignoreAsset) {}
+    } catch (ignoreAsset) {
+      /* ignore asset remove error */
+    }
   }
 }
 
@@ -68,7 +70,11 @@ function opengeoClearMapLayers(mapComp, removeFinal, documentId) {
     var layer = mapComp.layer(layerIndex);
     var layerOwnership = typeof opengeoReadOwnership === 'function' ? opengeoReadOwnership(layer.comment) : {};
     var sourceComment = '';
-    try { sourceComment = layer.source ? String(layer.source.comment || '') : ''; } catch (ignoreSource) {}
+    try {
+      sourceComment = layer.source ? String(layer.source.comment || '') : '';
+    } catch (ignoreSource) {
+      /* ignore source comment error */
+    }
     var isOwned = layerOwnership.document === String(documentId || 'legacy') || sourceComment === legacyAssetComment;
     var isPreview = isOwned && (layerOwnership.role === 'preview' || layer.name.indexOf('preview_') === 0);
     var isFinal = isOwned && (layerOwnership.role === 'final-active' || layer.name.indexOf('final_') === 0 || layer.name.indexOf('tile_') === 0);

@@ -61,7 +61,9 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     try {
       tileLayer.quality = LayerQuality.BEST;
       tileLayer.blendingMode = BlendingMode.NORMAL;
-    } catch (qualityError) {}
+    } catch (qualityError) {
+      /* quality and blending fallback */
+    }
     importedCount++;
   }
   return importedCount;

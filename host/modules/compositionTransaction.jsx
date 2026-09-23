@@ -53,14 +53,18 @@ function opengeoDiscardPreviewRevision(mapComp, folders, documentId, revision) {
     var layer = mapComp.layer(layerIndex);
     try {
       if (opengeoOwnershipMatches(layer.comment, documentId, 'preview-staging', revision)) layer.remove();
-    } catch (ignoreLayer) {}
+    } catch (ignoreLayer) {
+      /* preview staging layer remove fallback */
+    }
   }
   if (!folders || !folders.previewTiles) return;
   for (var assetIndex = folders.previewTiles.numItems; assetIndex >= 1; assetIndex--) {
     var asset = folders.previewTiles.item(assetIndex);
     try {
       if (opengeoOwnershipMatches(asset.comment, documentId, 'preview-staging', revision)) asset.remove();
-    } catch (ignoreAsset) {}
+    } catch (ignoreAsset) {
+      /* preview staging asset remove fallback */
+    }
   }
 }
 
@@ -100,7 +104,11 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
       if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
       stageLayer.enabled = true;
       if (replaceFinal !== true && typeof stageLayer.moveToEnd === 'function') {
-        try { stageLayer.moveToEnd(); } catch (ignoreMove) {}
+        try {
+          stageLayer.moveToEnd();
+        } catch (ignoreMove) {
+          /* moveToEnd layer order fallback */
+        }
       }
       promoted++;
     }
@@ -115,7 +123,9 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
         rollbackLayer.comment = opengeoOwnershipComment(documentId, 'preview-staging', revision, rollbackPlacement ? 'placement=' + rollbackPlacement : '');
         if (rollbackLayer.source) rollbackLayer.source.comment = opengeoOwnershipComment(documentId, 'preview-staging', revision, rollbackPlacement ? 'placement=' + rollbackPlacement : '');
         rollbackLayer.enabled = false;
-      } catch (ignoreRollback) {}
+      } catch (ignoreRollback) {
+        /* staging rollback disable fallback */
+      }
     }
     return 0;
   }
@@ -124,7 +134,11 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
 
   // Remove the prior visible revision only after the new one is complete.
   for (var oldLayerIndex = oldLayers.length - 1; oldLayerIndex >= 0; oldLayerIndex--) {
-    try { oldLayers[oldLayerIndex].remove(); } catch (ignoreOldLayer) {}
+    try {
+      oldLayers[oldLayerIndex].remove();
+    } catch (ignoreOldLayer) {
+      /* prior layer remove fallback */
+    }
   }
 
   var foldersToClean = [folders && folders.previewTiles];
@@ -140,7 +154,11 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
         (assetOwnership.role === 'preview' || assetOwnership.role === 'preview-staging');
       var keepFinal = replaceFinal !== true && assetOwnership.role === 'final-active';
       if (!keepCurrentRevision && !keepFinal) {
-        try { asset.remove(); } catch (ignoreOldAsset) {}
+        try {
+          asset.remove();
+        } catch (ignoreOldAsset) {
+          /* old asset remove fallback */
+        }
       }
     }
   }
@@ -169,7 +187,9 @@ function opengeoRemovePreparedRevision(mapComp, folders, documentId, revision) {
         layer.remove();
         removedLayers++;
       }
-    } catch (ignoreLayer) {}
+    } catch (ignoreLayer) {
+      /* final staging layer remove fallback */
+    }
   }
   if (folders && folders.finalTiles && opengeoIsValidObject(folders.finalTiles)) {
     for (var assetIndex = folders.finalTiles.numItems; assetIndex >= 1; assetIndex--) {
@@ -179,7 +199,9 @@ function opengeoRemovePreparedRevision(mapComp, folders, documentId, revision) {
           asset.remove();
           removedAssets++;
         }
-      } catch (ignoreAsset) {}
+      } catch (ignoreAsset) {
+        /* final staging asset remove fallback */
+      }
     }
   }
   return { layers: removedLayers, assets: removedAssets };
@@ -276,7 +298,9 @@ function opengeoPrepareCompositionRevision(jsonData) {
         try {
           tileLayer.quality = LayerQuality.BEST;
           tileLayer.blendingMode = BlendingMode.NORMAL;
-        } catch (qualityError) {}
+        } catch (qualityError) {
+          /* layer quality/blending fallback */
+        }
 
         // Apply smooth solid-base opacity transitions (eliminates crossfade darkening dip / alpha hole)
         if (data.zoomTransitions && data.zoomTransitions.length > 0) {
@@ -309,7 +333,9 @@ function opengeoPrepareCompositionRevision(jsonData) {
                 }
               }
             }
-          } catch (opacityError) {}
+          } catch (opacityError) {
+            /* opacity transition animation fallback */
+          }
         }
 
         createdLayers.push(tileLayer);
@@ -325,10 +351,18 @@ function opengeoPrepareCompositionRevision(jsonData) {
 
     if (result.failed.length > 0 || result.imported !== result.expected) {
       for (var cleanupLayer = createdLayers.length - 1; cleanupLayer >= 0; cleanupLayer--) {
-        try { createdLayers[cleanupLayer].remove(); } catch (ignoreCreatedLayer) {}
+        try {
+          createdLayers[cleanupLayer].remove();
+        } catch (ignoreCreatedLayer) {
+          /* abort cleanup created layer fallback */
+        }
       }
       for (var cleanupAsset = createdAssets.length - 1; cleanupAsset >= 0; cleanupAsset--) {
-        try { createdAssets[cleanupAsset].remove(); } catch (ignoreCreatedAsset) {}
+        try {
+          createdAssets[cleanupAsset].remove();
+        } catch (ignoreCreatedAsset) {
+          /* abort cleanup created asset fallback */
+        }
       }
       result.imported = 0;
       result.assetIds = [];
@@ -464,9 +498,19 @@ function opengeoCommitCompositionRevision(args) {
             balLayer.moveToBeginning();
           }
         }
-      } catch (colorBalanceError) {}
-      try { resolved.controller.comment = opengeoOwnershipComment(documentId, 'controller', null); } catch (controllerTagError) {}
-      try { resolved.mapComp.comment = opengeoOwnershipComment(documentId, 'map-comp', operationId, 'source=' + String(data.source || '')); } catch (mapTagError) {}
+      } catch (colorBalanceError) {
+        /* color balance layer creation fallback */
+      }
+      try {
+        resolved.controller.comment = opengeoOwnershipComment(documentId, 'controller', null);
+      } catch (controllerTagError) {
+        /* controller comment fallback */
+      }
+      try {
+        resolved.mapComp.comment = opengeoOwnershipComment(documentId, 'map-comp', operationId, 'source=' + String(data.source || ''));
+      } catch (mapTagError) {
+        /* mapComp comment fallback */
+      }
       try {
         if (data.metadata) {
           var metadataResult = opengeoSetCompMetadata(resolved.containingComp.id, String(data.metadata));
@@ -506,13 +550,25 @@ function opengeoCommitCompositionRevision(args) {
     } catch (commitError) {
       if (!activated) {
         for (var restoreOld = 0; restoreOld < oldFinalLayers.length; restoreOld++) {
-          try { oldFinalLayers[restoreOld].enabled = true; } catch (ignoreRestoreOld) {}
+          try {
+            oldFinalLayers[restoreOld].enabled = true;
+          } catch (ignoreRestoreOld) {
+            /* rollback restore old final fallback */
+          }
         }
         for (var restorePreview = 0; restorePreview < previewLayers.length; restorePreview++) {
-          try { previewLayers[restorePreview].enabled = true; } catch (ignoreRestorePreview) {}
+          try {
+            previewLayers[restorePreview].enabled = true;
+          } catch (ignoreRestorePreview) {
+            /* rollback restore preview fallback */
+          }
         }
         for (var hideStage = 0; hideStage < stagingLayers.length; hideStage++) {
-          try { stagingLayers[hideStage].enabled = false; } catch (ignoreHideStage) {}
+          try {
+            stagingLayers[hideStage].enabled = false;
+          } catch (ignoreHideStage) {
+            /* rollback hide staging fallback */
+          }
         }
       }
       result.commitState = activated ? 'reconciliation-required' : 'not-started';
@@ -566,7 +622,9 @@ function opengeoGetCompositionRevision(args) {
         try {
           var metadata = JSON.parse(resolved.containingComp.comment || '{}');
           metadataApplied = !!(metadata.opengeo && metadata.opengeo.activeRevision === ownership.revision);
-        } catch (ignoreMetadata) {}
+        } catch (ignoreMetadata) {
+          /* metadata JSON parse fallback */
+        }
         return JSON.stringify({ ok: true, documentId: documentId, activeRevision: ownership.revision || null, commitState: 'committed', metadataApplied: metadataApplied });
       }
     }
