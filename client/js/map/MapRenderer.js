@@ -50,11 +50,12 @@ class MapRenderer {
         return;
       }
 
-      // Draw tiles
+      // Draw tiles (with 0.5px subpixel dilation to eliminate canvas antialiasing hairline seams)
       for (const tile of tiles) {
+        const renderSize = tile.drawSize + 0.5;
         if (tile.bitmap) {
           // Full-resolution tile available
-          this.ctx.drawImage(tile.bitmap, tile.screenX, tile.screenY, tile.drawSize, tile.drawSize);
+          this.ctx.drawImage(tile.bitmap, tile.screenX, tile.screenY, renderSize, renderSize);
         } else if (tile.parentBitmap && tile.parentCropSize > 0) {
           // Parent-tile scaled fallback: crop the sub-quadrant and draw scaled
           try {
@@ -63,7 +64,7 @@ class MapRenderer {
               tile.parentCropX, tile.parentCropY,
               tile.parentCropSize, tile.parentCropSize,
               tile.screenX, tile.screenY,
-              tile.drawSize, tile.drawSize
+              renderSize, renderSize
             );
           } catch (e) {
             // Fallback to shimmer if parent draw fails
@@ -72,7 +73,7 @@ class MapRenderer {
         } else if (tile.error) {
           // If tile request failed (like ESRI 404 ocean tiles), draw a subtle deep blue/dark base
           this.ctx.fillStyle = '#061324';
-          this.ctx.fillRect(tile.screenX, tile.screenY, tile.drawSize, tile.drawSize);
+          this.ctx.fillRect(tile.screenX, tile.screenY, renderSize, renderSize);
         } else {
           // No tile and no parent — show loading shimmer
           this._drawShimmer(this.ctx, tile.screenX, tile.screenY, tile.drawSize, tile.drawSize);
@@ -163,6 +164,8 @@ class MapRenderer {
       this.ctx.font = '10px sans-serif';
       this.ctx.textAlign = 'left';
       this.ctx.fillText('Err: ' + e.message.substring(0, 40), 4, 20);
-    } catch (ex) {}
+    } catch (ex) {
+      /* canvas text draw fallback */
+    }
   }
 }

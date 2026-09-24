@@ -220,7 +220,7 @@ class TileDownloader {
     const handle = this._retryTimers.get(key);
     if (handle) {
       if (typeof clearTimeout !== 'undefined') {
-        try { clearTimeout(handle); } catch (_) {}
+        try { clearTimeout(handle); } catch (_) { /* timer clear fallback */ }
       }
       this._retryTimers.delete(key);
     }

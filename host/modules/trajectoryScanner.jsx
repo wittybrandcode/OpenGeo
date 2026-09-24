@@ -5,6 +5,28 @@
 var $ = typeof $ !== 'undefined' ? $ : {};
 $._opengeo = $._opengeo || {};
 
+function opengeoGetCameraProperties(controller) {
+  if (!controller) return null;
+  var effects = controller.property("ADBE Effect Parade");
+  if (!effects) return null;
+  var latEffect = effects.property('Latitude');
+  var lonEffect = effects.property('Longitude');
+  var zoomEffect = effects.property('Zoom');
+  if (!latEffect || !lonEffect || !zoomEffect) return null;
+  var latProp = (typeof latEffect.property === 'function') ? latEffect.property(1) : null;
+  var lonProp = (typeof lonEffect.property === 'function') ? lonEffect.property(1) : null;
+  var zoomProp = (typeof zoomEffect.property === 'function') ? zoomEffect.property(1) : null;
+  if (!latProp || !lonProp || !zoomProp) return null;
+  var pitchEffect = effects.property('Pitch');
+  var pitchProp = (pitchEffect && typeof pitchEffect.property === 'function') ? pitchEffect.property(1) : null;
+  return {
+    lat: latProp,
+    lon: lonProp,
+    zoom: zoomProp,
+    pitch: pitchProp
+  };
+}
+
 function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
   try {
     var comp = ensureComp(compId);
@@ -13,12 +35,12 @@ function opengeoGetTimelineTrajectory(compId, sampleStepFrames) {
     var controller = findLayerByComment(comp, 'opengeo:controller');
     if (!controller) return 'error: controller not found. Please select the OpenGeo Map composition.';
     
-    var effects = controller.property("ADBE Effect Parade");
-    var latProp = effects.property('Latitude').property(1);
-    var lonProp = effects.property('Longitude').property(1);
-    var zoomProp = effects.property('Zoom').property(1);
-    var pitchEffect = effects.property('Pitch');
-    var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
+    var cam = opengeoGetCameraProperties(controller);
+    if (!cam) return 'error: controller missing Latitude, Longitude, or Zoom controls.';
+    var latProp = cam.lat;
+    var lonProp = cam.lon;
+    var zoomProp = cam.zoom;
+    var pitchProp = cam.pitch;
     
     var fps = comp.frameRate;
     var workStart = comp.workAreaStart;
@@ -91,12 +113,12 @@ function opengeoAddKeyframe(compId, lat, lon, zoom, pitch) {
     var controller = findLayerByComment(comp, 'opengeo:controller');
     if (!controller) return 'error: controller not found. Please select the OpenGeo Map composition.';
     
-    var effects = controller.property("ADBE Effect Parade");
-    var latProp = effects.property('Latitude').property(1);
-    var lonProp = effects.property('Longitude').property(1);
-    var zoomProp = effects.property('Zoom').property(1);
-    var pitchEffect = effects.property('Pitch');
-    var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
+    var cam = opengeoGetCameraProperties(controller);
+    if (!cam) return 'error: controller missing Latitude, Longitude, or Zoom controls.';
+    var latProp = cam.lat;
+    var lonProp = cam.lon;
+    var zoomProp = cam.zoom;
+    var pitchProp = cam.pitch;
     
     var t = comp.time;
     
@@ -136,12 +158,12 @@ function opengeoClearCameraKeyframes(compId) {
       var controller = findLayerByComment(comp, 'opengeo:controller');
       if (!controller) return 'error: controller not found. Please select the OpenGeo Map composition.';
 
-      var effects = controller.property("ADBE Effect Parade");
-      var latProp = effects.property('Latitude').property(1);
-      var lonProp = effects.property('Longitude').property(1);
-      var zoomProp = effects.property('Zoom').property(1);
-      var pitchEffect = effects.property('Pitch');
-      var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
+      var cam = opengeoGetCameraProperties(controller);
+      if (!cam) return 'error: controller missing Latitude, Longitude, or Zoom controls.';
+      var latProp = cam.lat;
+      var lonProp = cam.lon;
+      var zoomProp = cam.zoom;
+      var pitchProp = cam.pitch;
       var properties = [latProp, lonProp, zoomProp];
       var values = [
         latProp.valueAtTime(comp.time, false),
@@ -182,12 +204,12 @@ function opengeoSynchronizeKeyframeEasing(compId, easingType, customInfluence) {
       var controller = findLayerByComment(comp, 'opengeo:controller');
       if (!controller) return 'error: controller not found';
 
-      var effects = controller.property("ADBE Effect Parade");
-      var latProp = effects.property('Latitude').property(1);
-      var lonProp = effects.property('Longitude').property(1);
-      var zoomProp = effects.property('Zoom').property(1);
-      var pitchEffect = effects.property('Pitch');
-      var pitchProp = (pitchEffect && pitchEffect.numProperties >= 1) ? pitchEffect.property(1) : null;
+      var cam = opengeoGetCameraProperties(controller);
+      if (!cam) return 'error: controller missing Latitude, Longitude, or Zoom controls.';
+      var latProp = cam.lat;
+      var lonProp = cam.lon;
+      var zoomProp = cam.zoom;
+      var pitchProp = cam.pitch;
       var properties = [latProp, lonProp, zoomProp];
       if (pitchProp) properties.push(pitchProp);
 

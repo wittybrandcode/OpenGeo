@@ -64,7 +64,14 @@ function assertAsync(fn, testName) {
   );
 }
 
+const mercatorMathSource = fs.readFileSync(path.resolve(__dirname, '../client/js/core/geometry/MercatorMath.js'), 'utf8');
+
 function loadBrowserClass(filePath, className, sandbox) {
+  if (sandbox && typeof sandbox.MercatorMath === 'undefined' && (filePath.includes('MercatorProjection') || filePath.includes('Viewport') || filePath.includes('TileGrid') || filePath.includes('MapSession'))) {
+    try {
+      vm.runInNewContext(mercatorMathSource, sandbox, { filename: 'MercatorMath.js' });
+    } catch (_ignoreMath) {}
+  }
   const source = fs.readFileSync(filePath, 'utf8') + `\nthis.__exportedClass = ${className};`;
   vm.runInNewContext(source, sandbox, { filename: filePath });
   return sandbox.__exportedClass;
@@ -2446,7 +2453,11 @@ assertAsync(async () => {
     }
   } finally {
     const resolved = path.resolve(tempDirectory);
-    if (resolved.startsWith(path.resolve(os.tmpdir()) + path.sep)) fs.rmSync(resolved, { recursive: true, force: true });
+    if (resolved.startsWith(path.resolve(os.tmpdir()) + path.sep)) {
+      try {
+        fs.rmSync(resolved, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+      } catch (e) {}
+    }
   }
 }, 'OperationLogger writes bounded redacted JSONL diagnostics suitable for support');
 

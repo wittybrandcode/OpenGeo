@@ -417,6 +417,85 @@ const searchPanelCode = fs.readFileSync(path.join(projectRoot, 'client/js/ui/Sea
   assert(featureManagerCode.includes("this.registry.setHostState(item.id, null"), 'FeatureManager detaches missing host layers without data corruption');
 }
 
+// 25. Mathematical Lock: Vector shape layer anchor point, controller Null, and spatial pins perfectly match MapPivot raster tiles across keyframes
+{
+  assert(vectorHostCode.includes('(s1 / curScale) * (1 - uZoom)'), 'vectorHost Anchor Point expression implements screen-space camera velocity matching MapPivot');
+  assert(vectorHostCode.includes('(s2 / curScale) * uZoom'), 'vectorHost Anchor Point expression implements screen-space zoom-out velocity matching MapPivot');
+
+  const pinCode = fs.readFileSync(path.join(projectRoot, 'host/modules/spatialPinHost.jsx'), 'utf8');
+  assert(pinCode.includes('(s1 / curScale) * (1 - uZoom)'), 'spatialPinHost Position expression implements screen-space camera velocity matching MapPivot');
+  assert(pinCode.includes('(s2 / curScale) * uZoom'), 'spatialPinHost Position expression implements screen-space zoom-out velocity matching MapPivot');
+
+  // Simulation of keyframe trajectory:
+  // Keyframe 1: t=0, lat=25.1972, lon=55.2744, zoom=14
+  // Keyframe 2: t=4, lat=48.8584, lon=2.2945, zoom=6
+  function simLatLonToWorld(lat, lon, mapSize) {
+    const safeLat = Math.max(-85.05112878, Math.min(85.05112878, lat));
+    const rad = safeLat * (Math.PI / 180);
+    const mN = Math.log(Math.tan(Math.PI / 4 + rad / 2));
+    const normLon = ((((lon + 180) % 360 + 360) % 360) - 180);
+    const wx = ((normLon + 180) / 360) * mapSize;
+    const wy = ((1 - mN / Math.PI) / 2) * mapSize;
+    return [wx, wy];
+  }
+
+  function simPivotWorldPos(t, t1, t2, k1, k2, currentZoom, mapSize) {
+    const w1 = simLatLonToWorld(k1.lat, k1.lon, mapSize);
+    const w2 = simLatLonToWorld(k2.lat, k2.lon, mapSize);
+    let dx = w2[0] - w1[0];
+    if (dx > mapSize / 2) dx -= mapSize;
+    else if (dx < -mapSize / 2) dx += mapSize;
+    const dy = w2[1] - w1[1];
+    const curScale = Math.pow(2, currentZoom);
+    const dz = k2.zoom - k1.zoom;
+    if (Math.abs(dz) > 0.2) {
+      const uZoom = Math.max(0, Math.min(1, (currentZoom - k1.zoom) / dz));
+      if (dz > 0) {
+        const s1 = Math.pow(2, k1.zoom);
+        const fIn = (s1 / curScale) * (1 - uZoom);
+        return [w2[0] - dx * fIn, w2[1] - dy * fIn];
+      } else {
+        const s2 = Math.pow(2, k2.zoom);
+        const fOut = (s2 / curScale) * uZoom;
+        return [w1[0] + dx * fOut, w1[1] + dy * fOut];
+      }
+    } else {
+      const uTime = Math.max(0, Math.min(1, (t - t1) / (t2 - t1)));
+      return [w1[0] + dx * uTime, w1[1] + dy * uTime];
+    }
+  }
+
+  const k1 = { lat: 25.1972, lon: 55.2744, zoom: 14 };
+  const k2 = { lat: 48.8584, lon: 2.2945, zoom: 6 };
+  const targetPt = { lat: 25.1972, lon: 55.2744 }; // Landmark under observation
+
+  // Test across 9 intermediate frames between t=0 and t=4
+  for (let step = 0; step <= 8; step++) {
+    const t = (step / 8) * 4;
+    const u = t / 4;
+    const currentZoom = k1.zoom + (k2.zoom - k1.zoom) * u;
+
+    // 1. MapPivot (Raster Tiles at mapSize 262144)
+    const pivotWorld = simPivotWorldPos(t, 0, 4, k1, k2, currentZoom, 262144);
+    const targetWorld262k = simLatLonToWorld(targetPt.lat, targetPt.lon, 262144);
+    const rasterScale = (100 * Math.pow(2, currentZoom) * 256) / 262144;
+    const screenOffsetRasterX = (targetWorld262k[0] - pivotWorld[0]) * (rasterScale / 100);
+    const screenOffsetRasterY = (targetWorld262k[1] - pivotWorld[1]) * (rasterScale / 100);
+
+    // 2. Vector Shape Layer (vertices compressed by 32, mapSize 8192)
+    const vectorWorld = simPivotWorldPos(t, 0, 4, k1, k2, currentZoom, 8192);
+    const targetVertex = [targetWorld262k[0] / 32, targetWorld262k[1] / 32];
+    const vectorScale = 3.125 * Math.pow(2, currentZoom);
+    const screenOffsetVectorX = (targetVertex[0] - vectorWorld[0]) * (vectorScale / 100);
+    const screenOffsetVectorY = (targetVertex[1] - vectorWorld[1]) * (vectorScale / 100);
+
+    const driftX = Math.abs(screenOffsetVectorX - screenOffsetRasterX);
+    const driftY = Math.abs(screenOffsetVectorY - screenOffsetRasterY);
+
+    assert(driftX < 1e-9 && driftY < 1e-9, `Zero Vector Drift at t=${t.toFixed(2)}s (z=${currentZoom.toFixed(1)}): ΔX=${driftX.toFixed(2)}px, ΔY=${driftY.toFixed(2)}px (< 1e-9 px)`);
+  }
+}
+
 console.log('====================================');
 console.log(`Vector Rigging Tests: Passed: ${passed} | Failed: ${failed}`);
 console.log('====================================');

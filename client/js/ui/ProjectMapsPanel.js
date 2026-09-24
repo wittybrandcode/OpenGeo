@@ -1,7 +1,13 @@
 /** Project-wide OpenGeo map browser. Host owns discovery; client owns thumbnails and UI. */
 class ProjectMapsPanel {
-  constructor(app) {
-    this.app = app;
+  constructor(appOrDeps) {
+    const isDeps = appOrDeps && (appOrDeps.aeBridge || appOrDeps.compositionController);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.aeBridge = (isDeps && appOrDeps.aeBridge) || (this.app && this.app.aeBridge) || null;
+    this.compositionController = (isDeps && appOrDeps.compositionController) || (this.app && this.app.compositionController) || null;
+    this.dialog = (isDeps && appOrDeps.dialog) || (this.app && this.app.dialog) || null;
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
+
     this.modal = document.getElementById('project-maps-modal');
     this.listElement = document.getElementById('project-maps-list');
     this.openButton = document.getElementById('project-maps-btn');
@@ -10,6 +16,7 @@ class ProjectMapsPanel {
     this.thumbnailProcessor = typeof ThumbnailProcessor !== 'undefined' ? new ThumbnailProcessor() : null;
     this._revision = 0;
     this._previousFocus = null;
+    this._unsubscribeThumbnail = null;
     this._onOpen = () => this.open();
     this._onClose = () => this.close();
     this._onRefresh = () => this.refresh();
@@ -36,7 +43,18 @@ class ProjectMapsPanel {
       }
     };
     if (typeof globalEventBus !== 'undefined') {
-      globalEventBus.on('project-maps:thumbnail-updated', this._onThumbnailUpdated);
+      this._unsubscribeThumbnail = globalEventBus.on('project-maps:thumbnail-updated', this._onThumbnailUpdated);
+    }
+  }
+
+  destroy() {
+    if (this.openButton) this.openButton.removeEventListener('click', this._onOpen);
+    if (this.closeButton) this.closeButton.removeEventListener('click', this._onClose);
+    if (this.refreshButton) this.refreshButton.removeEventListener('click', this._onRefresh);
+    document.removeEventListener('keydown', this._onKeyDown);
+    if (typeof this._unsubscribeThumbnail === 'function') {
+      this._unsubscribeThumbnail();
+      this._unsubscribeThumbnail = null;
     }
   }
 

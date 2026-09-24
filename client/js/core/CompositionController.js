@@ -1,7 +1,14 @@
 /** Owns composition creation, active-document hydration and guarded metadata writes. */
 class CompositionController {
-  constructor(app) {
-    this.app = app;
+  constructor(appOrDeps) {
+    const isDeps = appOrDeps && (appOrDeps.session || appOrDeps.syncEngine);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
+    this.syncEngine = (isDeps && appOrDeps.syncEngine) || (this.app && this.app.syncEngine) || null;
+    this.stateHydrator = (isDeps && appOrDeps.stateHydrator) || (this.app && this.app.stateHydrator) || null;
+    this.metadataManager = (isDeps && appOrDeps.metadataManager) || (this.app && this.app.metadataManager) || null;
+    this.providerManager = (isDeps && appOrDeps.providerManager) || (this.app && this.app.providerManager) || null;
+    this.viewport = (isDeps && appOrDeps.viewport) || (this.app && this.app.viewport) || null;
     this.loadRevision = 0;
     this.saveTimer = null;
   }

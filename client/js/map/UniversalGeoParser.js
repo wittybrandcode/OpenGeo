@@ -501,7 +501,9 @@
         if (placeMatch) {
           return decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
         }
-      } catch (e) {}
+      } catch (e) {
+        /* decodeURIComponent failure fallback */
+      }
       return null;
     }
 

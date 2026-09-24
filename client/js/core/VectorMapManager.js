@@ -6,12 +6,24 @@
  * bounds the country's land, never EEZ or maritime-political boundaries.
  */
 class VectorMapManager {
-  constructor(app) {
-    this.app = app;
+  constructor(appOrDeps) {
+    const isDeps = appOrDeps && (appOrDeps.geoDataRepository || appOrDeps.session);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.geoDataRepository = (isDeps && appOrDeps.geoDataRepository) || (this.app && this.app.geoDataRepository) || null;
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
+    this.featureManager = (isDeps && appOrDeps.featureManager) || (this.app && this.app.featureManager) || null;
+    this.aeBridge = (isDeps && appOrDeps.aeBridge) || (this.app && this.app.aeBridge) || null;
     this.fs = require('fs');
     this._unsubscribeDraw = typeof globalEventBus !== 'undefined'
       ? globalEventBus.on('search:drawCountryOutline', data => this.drawCountryOutlineFromSearch(data))
       : null;
+  }
+
+  destroy() {
+    if (typeof this._unsubscribeDraw === 'function') {
+      this._unsubscribeDraw();
+      this._unsubscribeDraw = null;
+    }
   }
 
   async drawCountryOutlineFromSearch(data) {

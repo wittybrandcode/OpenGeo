@@ -243,6 +243,21 @@ class MapSession {
     };
   }
 
+  get camera() {
+    return {
+      lat: this.mapState.latitude,
+      lng: this.mapState.longitude,
+      compZoom: this.mapState.compZoom,
+      uiZoom: this.mapState.getUIZoom(),
+      pitch: this.mapState.getPitch(),
+      tileSize: this.mapState.tileSize
+    };
+  }
+
+  getCamera() {
+    return this.camera;
+  }
+
   attachFeatureRegistry(registry) { this.featureRegistry = registry || null; }
 
   onChange(callback) {

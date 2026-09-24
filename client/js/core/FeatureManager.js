@@ -1,11 +1,15 @@
 /** Coordinates composition feature metadata, preview state and AE host state. */
 class FeatureManager {
-  constructor(app, registry) {
-    this.app = app;
-    this.registry = registry;
+  constructor(appOrDeps, registry) {
+    const isDeps = appOrDeps && (appOrDeps.registry || appOrDeps.jobManager || appOrDeps.session);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.registry = registry || (isDeps && appOrDeps.registry) || (this.app && this.app.featureRegistry) || null;
+    this.jobManager = (isDeps && appOrDeps.jobManager) || (this.app && this.app.jobManager) || null;
+    this.aeBridge = (isDeps && appOrDeps.aeBridge) || (this.app && this.app.aeBridge) || null;
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
     this.fs = require('fs');
     this.path = require('path');
-    const tempRoot = app.jobManager && app.jobManager.tempDir ? this.path.dirname(app.jobManager.tempDir) : null;
+    const tempRoot = this.jobManager && this.jobManager.tempDir ? this.path.dirname(this.jobManager.tempDir) : null;
     this.storageDir = tempRoot ? this.path.join(tempRoot, 'features') : null;
     try {
       if (this.storageDir && !this.fs.existsSync(this.storageDir)) this.fs.mkdirSync(this.storageDir, { recursive: true });
@@ -16,7 +20,13 @@ class FeatureManager {
     this._featureOperations = new Map();
     this._hydrateRevision = 0;
     this._disposed = false;
-    this._unsubscribe = registry.onChange(() => app._schedulePreviewRender());
+    this._unsubscribe = this.registry && typeof this.registry.onChange === 'function'
+      ? this.registry.onChange(() => {
+          if (this.app && typeof this.app._schedulePreviewRender === 'function') {
+            this.app._schedulePreviewRender();
+          }
+        })
+      : null;
   }
 
   async registerImported(payload, type, hostResult) {

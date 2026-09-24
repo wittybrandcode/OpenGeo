@@ -2,36 +2,33 @@
  * OpenGeo — MercatorProjection (Façade)
  *
  * Provides backward-compatible cartographic projection interface.
- * Delegates pure mathematical formulas to Functional Core (MercatorMath)
- * with inline deterministic fallbacks.
+ * Delegates pure mathematical formulas directly to Functional Core (MercatorMath).
  */
+
+const _MercatorMath = typeof MercatorMath !== 'undefined'
+  ? MercatorMath
+  : (typeof window !== 'undefined' && window.MercatorMath
+    ? window.MercatorMath
+    : (typeof global !== 'undefined' && global.MercatorMath ? global.MercatorMath : null));
 
 class MercatorProjection {
   static clampLat(lat) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.clampLat) {
-      return MercatorMath.clampLat(lat);
-    }
+    if (_MercatorMath) return _MercatorMath.clampLat(lat);
     return Math.max(-85.05112878, Math.min(85.05112878, Number(lat) || 0));
   }
 
   static normalizeLng(lng) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.normalizeLng) {
-      return MercatorMath.normalizeLng(lng);
-    }
+    if (_MercatorMath) return _MercatorMath.normalizeLng(lng);
     return ((((Number(lng) || 0) + 180) % 360) + 360) % 360 - 180;
   }
 
   static getWorldSize(zoom, tileSize = 256) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.getWorldSize) {
-      return MercatorMath.getWorldSize(zoom, tileSize);
-    }
+    if (_MercatorMath) return _MercatorMath.getWorldSize(zoom, tileSize);
     return Math.pow(2, zoom) * tileSize;
   }
 
   static latLngToWorldPoint(lat, lng, zoom, tileSize = 256) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.latLngToWorldPoint) {
-      return MercatorMath.latLngToWorldPoint(lat, lng, zoom, tileSize);
-    }
+    if (_MercatorMath) return _MercatorMath.latLngToWorldPoint(lat, lng, zoom, tileSize);
     const size = this.getWorldSize(zoom, tileSize);
     const safeLat = this.clampLat(lat) * Math.PI / 180;
     const sinLat = Math.sin(safeLat);
@@ -43,9 +40,7 @@ class MercatorProjection {
   }
 
   static worldPointToLatLng(px, py, zoom, tileSize = 256) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.worldPointToLatLng) {
-      return MercatorMath.worldPointToLatLng(px, py, zoom, tileSize);
-    }
+    if (_MercatorMath) return _MercatorMath.worldPointToLatLng(px, py, zoom, tileSize);
     const size = this.getWorldSize(zoom, tileSize);
     const lng = this.normalizeLng((px / size) * 360 - 180);
     const safeY = Math.max(0, Math.min(size, py));
@@ -54,17 +49,13 @@ class MercatorProjection {
   }
 
   static getMetersPerPixel(lat, zoom) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.getMetersPerPixel) {
-      return MercatorMath.getMetersPerPixel(lat, zoom);
-    }
+    if (_MercatorMath) return _MercatorMath.getMetersPerPixel(lat, zoom);
     const latRad = this.clampLat(lat) * Math.PI / 180;
     return 156543.03392 * Math.cos(latRad) / Math.pow(2, zoom);
   }
 
   static cameraPixelDistance(first, second, zoom, tileSize = 256) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.cameraPixelDistance) {
-      return MercatorMath.cameraPixelDistance(first, second, zoom, tileSize);
-    }
+    if (_MercatorMath) return _MercatorMath.cameraPixelDistance(first, second, zoom, tileSize);
     if (!first || !second) return Infinity;
     const comparisonZoom = isFinite(Number(zoom))
       ? Number(zoom)
@@ -79,9 +70,7 @@ class MercatorProjection {
   }
 
   static camerasEquivalent(first, second, options = {}) {
-    if (typeof MercatorMath !== 'undefined' && MercatorMath.camerasEquivalent) {
-      return MercatorMath.camerasEquivalent(first, second, options);
-    }
+    if (_MercatorMath) return _MercatorMath.camerasEquivalent(first, second, options);
     if (!first || !second) return false;
     const zoomTolerance = options.zoomTolerance === undefined ? 0.001 : options.zoomTolerance;
     if (Math.abs((Number(first.zoom) || 0) - (Number(second.zoom) || 0)) > zoomTolerance) return false;
@@ -90,35 +79,24 @@ class MercatorProjection {
     return this.cameraPixelDistance(first, second, zoom, options.tileSize || 256) <= pixelTolerance;
   }
 
-  /**
-   * Calculates camera anchor coordinates that guarantee linear, non-slingshot
-   * screen-space velocity when interpolating between two zoom levels.
-   */
   static screenSpaceTrajectoryPoint(start, end, progress, options = {}) {
+    if (_MercatorMath) return _MercatorMath.screenSpaceTrajectoryPoint(start, end, progress, options);
     const mapSize = options.mapSize || 268435456;
     const startLng = start.lng !== undefined ? start.lng : (start.lon || 0);
     const endLng = end.lng !== undefined ? end.lng : (end.lon || 0);
     const z1 = Number(start.zoom) || 0;
     const z2 = Number(end.zoom) || 0;
-
     const w1 = this.latLngToWorldPoint(start.lat, startLng, 0, mapSize);
     const w2 = this.latLngToWorldPoint(end.lat, endLng, 0, mapSize);
-
     const u = Math.max(0, Math.min(1, progress));
     const currentZoom = options.currentZoom !== undefined ? options.currentZoom : (z1 + u * (z2 - z1));
     const curScale = Math.pow(2, currentZoom);
-
-    // Shortest-path longitudinal wrap (avoids 350-degree round-the-world flights)
     let dx = w2.x - w1.x;
     if (dx > mapSize / 2) dx -= mapSize;
     else if (dx < -mapSize / 2) dx += mapSize;
     const dy = w2.y - w1.y;
-
     const dz = z2 - z1;
-    const uZoom = Math.abs(dz) > 0.001
-      ? Math.max(0, Math.min(1, (currentZoom - z1) / dz))
-      : Math.max(0, Math.min(1, progress));
-
+    const uZoom = Math.abs(dz) > 0.001 ? Math.max(0, Math.min(1, (currentZoom - z1) / dz)) : Math.max(0, Math.min(1, progress));
     let x, y;
     if (z2 > z1 + 0.2) {
       const s1 = Math.pow(2, z1);
@@ -134,17 +112,9 @@ class MercatorProjection {
       x = w1.x + dx * uZoom;
       y = w1.y + dy * uZoom;
     }
-
     x = ((x % mapSize) + mapSize) % mapSize;
-
     const latLng = this.worldPointToLatLng(x, y, 0, mapSize);
-    return {
-      lat: latLng.lat,
-      lng: latLng.lng,
-      x,
-      y,
-      zoom: currentZoom
-    };
+    return { lat: latLng.lat, lng: latLng.lng, x, y, zoom: currentZoom };
   }
 }
 

@@ -3,9 +3,12 @@
  * to their dedicated controllers; this class only translates DOM intent.
  */
 class ToolbarController {
-  constructor(app) {
-    this.app = app;
-    this.lifecycle = app.lifecycle;
+  constructor(appOrDeps) {
+    const isDeps = appOrDeps && (appOrDeps.lifecycle || appOrDeps.session);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.lifecycle = (isDeps && appOrDeps.lifecycle) || (this.app && this.app.lifecycle) || null;
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
+    this.viewport = (isDeps && appOrDeps.viewport) || (this.app && this.app.viewport) || null;
     this._geoJsonReader = null;
     this._geoJsonLoadRevision = 0;
     this._geoJsonProgressAt = 0;
@@ -139,7 +142,9 @@ class ToolbarController {
       if (saved.height) height.value = saved.height;
       if (saved.fps) fps.value = saved.fps;
       if (saved.duration) duration.value = saved.duration;
-    } catch (error) {}
+    } catch (error) {
+      /* localStorage comp settings parse fallback */
+    }
 
     this._listen(preset, 'change', () => {
       const dimensions = {

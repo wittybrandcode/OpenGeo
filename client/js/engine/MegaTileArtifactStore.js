@@ -182,7 +182,7 @@ class MegaTileArtifactStore {
     } finally {
       if (tempPng) this._unlink(tempPng);
       if (tempManifest) this._unlink(tempManifest);
-      try { fs.closeSync(lockHandle); } catch (_error) {}
+      try { fs.closeSync(lockHandle); } catch (_error) { /* ignore lock close failure */ }
       this._unlink(spec.lockPath);
     }
   }
@@ -322,7 +322,9 @@ class MegaTileArtifactStore {
         const candidate = path.resolve(directory, name);
         if (candidate.indexOf(path.resolve(directory) + path.sep) === 0) this._unlink(candidate);
       }
-    } catch (_error) {}
+    } catch (_error) {
+      /* ignore cleanup readdir failure */
+    }
   }
 
   _canonicalJson(value) {
@@ -340,7 +342,7 @@ class MegaTileArtifactStore {
 
   _unlink(filePath) {
     const fs = require('fs');
-    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (_error) {}
+    try { if (fs.existsSync(filePath)) fs.unlinkSync(filePath); } catch (_error) { /* ignore unlink failure */ }
   }
 
   _error(code, message) {

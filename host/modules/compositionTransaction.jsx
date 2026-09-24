@@ -294,12 +294,22 @@ function opengeoPrepareCompositionRevision(jsonData) {
         tileLayer.property('Anchor Point').setValue([0, 0, 0]);
         tileLayer.parent = mapPivot;
         tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize, 0]);
-        tileLayer.property('Scale').setValue([(worldTileSize / tileActualSize) * 100, (worldTileSize / tileActualSize) * 100, 100]);
+        // Sub-pixel seam-seal scale: overlaps borders by exactly 1.5 texels to eliminate AE 3D antialiasing seam gaps across all zoom keyframes
+        var exactScale = (worldTileSize / tileActualSize) * 100;
+        var oneScreenPixelInWorld = worldTileSize / tileActualSize;
+        var subpixelBleed = oneScreenPixelInWorld * 1.5;
+        var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100;
+        tileLayer.property('Scale').setValue([seamSealScale, seamSealScale, 100]);
         try {
           tileLayer.quality = LayerQuality.BEST;
-          tileLayer.blendingMode = BlendingMode.NORMAL;
+          tileLayer.samplingQuality = LayerSamplingQuality.BILINEAR;
         } catch (qualityError) {
-          /* layer quality/blending fallback */
+          /* layer quality/sampling fallback */
+        }
+        try {
+          tileLayer.blendingMode = BlendingMode.NORMAL;
+        } catch (blendError) {
+          /* layer blending fallback */
         }
 
         // Apply smooth solid-base opacity transitions (eliminates crossfade darkening dip / alpha hole)

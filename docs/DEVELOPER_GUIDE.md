@@ -1,7 +1,7 @@
 # OpenGeo Developer & Contributor Architecture Guide
 
 > **Audience:** Developers, Systems Architects, and Technical Contributors  
-> **Version:** 1.0.2  
+> **Version:** 1.0.3  
 > **Runtime Target:** Adobe CEP (Chromium 88+ / Node.js 12+) + ExtendScript (ES3)  
 > **Target Host:** Adobe After Effects 2022–2025+  
 

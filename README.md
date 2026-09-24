@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/wittybrandcode/OpenGeo/releases"><img src="https://img.shields.io/badge/version-1.0.2-39b54a?style=for-the-badge" alt="Version 1.0.2"></a>
+  <a href="https://github.com/wittybrandcode/OpenGeo/releases"><img src="https://img.shields.io/badge/version-1.0.3-39b54a?style=for-the-badge" alt="Version 1.0.3"></a>
   <img src="https://img.shields.io/badge/license-MIT-blue?style=for-the-badge" alt="License MIT">
   <img src="https://img.shields.io/badge/cost-100%25%20Free%20Forever-brightgreen?style=for-the-badge" alt="100% Free">
   <img src="https://img.shields.io/badge/After%20Effects-2022--2025%2B-9999ff?style=for-the-badge" alt="After Effects 2022-2025+">

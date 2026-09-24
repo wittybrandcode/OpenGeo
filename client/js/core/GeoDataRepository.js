@@ -37,7 +37,9 @@ class GeoDataRepository {
         extPath = decodeURIComponent(extPath);
         return this.path.join(extPath, 'client', 'assets', 'data').replace(/\\/g, '/');
       }
-    } catch(e) {}
+    } catch(e) {
+      /* CSInterface path resolution fallback */
+    }
     try {
       return this.path.resolve(__dirname, '../../assets/data').replace(/\\/g, '/');
     } catch (ex) {

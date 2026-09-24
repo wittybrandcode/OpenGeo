@@ -70,9 +70,14 @@ class CoveragePlanner {
     const gutterTiles = Number.isFinite(requestedGutter)
       ? Math.max(0, Math.min(4, Math.floor(requestedGutter)))
       : 1;
+    const horizonGutter = (pitch > 0)
+      ? ((typeof FrustumMath !== 'undefined' && FrustumMath.calculatePitchOverscan)
+          ? FrustumMath.calculatePitchOverscan(pitch).horizonGutter
+          : 3)
+      : 0;
     let minX = Math.floor((center.x - halfWidth) / tileSize) - gutterTiles;
     let maxX = Math.floor((center.x + halfWidth) / tileSize) + gutterTiles;
-    let minY = Math.max(0, Math.floor((center.y - halfHeight) / tileSize) - gutterTiles);
+    let minY = Math.max(0, Math.floor((center.y - halfHeight) / tileSize) - (gutterTiles + horizonGutter));
     let maxY = Math.min(count - 1, Math.floor((center.y + halfHeight) / tileSize) + gutterTiles);
     // Alignment is an explicit export policy, never a download default. The
     // stitcher can pack sparse groups with transparent cells after download.

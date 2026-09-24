@@ -121,7 +121,9 @@ class DialogManager {
           if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
             window.lucide.createIcons({ root: this.symbolContainer });
           }
-        } catch (_err) {}
+        } catch (_err) {
+          /* lucide icon rendering fallback */
+        }
       }
     }
     if (this.confirmButton) {

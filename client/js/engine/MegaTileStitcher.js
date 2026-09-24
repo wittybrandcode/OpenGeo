@@ -428,7 +428,7 @@ class MegaTileStitcher {
             resolve(outputPath);
           }, reject);
         } catch (e) {
-          try { canvas.width = 0; canvas.height = 0; } catch (_ce) {}
+          try { canvas.width = 0; canvas.height = 0; } catch (_ce) { /* canvas dimension reset fallback */ }
           reject(e);
         }
       });

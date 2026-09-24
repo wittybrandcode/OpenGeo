@@ -48,7 +48,9 @@ class InputHandler {
     
     try { 
       this.canvas.setPointerCapture(e.pointerId); 
-    } catch (ex) {}
+    } catch (ex) {
+      /* setPointerCapture fallback */
+    }
     
     this.canvas.style.cursor = this.isTilt ? 'ns-resize' : 'grabbing';
     this.inertia.active = false;

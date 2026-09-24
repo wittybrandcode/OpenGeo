@@ -32,7 +32,7 @@ class PreferencesStore {
 
   saveRaw(value) {
     try { this.storage.setItem(this.key, JSON.stringify(value)); }
-    catch (ignoreStorage) {}
+    catch (ignoreStorage) { /* localStorage quota or access denied fallback */ }
   }
 }
 

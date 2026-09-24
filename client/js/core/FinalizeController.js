@@ -1,7 +1,18 @@
 class FinalizeController {
-  constructor(app) {
+  constructor(app, options = {}) {
     this.app = app;
+    const ScannerClass = (options && options.TimelineScanner) ||
+      (typeof FinalizeTimelineScanner !== 'undefined' ? FinalizeTimelineScanner : (typeof window !== 'undefined' && window.FinalizeTimelineScanner ? window.FinalizeTimelineScanner : (typeof global !== 'undefined' && global.FinalizeTimelineScanner ? global.FinalizeTimelineScanner : null)));
+    const TxManagerClass = (options && options.TransactionManager) ||
+      (typeof FinalizeTransactionManager !== 'undefined' ? FinalizeTransactionManager : (typeof window !== 'undefined' && window.FinalizeTransactionManager ? window.FinalizeTransactionManager : (typeof global !== 'undefined' && global.FinalizeTransactionManager ? global.FinalizeTransactionManager : null)));
+
     this.tilePlanner = typeof TilePlanner !== 'undefined' ? new TilePlanner(app) : null;
+    this.timelineScanner = ScannerClass && app && app.aeBridge
+      ? new ScannerClass(app.aeBridge, this.tilePlanner)
+      : null;
+    this.transactionManager = TxManagerClass && app && app.aeBridge
+      ? new TxManagerClass(app.aeBridge, app.jobManager)
+      : null;
     this.isFinalizing = false;
     this._runId = 0;
     this._operationGeneration = null;
@@ -49,8 +60,8 @@ class FinalizeController {
       }
       this._assertCurrentRun(runId, activeCompId, documentId);
 
-      const qualitySelect = document.getElementById('finalize-quality');
-      const quality = qualitySelect ? qualitySelect.value : 'normal';
+      const qualitySelect = typeof document !== 'undefined' ? document.getElementById('finalize-quality') : null;
+      const quality = (options && options.quality) || (qualitySelect ? qualitySelect.value : 'normal');
       const snapshot = OperationSnapshot.capture(this.app, {
         kind: 'finalize', generation: operationGeneration, compId: activeCompId, quality
       });
@@ -327,6 +338,9 @@ class FinalizeController {
   }
 
   async scanTimeline(activeCompId, snapshot) {
+    if (this.timelineScanner) {
+      return this.timelineScanner.scanTimeline(activeCompId, snapshot);
+    }
     globalEventBus.emit('ui:status', { message: 'Finalize: Scanning timeline...', isError: false });
     
     // Constant for Timeline Sample Step
@@ -616,6 +630,9 @@ class FinalizeController {
 
   async prepareComposition(megaTiles, activeCompId, snapshot, revisionId, zoomTransitions) {
     globalEventBus.emit('ui:status', { message: `Finalize: Preparing ${megaTiles.length} hidden AE layers...`, isError: false });
+    if (this.transactionManager) {
+      return this.transactionManager.prepare(megaTiles, activeCompId, snapshot, revisionId, zoomTransitions);
+    }
     const payloadObject = {
       operationId: revisionId,
       tiles: megaTiles,
@@ -645,6 +662,14 @@ class FinalizeController {
       done: expected,
       total: expected
     });
+    const serializedMetadata = this.app && this.app.metadataManager
+      ? this.app.metadataManager.serializeState(
+          this.app.metadataManager.createSnapshotState(snapshot, true, revisionId)
+        )
+      : null;
+    if (this.transactionManager) {
+      return this.transactionManager.commit(expected, activeCompId, snapshot, revisionId, serializedMetadata);
+    }
     const commitTimeoutMs = Math.max(90000, expected * 2000);
     return this.app.aeBridge.invoke('composition.commit', {
       operationId: revisionId,
@@ -652,9 +677,7 @@ class FinalizeController {
       compId: activeCompId,
       expected,
       source: snapshot.sourceKey,
-      metadata: this.app.metadataManager.serializeState(
-        this.app.metadataManager.createSnapshotState(snapshot, true, revisionId)
-      )
+      metadata: serializedMetadata
     }, { timeoutMs: commitTimeoutMs });
   }
 
@@ -680,7 +703,9 @@ class FinalizeController {
           }
         }
       }
-    } catch (_e) {}
+    } catch (_e) {
+      /* budget config read fallback */
+    }
 
     const preflight = (budgetConfig && budgetConfig.preflight) || {};
     const fourKConfig = (budgetConfig && budgetConfig.fourK) || {};
@@ -793,6 +818,10 @@ class FinalizeController {
       if (transaction.revisionDir) this._removeRevisionDirectory(transaction.revisionDir);
       transaction.revisionDir = null;
     };
+    if (this.transactionManager) {
+      transaction.rollbackPromise = this.transactionManager.rollback(transaction, removeLocalRevision);
+      return transaction.rollbackPromise;
+    }
     if (!transaction.hostPrepareStarted) {
       removeLocalRevision();
       transaction.rollbackPromise = Promise.resolve(true);
@@ -813,6 +842,9 @@ class FinalizeController {
   }
 
   async _reconcileCommit(transaction) {
+    if (this.transactionManager) {
+      return this.transactionManager.reconcile(transaction);
+    }
     try {
       return await this.app.aeBridge.invoke('composition.getRevision', {
         operationId: transaction.revisionId,

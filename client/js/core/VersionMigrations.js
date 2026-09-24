@@ -1,6 +1,6 @@
 /** Independent schema versions and deterministic N-2 migration rules. */
 const OpenGeoVersions = Object.freeze({
-  app: '1.0.2',
+  app: '1.0.3',
   settingsSchema: '2.0.0',
   metadataSchema: '2.2.0',
   bridgeProtocol: '2.0.0',

@@ -100,4 +100,20 @@ function build() {
   console.log('====================================');
 }
 
-build();
+function clean() {
+  console.log('====================================');
+  console.log('[OpenGeo] Cleaning stage directory...');
+  console.log('====================================');
+  if (fs.existsSync(STAGE_DIR)) {
+    fs.rmSync(STAGE_DIR, { recursive: true, force: true });
+    console.log(`[OpenGeo] Stage directory cleaned: ${STAGE_DIR}`);
+  } else {
+    console.log('[OpenGeo] Stage directory already clean.');
+  }
+}
+
+if (process.argv.includes('--clean') || process.argv.includes('clean')) {
+  clean();
+} else {
+  build();
+}

@@ -246,6 +246,26 @@ runTest('TB.9: OpenGeo Color Balance adjustment layer created in commitCompositi
   assert(transactionCode.includes('balLayer.moveToBeginning()'), 'Layer must move to top of map comp');
 });
 
+// ----------------------------------------------------------------------------
+// TB.10: Sub-pixel seam-seal scale (1.5 texel overlap) applied in ExtendScript modules
+// ----------------------------------------------------------------------------
+runTest('TB.10: ExtendScript modules enforce sub-pixel seam-seal scale (1.5 texel overlap)', () => {
+  const transactionCode = fs.readFileSync(sourcePath('host/modules/compositionTransaction.jsx'), 'utf8');
+  const tilesCode = fs.readFileSync(sourcePath('host/modules/compositionTiles.jsx'), 'utf8');
+
+  assert(transactionCode.includes('var exactScale = (worldTileSize / tileActualSize) * 100'), 'compositionTransaction.jsx must define exactScale');
+  assert(tilesCode.includes('var exactScale = (worldTileSize / tileActualSize) * 100'), 'compositionTiles.jsx must define exactScale');
+
+  assert(transactionCode.includes('oneScreenPixelInWorld'), 'compositionTransaction.jsx must calculate oneScreenPixelInWorld');
+  assert(tilesCode.includes('oneScreenPixelInWorld'), 'compositionTiles.jsx must calculate oneScreenPixelInWorld');
+
+  assert(transactionCode.includes('var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100'), 'compositionTransaction.jsx must calculate seamSealScale');
+  assert(tilesCode.includes('var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100'), 'compositionTiles.jsx must calculate seamSealScale');
+
+  assert(transactionCode.includes('tileLayer.property(\'Scale\').setValue([seamSealScale, seamSealScale, 100])'), 'compositionTransaction.jsx must set seamSealScale');
+  assert(tilesCode.includes('tileLayer.property(\'Scale\').setValue([seamSealScale, seamSealScale, 100])'), 'compositionTiles.jsx must set seamSealScale');
+});
+
 console.log('====================================');
 console.log(`Results: ${passed} Passed | ${failed} Failed`);
 console.log('====================================');

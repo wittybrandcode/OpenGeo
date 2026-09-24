@@ -18,14 +18,14 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
   var safeMapLayerName = opengeoVectorEscapeExpressionString(mapLayerName);
   var resolveMapPreamble =
     'var map = null;\n' +
-    'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) {}\n' +
+    'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) { /* map layer lookup fallback */ }\n' +
     'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
     '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
     '    try {\n' +
     '      var l = thisComp.layer(i);\n' +
     '      if (l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
     '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
-    '    } catch(err) {}\n' +
+    '    } catch(err) { /* layer scan fallback */ }\n' +
     '  }\n' +
     '}\n';
 
@@ -36,13 +36,70 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
   layer.property("Anchor Point").expression =
     resolveMapPreamble +
     'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
-    '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-    '  var lon = map.effect("Longitude")(1).value;\n' +
-    '  var latRad = lat * 0.017453292519943295;\n' +
-    '  var mercN = Math.log(Math.tan(0.7853981633974483 + latRad * 0.5));\n' +
-    '  var camX = ((lon + 180) / 360) * 8192;\n' +
-    '  var camY = ((1 - mercN * 0.3183098861837907) * 0.5) * 8192;\n' +
-    '  [camX, camY, 0];\n' +
+    '  try {\n' +
+    '    var myTime = time;\n' +
+    '    var latEff = map.effect("Latitude")(1);\n' +
+    '    var lonEff = map.effect("Longitude")(1);\n' +
+    '    var zoomEff = map.effect("Zoom")(1);\n' +
+    '    var mapSize = 8192;\n' +
+    '    function latLonToWorld(lt, ln) {\n' +
+    '      var safeLat = Math.max(-85.05112878, Math.min(85.05112878, Number(lt) || 0));\n' +
+    '      var rad = safeLat * 0.017453292519943295;\n' +
+    '      var mN = Math.log(Math.tan(0.7853981633974483 + rad * 0.5));\n' +
+    '      var normLon = ((((Number(ln) || 0) + 180) % 360 + 360) % 360) - 180;\n' +
+    '      var wx = ((normLon + 180) / 360) * mapSize;\n' +
+    '      var wy = ((1 - mN * 0.3183098861837907) * 0.5) * mapSize;\n' +
+    '      return [wx, wy];\n' +
+    '    }\n' +
+    '    var currentZoom = zoomEff ? zoomEff.valueAtTime(myTime) : 0;\n' +
+    '    var worldPos = null;\n' +
+    '    if (zoomEff && zoomEff.numKeys > 1) {\n' +
+    '      var nkIdx = zoomEff.nearestKey(myTime).index;\n' +
+    '      var k1 = null, k2 = null;\n' +
+    '      if (zoomEff.key(nkIdx).time <= myTime) {\n' +
+    '        k1 = zoomEff.key(nkIdx);\n' +
+    '        k2 = (nkIdx < zoomEff.numKeys) ? zoomEff.key(nkIdx + 1) : null;\n' +
+    '      } else {\n' +
+    '        k1 = (nkIdx > 1) ? zoomEff.key(nkIdx - 1) : null;\n' +
+    '        k2 = zoomEff.key(nkIdx);\n' +
+    '      }\n' +
+    '      if (k1 && k2 && k2.time > k1.time) {\n' +
+    '        var z1 = k1.value;\n' +
+    '        var z2 = k2.value;\n' +
+    '        var t1 = k1.time;\n' +
+    '        var t2 = k2.time;\n' +
+    '        var w1 = latLonToWorld(latEff ? latEff.valueAtTime(t1) : 0, lonEff ? lonEff.valueAtTime(t1) : 0);\n' +
+    '        var w2 = latLonToWorld(latEff ? latEff.valueAtTime(t2) : 0, lonEff ? lonEff.valueAtTime(t2) : 0);\n' +
+    '        var dx = w2[0] - w1[0];\n' +
+    '        if (dx > mapSize / 2) dx -= mapSize;\n' +
+    '        else if (dx < -mapSize / 2) dx += mapSize;\n' +
+    '        var dy = w2[1] - w1[1];\n' +
+    '        var curScale = Math.pow(2, currentZoom);\n' +
+    '        var dz = z2 - z1;\n' +
+    '        if (Math.abs(dz) > 0.2) {\n' +
+    '          var uZoom = Math.max(0, Math.min(1, (currentZoom - z1) / dz));\n' +
+    '          if (dz > 0) {\n' +
+    '            var s1 = Math.pow(2, z1);\n' +
+    '            var fIn = (s1 / curScale) * (1 - uZoom);\n' +
+    '            worldPos = [w2[0] - dx * fIn, w2[1] - dy * fIn];\n' +
+    '          } else {\n' +
+    '            var s2 = Math.pow(2, z2);\n' +
+    '            var fOut = (s2 / curScale) * uZoom;\n' +
+    '            worldPos = [w1[0] + dx * fOut, w1[1] + dy * fOut];\n' +
+    '          }\n' +
+    '        } else {\n' +
+    '          var uTime = Math.max(0, Math.min(1, (myTime - t1) / (t2 - t1)));\n' +
+    '          worldPos = [w1[0] + dx * uTime, w1[1] + dy * uTime];\n' +
+    '        }\n' +
+    '      }\n' +
+    '    }\n' +
+    '    if (!worldPos) {\n' +
+    '      var rawLat = latEff ? latEff.valueAtTime(myTime) : 0;\n' +
+    '      var rawLon = lonEff ? lonEff.valueAtTime(myTime) : 0;\n' +
+    '      worldPos = latLonToWorld(rawLat, rawLon);\n' +
+    '    }\n' +
+    '    [((worldPos[0] % mapSize) + mapSize) % mapSize, worldPos[1], 0];\n' +
+    '  } catch(anchorErr) { value; }\n' +
     '}';
 
   layer.property("Scale").expression =
@@ -116,21 +173,90 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
     var ptX = Number(point[0]) || 0;
     var ptY = Number(point[1]) || 0;
     var resolveMapPreamble =
-      'var map = thisComp.layer("' + safeMapLayerName + '");\n';
+      'var map = null;\n' +
+      'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) { /* map layer lookup fallback */ }\n' +
+      'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
+      '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+      '    try {\n' +
+      '      var l = thisComp.layer(i);\n' +
+      '      if (l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
+      '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
+      '    } catch(err) { /* layer scan fallback */ }\n' +
+      '  }\n' +
+      '}\n';
     controller.property('Position').expression =
       resolveMapPreamble +
       'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
-      '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-      '  var lon = map.effect("Longitude")(1).value;\n' +
-      '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-      '  var latRad = lat * Math.PI / 180;\n' +
-      '  var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-      '  var camX = ((lon + 180) / 360) * 262144;\n' +
-      '  var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-      '  var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
-      '  var pt = [' + ptX + ', ' + ptY + '];\n' +
-      '  var mapPos = map.transform.position;\n' +
-      '  [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
+      '  try {\n' +
+      '    var myTime = time;\n' +
+      '    var latEff = map.effect("Latitude")(1);\n' +
+      '    var lonEff = map.effect("Longitude")(1);\n' +
+      '    var zoomEff = map.effect("Zoom")(1);\n' +
+      '    var mapSize = 262144;\n' +
+      '    function latLonToWorld(lt, ln) {\n' +
+      '      var safeLat = Math.max(-85.05112878, Math.min(85.05112878, Number(lt) || 0));\n' +
+      '      var rad = safeLat * 0.017453292519943295;\n' +
+      '      var mN = Math.log(Math.tan(0.7853981633974483 + rad * 0.5));\n' +
+      '      var normLon = ((((Number(ln) || 0) + 180) % 360 + 360) % 360) - 180;\n' +
+      '      var wx = ((normLon + 180) / 360) * mapSize;\n' +
+      '      var wy = ((1 - mN * 0.3183098861837907) * 0.5) * mapSize;\n' +
+      '      return [wx, wy];\n' +
+      '    }\n' +
+      '    var currentZoom = zoomEff ? zoomEff.valueAtTime(myTime) : 0;\n' +
+      '    var zoom = Math.max(0, Math.min(22, currentZoom));\n' +
+      '    var worldPos = null;\n' +
+      '    if (zoomEff && zoomEff.numKeys > 1) {\n' +
+      '      var nkIdx = zoomEff.nearestKey(myTime).index;\n' +
+      '      var k1 = null, k2 = null;\n' +
+      '      if (zoomEff.key(nkIdx).time <= myTime) {\n' +
+      '        k1 = zoomEff.key(nkIdx);\n' +
+      '        k2 = (nkIdx < zoomEff.numKeys) ? zoomEff.key(nkIdx + 1) : null;\n' +
+      '      } else {\n' +
+      '        k1 = (nkIdx > 1) ? zoomEff.key(nkIdx - 1) : null;\n' +
+      '        k2 = zoomEff.key(nkIdx);\n' +
+      '      }\n' +
+      '      if (k1 && k2 && k2.time > k1.time) {\n' +
+      '        var z1 = k1.value;\n' +
+      '        var z2 = k2.value;\n' +
+      '        var t1 = k1.time;\n' +
+      '        var t2 = k2.time;\n' +
+      '        var w1 = latLonToWorld(latEff ? latEff.valueAtTime(t1) : 0, lonEff ? lonEff.valueAtTime(t1) : 0);\n' +
+      '        var w2 = latLonToWorld(latEff ? latEff.valueAtTime(t2) : 0, lonEff ? lonEff.valueAtTime(t2) : 0);\n' +
+      '        var dx = w2[0] - w1[0];\n' +
+      '        if (dx > mapSize / 2) dx -= mapSize;\n' +
+      '        else if (dx < -mapSize / 2) dx += mapSize;\n' +
+      '        var dy = w2[1] - w1[1];\n' +
+      '        var curScale = Math.pow(2, currentZoom);\n' +
+      '        var dz = z2 - z1;\n' +
+      '        if (Math.abs(dz) > 0.2) {\n' +
+      '          var uZoom = Math.max(0, Math.min(1, (currentZoom - z1) / dz));\n' +
+      '          if (dz > 0) {\n' +
+      '            var s1 = Math.pow(2, z1);\n' +
+      '            var fIn = (s1 / curScale) * (1 - uZoom);\n' +
+      '            worldPos = [w2[0] - dx * fIn, w2[1] - dy * fIn];\n' +
+      '          } else {\n' +
+      '            var s2 = Math.pow(2, z2);\n' +
+      '            var fOut = (s2 / curScale) * uZoom;\n' +
+      '            worldPos = [w1[0] + dx * fOut, w1[1] + dy * fOut];\n' +
+      '          }\n' +
+      '        } else {\n' +
+      '          var uTime = Math.max(0, Math.min(1, (myTime - t1) / (t2 - t1)));\n' +
+      '          worldPos = [w1[0] + dx * uTime, w1[1] + dy * uTime];\n' +
+      '        }\n' +
+      '      }\n' +
+      '    }\n' +
+      '    if (!worldPos) {\n' +
+      '      var rawLat = latEff ? latEff.valueAtTime(myTime) : 0;\n' +
+      '      var rawLon = lonEff ? lonEff.valueAtTime(myTime) : 0;\n' +
+      '      worldPos = latLonToWorld(rawLat, rawLon);\n' +
+      '    }\n' +
+      '    var camX = ((worldPos[0] % mapSize) + mapSize) % mapSize;\n' +
+      '    var camY = worldPos[1];\n' +
+      '    var s = (Math.pow(2, zoom) * 256) / mapSize;\n' +
+      '    var pt = [' + ptX + ', ' + ptY + '];\n' +
+      '    var mapPos = map.transform.position;\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
+      '  } catch(posErr) { value; }\n' +
       '}';
   }
   try {
@@ -330,21 +456,90 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
     var x = Number(label.point[0]) || 0;
     var y = Number(label.point[1]) || 0;
     var resolveMapPreamble =
-      'var map = thisComp.layer("' + safeMapLayerName + '");\n';
+      'var map = null;\n' +
+      'try { map = thisComp.layer("' + safeMapLayerName + '"); } catch(e) { /* map layer lookup fallback */ }\n' +
+      'if (!map || !map.effect || !map.effect("Latitude")) {\n' +
+      '  for (var i = 1; i <= thisComp.numLayers; i++) {\n' +
+      '    try {\n' +
+      '      var l = thisComp.layer(i);\n' +
+      '      if (l.effect("Latitude") && l.effect("Longitude") && l.effect("Zoom")) { map = l; break; }\n' +
+      '      if (l.comment && (l.comment.indexOf("opengeo:controller") !== -1 || l.comment.indexOf("role=controller") !== -1)) { map = l; break; }\n' +
+      '    } catch(err) { /* layer scan fallback */ }\n' +
+      '  }\n' +
+      '}\n';
     textLayer.property("Position").expression =
       resolveMapPreamble +
       'if (!map || !map.effect || !map.effect("Latitude")) { value; } else {\n' +
-      '  var lat = Math.max(-85.05112878, Math.min(85.05112878, map.effect("Latitude")(1).value));\n' +
-      '  var lon = map.effect("Longitude")(1).value;\n' +
-      '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-      '  var latRad = lat * Math.PI / 180;\n' +
-      '  var mercN = Math.log(Math.tan(Math.PI / 4 + latRad / 2));\n' +
-      '  var camX = ((lon + 180) / 360) * 262144;\n' +
-      '  var camY = ((1 - mercN / Math.PI) / 2) * 262144;\n' +
-      '  var s = (Math.pow(2, zoom) * 256) / 262144;\n' +
-      '  var pt = [' + x + ', ' + y + '];\n' +
-      '  var mapPos = map.transform.position;\n' +
-      '  [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
+      '  try {\n' +
+      '    var myTime = time;\n' +
+      '    var latEff = map.effect("Latitude")(1);\n' +
+      '    var lonEff = map.effect("Longitude")(1);\n' +
+      '    var zoomEff = map.effect("Zoom")(1);\n' +
+      '    var mapSize = 262144;\n' +
+      '    function latLonToWorld(lt, ln) {\n' +
+      '      var safeLat = Math.max(-85.05112878, Math.min(85.05112878, Number(lt) || 0));\n' +
+      '      var rad = safeLat * 0.017453292519943295;\n' +
+      '      var mN = Math.log(Math.tan(Math.PI / 4 + rad / 2));\n' +
+      '      var normLon = ((((Number(ln) || 0) + 180) % 360 + 360) % 360) - 180;\n' +
+      '      var wx = ((normLon + 180) / 360) * mapSize;\n' +
+      '      var wy = ((1 - mN * 0.3183098861837907) * 0.5) * mapSize;\n' +
+      '      return [wx, wy];\n' +
+      '    }\n' +
+      '    var currentZoom = zoomEff ? zoomEff.valueAtTime(myTime) : 0;\n' +
+      '    var zoom = Math.max(0, Math.min(22, currentZoom));\n' +
+      '    var worldPos = null;\n' +
+      '    if (zoomEff && zoomEff.numKeys > 1) {\n' +
+      '      var nkIdx = zoomEff.nearestKey(myTime).index;\n' +
+      '      var k1 = null, k2 = null;\n' +
+      '      if (zoomEff.key(nkIdx).time <= myTime) {\n' +
+      '        k1 = zoomEff.key(nkIdx);\n' +
+      '        k2 = (nkIdx < zoomEff.numKeys) ? zoomEff.key(nkIdx + 1) : null;\n' +
+      '      } else {\n' +
+      '        k1 = (nkIdx > 1) ? zoomEff.key(nkIdx - 1) : null;\n' +
+      '        k2 = zoomEff.key(nkIdx);\n' +
+      '      }\n' +
+      '      if (k1 && k2 && k2.time > k1.time) {\n' +
+      '        var z1 = k1.value;\n' +
+      '        var z2 = k2.value;\n' +
+      '        var t1 = k1.time;\n' +
+      '        var t2 = k2.time;\n' +
+      '        var w1 = latLonToWorld(latEff ? latEff.valueAtTime(t1) : 0, lonEff ? lonEff.valueAtTime(t1) : 0);\n' +
+      '        var w2 = latLonToWorld(latEff ? latEff.valueAtTime(t2) : 0, lonEff ? lonEff.valueAtTime(t2) : 0);\n' +
+      '        var dx = w2[0] - w1[0];\n' +
+      '        if (dx > mapSize / 2) dx -= mapSize;\n' +
+      '        else if (dx < -mapSize / 2) dx += mapSize;\n' +
+      '        var dy = w2[1] - w1[1];\n' +
+      '        var curScale = Math.pow(2, currentZoom);\n' +
+      '        var dz = z2 - z1;\n' +
+      '        if (Math.abs(dz) > 0.2) {\n' +
+      '          var uZoom = Math.max(0, Math.min(1, (currentZoom - z1) / dz));\n' +
+      '          if (dz > 0) {\n' +
+      '            var s1 = Math.pow(2, z1);\n' +
+      '            var fIn = (s1 / curScale) * (1 - uZoom);\n' +
+      '            worldPos = [w2[0] - dx * fIn, w2[1] - dy * fIn];\n' +
+      '          } else {\n' +
+      '            var s2 = Math.pow(2, z2);\n' +
+      '            var fOut = (s2 / curScale) * uZoom;\n' +
+      '            worldPos = [w1[0] + dx * fOut, w1[1] + dy * fOut];\n' +
+      '          }\n' +
+      '        } else {\n' +
+      '          var uTime = Math.max(0, Math.min(1, (myTime - t1) / (t2 - t1)));\n' +
+      '          worldPos = [w1[0] + dx * uTime, w1[1] + dy * uTime];\n' +
+      '        }\n' +
+      '      }\n' +
+      '    }\n' +
+      '    if (!worldPos) {\n' +
+      '      var rawLat = latEff ? latEff.valueAtTime(myTime) : 0;\n' +
+      '      var rawLon = lonEff ? lonEff.valueAtTime(myTime) : 0;\n' +
+      '      worldPos = latLonToWorld(rawLat, rawLon);\n' +
+      '    }\n' +
+      '    var camX = ((worldPos[0] % mapSize) + mapSize) % mapSize;\n' +
+      '    var camY = worldPos[1];\n' +
+      '    var s = (Math.pow(2, zoom) * 256) / mapSize;\n' +
+      '    var pt = [' + x + ', ' + y + '];\n' +
+      '    var mapPos = map.transform.position;\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
+      '  } catch(posErr) { value; }\n' +
       '}';
     textLayer.property("Scale").setValue([100, 100]);
     if (visibilityLayerName) {

@@ -21,7 +21,9 @@ class ChunkedFileReader {
         extPath = decodeURIComponent(extPath);
         return pathModule.join(extPath, 'client', 'assets', 'data').replace(/\\/g, '/');
       }
-    } catch (e) {}
+    } catch (e) {
+      /* CSInterface extension path resolution fallback */
+    }
 
     try {
       return pathModule.resolve(__dirname, '../../../assets/data').replace(/\\/g, '/');

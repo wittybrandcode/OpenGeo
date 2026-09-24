@@ -87,7 +87,8 @@ function opengeoEnsureMapController(containingComp, mapComp, mapcompName, compWi
             '  try { d = cameraOption.zoom.value; } catch(err) {\n' +
             '    try { d = cameraOption.zoom; } catch(err2) { /* zoom option fallback */ }\n' +
             '  }\n' +
-            '  var poi = pointOfInterest;\n' +
+            '  var poi = [thisComp.width / 2, thisComp.height / 2, 0];\n' +
+            '  try { poi = pointOfInterest; } catch(poiErr) { /* 1-node camera fallback */ }\n' +
             '  [poi[0], poi[1] + d * Math.sin(rad), -d * Math.cos(rad)];\n' +
             '}\n';
         }
@@ -202,7 +203,8 @@ function opengeoInstallMapPivotExpressions(mapPivot, containingCompName, mapcomp
     '      var safeLat = Math.max(-85.05112878, Math.min(85.05112878, Number(lt) || 0));\n' +
     '      var rad = safeLat * Math.PI / 180;\n' +
     '      var mN = Math.log(Math.tan(Math.PI / 4 + rad / 2));\n' +
-    '      var wx = (((Number(ln) || 0) + 180) / 360) * mapSize;\n' +
+    '      var normLon = ((((Number(ln) || 0) + 180) % 360 + 360) % 360) - 180;\n' +
+    '      var wx = ((normLon + 180) / 360) * mapSize;\n' +
     '      var wy = ((1 - mN / Math.PI) / 2) * mapSize;\n' +
     '      return [wx, wy];\n' +
     '    }\n' +

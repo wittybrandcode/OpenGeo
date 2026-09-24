@@ -1,7 +1,10 @@
 /** Safe DOM-only feature layer panel. */
 class LayersPanel {
-  constructor(app) {
-    this.app = app;
+  constructor(app = {}) {
+    const isDeps = app && (app.featureRegistry || app.featureManager);
+    this.app = isDeps && app.app ? app.app : app;
+    this.featureRegistry = (isDeps && app.featureRegistry) || (this.app && this.app.featureRegistry) || null;
+    this.featureManager = (isDeps && app.featureManager) || (this.app && this.app.featureManager) || null;
     this.panel = document.getElementById('feature-layers-panel');
     this.listElement = document.getElementById('feature-layers-list');
     this.toggleButton = document.getElementById('feature-layers-btn');
@@ -10,8 +13,23 @@ class LayersPanel {
     this._onClose = () => this.close();
     if (this.toggleButton) this.toggleButton.addEventListener('click', this._onToggle);
     if (this.closeButton) this.closeButton.addEventListener('click', this._onClose);
-    this._unsubscribe = app.featureRegistry.onChange(items => this.render(items));
-    this.render(app.featureRegistry.list());
+    this._unsubscribe = (app && app.featureRegistry)
+      ? app.featureRegistry.onChange(items => this.render(items))
+      : (this.featureRegistry && typeof this.featureRegistry.onChange === 'function'
+          ? this.featureRegistry.onChange(items => this.render(items))
+          : null);
+    if (this.featureRegistry && typeof this.featureRegistry.list === 'function') {
+      this.render(this.featureRegistry.list());
+    }
+  }
+
+  destroy() {
+    if (this.toggleButton) this.toggleButton.removeEventListener('click', this._onToggle);
+    if (this.closeButton) this.closeButton.removeEventListener('click', this._onClose);
+    if (typeof this._unsubscribe === 'function') {
+      this._unsubscribe();
+      this._unsubscribe = null;
+    }
   }
 
   toggle() { if (this.panel && this.panel.classList.contains('visible')) this.close(); else this.open(); }

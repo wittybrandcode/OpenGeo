@@ -98,7 +98,9 @@ self.onmessage = async function(e) {
       try {
         canvas.width = 0;
         canvas.height = 0;
-      } catch (_e) {}
+      } catch (_e) {
+        /* worker canvas cleanup fallback */
+      }
       canvas = null;
     }
     self.postMessage({

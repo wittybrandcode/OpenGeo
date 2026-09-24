@@ -1,10 +1,10 @@
 {
   "name": "opengeo",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Interactive map extension for Adobe After Effects",
   "main": "client/index.html",
   "scripts": {
-    "clean": "node scripts/build.js",
+    "clean": "node scripts/build.js --clean",
     "build": "node scripts/build.js",
     "vector:data": "node scripts/build-vector-runtime-data.js",
     "vector:preview-index": "node scripts/build-vector-runtime-data.js",
@@ -23,6 +23,7 @@
     "verify:geometry": "node scripts/verify-vector-geometry.js",
     "verify:runtime-data": "node scripts/runtime-data-contract.js",
     "test": "node scripts/test.js",
+    "test:all": "node scripts/run-all-tests.js",
     "test:ae-sync-camera": "node scripts/ae-sync-camera-regression.js",
     "test:tile-pipeline:red": "node scripts/tests/tile-pipeline/fault-injection.test.js",
     "verify:tile-pipeline:red-baseline": "node scripts/tests/tile-pipeline/verify-red-baseline.js",

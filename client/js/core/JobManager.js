@@ -97,7 +97,7 @@ class JobManager {
         const filePath = this.path.join(this.tempDir, name);
         const stats = this.fs.statSync(filePath);
         if (stats.isFile() && stats.mtimeMs < cutoff) {
-          try { this.fs.unlinkSync(filePath); } catch (cleanupError) {}
+          try { this.fs.unlinkSync(filePath); } catch (cleanupError) { /* ignore locked abandoned file */ }
         }
       }
     } catch (error) {

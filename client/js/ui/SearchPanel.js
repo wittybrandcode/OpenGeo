@@ -407,7 +407,7 @@ class SearchPanel {
     request.onprogress = event => {
       if (event && event.loaded > maxResponseBytes) {
         reportNetworkFailure('Search response exceeded the safety limit');
-        try { request.abort(); } catch (_ignoreAbort) {}
+        try { request.abort(); } catch (_ignoreAbort) { /* request abort fallback */ }
       }
     };
     
@@ -430,7 +430,9 @@ class SearchPanel {
       let items = [];
       try {
         items = request.status === 200 ? JSON.parse(request.responseText) : [];
-      } catch (e) {}
+      } catch (e) {
+        /* JSON parse error fallback */
+      }
       if (!Array.isArray(items)) items = [];
       items = items.slice(0, 5).filter(item => item && typeof item === 'object');
       

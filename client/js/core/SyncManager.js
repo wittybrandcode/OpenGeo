@@ -1,6 +1,13 @@
 class SyncManager {
-  constructor(app) {
-    this.app = app;
+  constructor(appOrDeps) {
+    const isDeps = appOrDeps && (appOrDeps.session || appOrDeps.aeBridge);
+    this.app = isDeps && appOrDeps.app ? appOrDeps.app : (appOrDeps || {});
+    this.session = (isDeps && appOrDeps.session) || (this.app && this.app.session) || null;
+    this.aeBridge = (isDeps && appOrDeps.aeBridge) || (this.app && this.app.aeBridge) || null;
+    this.metadataManager = (isDeps && appOrDeps.metadataManager) || (this.app && this.app.metadataManager) || null;
+    this.tileDownloader = (isDeps && appOrDeps.tileDownloader) || (this.app && this.app.tileDownloader) || null;
+    this.jobManager = (isDeps && appOrDeps.jobManager) || (this.app && this.app.jobManager) || null;
+    this.tileTransport = (isDeps && appOrDeps.tileTransport) || (this.app && this.app.tileTransport) || null;
     this.exportTimer = null;
     this.trajectoryTimer = null;
     this._trajectoryRunId = 0;
@@ -18,7 +25,8 @@ class SyncManager {
           }
         })
       : null;
-    if (this.fsm && this.app && this.app.activeCompId) {
+    const activeCompId = (isDeps && appOrDeps.activeCompId) || (this.app && this.app.activeCompId);
+    if (this.fsm && activeCompId) {
       this.fsm.transition(SyncState.ATTACHED_IDLE);
     }
   }

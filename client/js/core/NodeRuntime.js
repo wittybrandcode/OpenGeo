@@ -8,9 +8,9 @@
   }
   if (typeof globalObject.require !== 'function') return;
   if (typeof globalObject.Buffer === 'undefined') {
-    try { globalObject.Buffer = globalObject.require('buffer').Buffer; } catch (_bufferError) {}
+    try { globalObject.Buffer = globalObject.require('buffer').Buffer; } catch (_bufferError) { /* ignore buffer require error */ }
   }
   if (typeof globalObject.process === 'undefined') {
-    try { globalObject.process = globalObject.require('process'); } catch (_processError) {}
+    try { globalObject.process = globalObject.require('process'); } catch (_processError) { /* ignore process require error */ }
   }
 })(typeof window !== 'undefined' ? window : null);

@@ -31,7 +31,7 @@ class TileTransport {
         finish(reject, policy
           ? policy.createError('NETWORK_TIMEOUT', 'Tile download timeout')
           : new Error('Tile download timeout'));
-        try { request.abort(); } catch (ignoreAbort) {}
+        try { request.abort(); } catch (ignoreAbort) { /* request abort fallback */ }
       }, timeoutMs);
       request.onload = () => {
         const finalValidation = policy ? policy.validateFinalUrl(validation.url, request.responseURL) : { ok: true };
@@ -62,7 +62,7 @@ class TileTransport {
           finish(reject, policy
             ? policy.createError('NETWORK_RESPONSE_TOO_LARGE', `Tile response exceeds ${maxBytes} bytes.`)
             : new Error(`Tile response exceeds ${maxBytes} bytes.`));
-          try { request.abort(); } catch (ignoreAbort) {}
+          try { request.abort(); } catch (ignoreAbort) { /* request abort fallback */ }
         }
       };
       request.onerror = () => finish(reject, new Error('Network error downloading tile'));
@@ -73,7 +73,7 @@ class TileTransport {
     return {
       promise,
       abort: () => {
-        try { request.abort(); } catch (ignoreAbort) {}
+        try { request.abort(); } catch (ignoreAbort) { /* request abort fallback */ }
       }
     };
   }

@@ -118,6 +118,68 @@ class MercatorMath {
     const zoom = Math.max(Number(first.zoom) || 0, Number(second.zoom) || 0);
     return this.cameraPixelDistance(first, second, zoom, options.tileSize || 256) <= pixelTolerance;
   }
+
+  /**
+   * Calculates camera anchor coordinates that guarantee linear, non-slingshot
+   * screen-space velocity when interpolating between two zoom levels.
+   * @param {{lat: number, lng?: number, lon?: number, zoom?: number}} start
+   * @param {{lat: number, lng?: number, lon?: number, zoom?: number}} end
+   * @param {number} progress
+   * @param {object} [options]
+   * @returns {{lat: number, lng: number, x: number, y: number, zoom: number}}
+   */
+  static screenSpaceTrajectoryPoint(start, end, progress, options = {}) {
+    const mapSize = options.mapSize || 268435456;
+    const startLng = start.lng !== undefined ? start.lng : (start.lon || 0);
+    const endLng = end.lng !== undefined ? end.lng : (end.lon || 0);
+    const z1 = Number(start.zoom) || 0;
+    const z2 = Number(end.zoom) || 0;
+
+    const w1 = this.latLngToWorldPoint(start.lat, startLng, 0, mapSize);
+    const w2 = this.latLngToWorldPoint(end.lat, endLng, 0, mapSize);
+
+    const u = Math.max(0, Math.min(1, progress));
+    const currentZoom = options.currentZoom !== undefined ? options.currentZoom : (z1 + u * (z2 - z1));
+    const curScale = Math.pow(2, currentZoom);
+
+    // Shortest-path longitudinal wrap (avoids 350-degree round-the-world flights)
+    let dx = w2.x - w1.x;
+    if (dx > mapSize / 2) dx -= mapSize;
+    else if (dx < -mapSize / 2) dx += mapSize;
+    const dy = w2.y - w1.y;
+
+    const dz = z2 - z1;
+    const uZoom = Math.abs(dz) > 0.001
+      ? Math.max(0, Math.min(1, (currentZoom - z1) / dz))
+      : Math.max(0, Math.min(1, progress));
+
+    let x, y;
+    if (z2 > z1 + 0.2) {
+      const s1 = Math.pow(2, z1);
+      const factor = (s1 / curScale) * (1 - uZoom);
+      x = w2.x - dx * factor;
+      y = w2.y - dy * factor;
+    } else if (z2 < z1 - 0.2) {
+      const s2 = Math.pow(2, z2);
+      const factor = (s2 / curScale) * uZoom;
+      x = w1.x + dx * factor;
+      y = w1.y + dy * factor;
+    } else {
+      x = w1.x + dx * uZoom;
+      y = w1.y + dy * uZoom;
+    }
+
+    x = ((x % mapSize) + mapSize) % mapSize;
+
+    const latLng = this.worldPointToLatLng(x, y, 0, mapSize);
+    return {
+      lat: latLng.lat,
+      lng: latLng.lng,
+      x,
+      y,
+      zoom: currentZoom
+    };
+  }
 }
 
 if (typeof module !== 'undefined' && module.exports) {
