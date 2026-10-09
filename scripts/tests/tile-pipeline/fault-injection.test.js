@@ -332,7 +332,9 @@ async function fi04CacheRequiresManifestValidation() {
       fail('CACHE_SIZE_ONLY_ACCEPTED', 'A stale MegaTile was accepted with mismatched coverage and hash metadata.');
     }
   } finally {
-    fs.rmSync(root, { recursive: true, force: true });
+    try {
+      fs.rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 50 });
+    } catch (_ignoreRm) {}
   }
 }
 

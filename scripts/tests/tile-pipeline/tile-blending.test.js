@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 const assert = require('assert');
+const MegaTileArtifactStore = require('../../../client/js/engine/MegaTileArtifactStore.js');
 
 const projectRoot = path.resolve(__dirname, '../../..');
 
@@ -174,17 +175,17 @@ runTest('TB.3: Static framing creates zero transitions and downloads single zoom
 });
 
 // ----------------------------------------------------------------------------
-// TB.4: Host ExtendScript assigns BlendingMode.NORMAL and eliminates ALPHA_ADD
+// TB.4: Host ExtendScript uses normal compositing; the safe overlap is baked
+// into the source image as an edge gutter, never by additive compositing.
 // ----------------------------------------------------------------------------
-runTest('TB.4: ExtendScript modules set BlendingMode.NORMAL instead of ALPHA_ADD', () => {
+runTest('TB.4: ExtendScript modules set BlendingMode.NORMAL with edge-gutter assets to eliminate seams and white glow', () => {
   const transactionCode = fs.readFileSync(sourcePath('host/modules/compositionTransaction.jsx'), 'utf8');
   const tilesCode = fs.readFileSync(sourcePath('host/modules/compositionTiles.jsx'), 'utf8');
+  const syncCode = fs.readFileSync(sourcePath('host/modules/metadataSync.jsx'), 'utf8');
 
-  assert(!transactionCode.includes('BlendingMode.ALPHA_ADD'), 'compositionTransaction.jsx must not use ALPHA_ADD');
-  assert(!tilesCode.includes('BlendingMode.ALPHA_ADD'), 'compositionTiles.jsx must not use ALPHA_ADD');
-
-  assert(transactionCode.includes('tileLayer.blendingMode = BlendingMode.NORMAL'), 'compositionTransaction.jsx must use BlendingMode.NORMAL');
-  assert(tilesCode.includes('tileLayer.blendingMode = BlendingMode.NORMAL'), 'compositionTiles.jsx must use BlendingMode.NORMAL');
+  assert(transactionCode.includes('tileLayer.blendingMode = BlendingMode.NORMAL;'), 'compositionTransaction.jsx must use BlendingMode.NORMAL');
+  assert(tilesCode.includes('tileLayer.blendingMode = BlendingMode.NORMAL;'), 'compositionTiles.jsx must use BlendingMode.NORMAL');
+  assert(syncCode.includes('innerLayer.blendingMode = BlendingMode.NORMAL;'), 'metadataSync.jsx must use BlendingMode.NORMAL');
 });
 
 // ----------------------------------------------------------------------------
@@ -247,24 +248,47 @@ runTest('TB.9: OpenGeo Color Balance adjustment layer created in commitCompositi
 });
 
 // ----------------------------------------------------------------------------
-// TB.10: Sub-pixel seam-seal scale (1.5 texel overlap) applied in ExtendScript modules
+// TB.10: Exact content geometry with a source-asset edge gutter
 // ----------------------------------------------------------------------------
-runTest('TB.10: ExtendScript modules enforce sub-pixel seam-seal scale (1.5 texel overlap)', () => {
+runTest('TB.10: ExtendScript modules preserve exact content scale and offset only the baked gutter', () => {
   const transactionCode = fs.readFileSync(sourcePath('host/modules/compositionTransaction.jsx'), 'utf8');
   const tilesCode = fs.readFileSync(sourcePath('host/modules/compositionTiles.jsx'), 'utf8');
 
-  assert(transactionCode.includes('var exactScale = (worldTileSize / tileActualSize) * 100'), 'compositionTransaction.jsx must define exactScale');
-  assert(tilesCode.includes('var exactScale = (worldTileSize / tileActualSize) * 100'), 'compositionTiles.jsx must define exactScale');
-
-  assert(transactionCode.includes('oneScreenPixelInWorld'), 'compositionTransaction.jsx must calculate oneScreenPixelInWorld');
-  assert(tilesCode.includes('oneScreenPixelInWorld'), 'compositionTiles.jsx must calculate oneScreenPixelInWorld');
-
-  assert(transactionCode.includes('var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100'), 'compositionTransaction.jsx must calculate seamSealScale');
-  assert(tilesCode.includes('var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100'), 'compositionTiles.jsx must calculate seamSealScale');
-
-  assert(transactionCode.includes('tileLayer.property(\'Scale\').setValue([seamSealScale, seamSealScale, 100])'), 'compositionTransaction.jsx must set seamSealScale');
-  assert(tilesCode.includes('tileLayer.property(\'Scale\').setValue([seamSealScale, seamSealScale, 100])'), 'compositionTiles.jsx must set seamSealScale');
+  const helpersCode = fs.readFileSync(sourcePath('host/modules/helpers.jsx'), 'utf8');
+  assert(helpersCode.includes('function opengeoResolveTileGeometry'), 'helpers.jsx must centralize content/gutter geometry');
+  assert(helpersCode.includes('contentPixels + (requestedGutter * 2) <= sourcePixels'), 'gutter must fit within the source footage');
+  assert(transactionCode.includes("tileLayer.property('Anchor Point').setValue([tileGeometry.gutterPixels, tileGeometry.gutterPixels, 0])"), 'compositionTransaction.jsx must offset the anchor by the baked gutter');
+  assert(tilesCode.includes("tileLayer.property('Anchor Point').setValue([tileGeometry.gutterPixels, tileGeometry.gutterPixels, 0])"), 'compositionTiles.jsx must offset the anchor by the baked gutter');
+  assert(transactionCode.includes("tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100])"), 'compositionTransaction.jsx must use exact content scale');
+  assert(tilesCode.includes("tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100])"), 'compositionTiles.jsx must use exact content scale');
+  assert(!transactionCode.includes('paddedScale'), 'compositionTransaction.jsx must not geometrically stretch tiles');
+  assert(!tilesCode.includes('paddedScale'), 'compositionTiles.jsx must not geometrically stretch tiles');
 });
+
+// ----------------------------------------------------------------------------
+// TB.11: MegaTile assets contain an edge-extruded source gutter, while their
+// logical Mercator extent remains unchanged for the host placer.
+// ----------------------------------------------------------------------------
+runTest('TB.11: MegaTile artifact contract preserves content size and adds a one-pixel edge gutter', () => {
+  const store = new MegaTileArtifactStore({ artifactKind: 'preview-cache' });
+  const spec = store.createSpec([
+    { z: 4, x: 3, y: 2, placementKey: 'placement/4/3/2' }
+  ], 3, 2, 256, 256, 'C:/tmp/megatile.png');
+  const stitcherCode = fs.readFileSync(sourcePath('client/js/engine/MegaTileStitcher.js'), 'utf8');
+  const workerCode = fs.readFileSync(sourcePath('client/js/engine/stitcherWorker.js'), 'utf8');
+
+  assert.strictEqual(spec.contentWidth, 256, 'Logical width must remain the original tile extent');
+  assert.strictEqual(spec.contentHeight, 256, 'Logical height must remain the original tile extent');
+  assert.strictEqual(spec.gutterPixels, 1, 'Every derived MegaTile needs a one-pixel edge gutter');
+  assert.strictEqual(spec.width, 258, 'Stored texture width must include both gutter sides');
+  assert.strictEqual(spec.height, 258, 'Stored texture height must include both gutter sides');
+  assert(stitcherCode.includes('contentPixelSize: canvasSize'), 'Stitcher must pass the logical content size to AE');
+  assert(stitcherCode.includes('gutterPixels: this.artifactStore.gutterPixels'), 'Stitcher must pass the gutter size to AE');
+  assert(stitcherCode.includes('this._extrudeCanvasGutter(ctx, size, spec.gutterPixels)'), 'Main-thread fallback must extrude edge texels');
+  assert(workerCode.includes('extrudeCanvasGutter(ctx, size, edge)'), 'Worker route must extrude edge texels');
+  assert(workerCode.includes('new OffscreenCanvas(size + (edge * 2), size + (edge * 2))'), 'Worker output must include the gutter dimensions');
+});
+
 
 console.log('====================================');
 console.log(`Results: ${passed} Passed | ${failed} Failed`);

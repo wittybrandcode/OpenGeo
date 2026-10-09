@@ -40,7 +40,6 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     try {
       footageItem = app.project.importFile(new ImportOptions(tileFile));
       footageItem.parentFolder = data.isPreview === true ? folders.previewTiles : folders.finalTiles;
-      footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + placementIdentity);
     } catch (importError) {
       hError('Import failed for tile ' + tileName + ': ' + importError.toString());
       continue;
@@ -49,25 +48,26 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
 
     var tileLayer = mapComp.layers.add(footageItem);
     tileLayer.name = tileName;
-    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, 'placement=' + placementIdentity);
     if (isPreviewStaging) tileLayer.enabled = false;
     tileLayer.threeDLayer = true;
     var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
-    var tileActualSize = footageItem.width || 256;
-    tileLayer.property('Anchor Point').setValue([0, 0, 0]);
+    var tileGeometry = opengeoResolveTileGeometry(tile, footageItem, worldTileSize);
+    var tileOwnershipExtra = opengeoTileGeometryExtra(
+      placementIdentity, tileGeometry.contentPixels, tileGeometry.gutterPixels, tile.z
+    );
+    footageItem.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, tileOwnershipExtra);
+    tileLayer.comment = opengeoOwnershipComment(data.documentId || 'legacy', ownershipRole, revision, tileOwnershipExtra);
+    tileLayer.property('Anchor Point').setValue([tileGeometry.gutterPixels, tileGeometry.gutterPixels, 0]);
     tileLayer.parent = mapPivot;
     tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize, 0]);
-    // Sub-pixel seam-seal scale: overlaps borders by exactly 1.5 texels to eliminate AE 3D antialiasing seam gaps across all zoom keyframes
-    var exactScale = (worldTileSize / tileActualSize) * 100;
-    var oneScreenPixelInWorld = worldTileSize / tileActualSize;
-    var subpixelBleed = oneScreenPixelInWorld * 1.5;
-    var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100;
-    tileLayer.property('Scale').setValue([seamSealScale, seamSealScale, 100]);
+    // The client writes a one-pixel edge-extruded gutter. It overlaps only
+    // duplicated edge texels while this exact scale keeps map features fixed.
+    tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100]);
     try {
       tileLayer.quality = LayerQuality.BEST;
       tileLayer.samplingQuality = LayerSamplingQuality.BILINEAR;
     } catch (qualityError) {
-      /* quality and sampling fallback */
+      /* quality fallback */
     }
     try {
       tileLayer.blendingMode = BlendingMode.NORMAL;

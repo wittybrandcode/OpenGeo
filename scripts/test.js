@@ -2074,6 +2074,11 @@ assertAsync(async () => {
       cacheSignature: 'children-fixture', operationId: 'operation-fixture'
     });
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X3d4WQAAAABJRU5ErkJggg==', 'base64');
+    // The derived artifact has a one-pixel gutter on every side of its 1px
+    // logical content. This fixture exercises the artifact manifest contract,
+    // whose PNG inspector reads IHDR dimensions only.
+    png.writeUInt32BE(3, 16);
+    png.writeUInt32BE(3, 20);
     const childPath = path.join(root, 'child.png');
     fs.writeFileSync(childPath, png);
     let spec = store.createSpec([
@@ -2127,6 +2132,8 @@ assertAsync(async () => {
       cacheSignature: 'must-not-be-reused', operationId: 'revision-42'
     });
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M/wHwAF/gL+X3d4WQAAAABJRU5ErkJggg==', 'base64');
+    png.writeUInt32BE(3, 16);
+    png.writeUInt32BE(3, 20);
     const childPath = path.join(root, 'child.png');
     fs.writeFileSync(childPath, png);
     let spec = store.createSpec([

@@ -269,20 +269,35 @@ function opengeoUpdateCamera(compId, lat, lng, zoom, recordKeyframe, revision, p
       });
     }
 
-    // Auto-upgrade: Ensure inner mapComp layers (MapPivot and tiles) and outer vector/pin features are 3D
+    // Auto-upgrade: Ensure MapPivot and tile layers inside mapComp are 3D with BlendingMode.NORMAL.
+    // collapseTransformation on controller is TRUE so After Effects collapses transformations
+    // for continuous 3D camera interaction, infinite-resolution vector rasterization, and seamless 3D pin alignment.
     try {
       if (controller.source && controller.source.layers) {
         var innerComp = controller.source;
         for (var lIdx = 1; lIdx <= innerComp.numLayers; lIdx++) {
           try {
             var innerLayer = innerComp.layer(lIdx);
-            if (innerLayer && !innerLayer.threeDLayer) {
-              innerLayer.threeDLayer = true;
+            if (innerLayer) {
+              if (!innerLayer.threeDLayer) innerLayer.threeDLayer = true;
+              if (!innerLayer.nullLayer) {
+                try { innerLayer.blendingMode = BlendingMode.NORMAL; } catch(bErr) {}
+                // Existing map layers may be animated. Never retrofit the old
+                // scale-overlap workaround here: new imports carry their
+                // baked gutter and anchor while legacy maps are repaired only
+                // by a fresh Preview or Finalize import.
+              }
             }
           } catch (innerLayerErr) {
             /* inner layer 3D upgrade fallback */
           }
         }
+      }
+      if (!controller.collapseTransformation) {
+        controller.collapseTransformation = true;
+      }
+      if (!controller.threeDLayer) {
+        controller.threeDLayer = true;
       }
       for (var cIdx = 1; cIdx <= comp.numLayers; cIdx++) {
         try {

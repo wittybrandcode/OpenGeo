@@ -100,8 +100,12 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
       var stageLayer = stagingLayers[stageIndex];
       var stageOwnership = opengeoReadOwnership(stageLayer.comment);
       var stagePlacement = stageOwnership.placement || stageOwnership.key || '';
-      stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
-      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stagePlacement ? 'placement=' + stagePlacement : '');
+      var stageExtra = stagePlacement ? 'placement=' + stagePlacement : '';
+      if (stageOwnership.contentPixels) stageExtra += ';contentPixels=' + stageOwnership.contentPixels;
+      if (stageOwnership.gutterPixels !== undefined) stageExtra += ';gutterPixels=' + stageOwnership.gutterPixels;
+      if (stageOwnership.tileZoom) stageExtra += ';tileZoom=' + stageOwnership.tileZoom;
+      stageLayer.comment = opengeoOwnershipComment(documentId, 'preview', revision, stageExtra);
+      if (stageLayer.source) stageLayer.source.comment = opengeoOwnershipComment(documentId, 'preview', revision, stageExtra);
       stageLayer.enabled = true;
       if (replaceFinal !== true && typeof stageLayer.moveToEnd === 'function') {
         try {
@@ -281,30 +285,30 @@ function opengeoPrepareCompositionRevision(jsonData) {
         footageItem = app.project.importFile(new ImportOptions(tileFile));
         if (!footageItem) throw new Error('Import returned no footage item');
         footageItem.parentFolder = folders.finalTiles;
-        footageItem.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'placement=' + tileKey);
         createdAssets.push(footageItem);
 
         var tileLayer = resolved.mapComp.layers.add(footageItem);
         tileLayer.name = 'staging_' + operationId + '_' + tile.z + '_' + tile.x + '_' + tile.y;
-        tileLayer.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, 'placement=' + tileKey);
         tileLayer.enabled = false;
         tileLayer.threeDLayer = true;
         var worldTileSize = MAP_SIZE / Math.pow(2, tile.z);
-        var tileActualSize = footageItem.width || 256;
-        tileLayer.property('Anchor Point').setValue([0, 0, 0]);
+        var tileGeometry = opengeoResolveTileGeometry(tile, footageItem, worldTileSize);
+        var tileOwnershipExtra = opengeoTileGeometryExtra(
+          tileKey, tileGeometry.contentPixels, tileGeometry.gutterPixels, tile.z
+        );
+        footageItem.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, tileOwnershipExtra);
+        tileLayer.comment = opengeoOwnershipComment(documentId, 'final-staging', operationId, tileOwnershipExtra);
+        tileLayer.property('Anchor Point').setValue([tileGeometry.gutterPixels, tileGeometry.gutterPixels, 0]);
         tileLayer.parent = mapPivot;
         tileLayer.property('Position').setValue([tile.x * worldTileSize, tile.y * worldTileSize, 0]);
-        // Sub-pixel seam-seal scale: overlaps borders by exactly 1.5 texels to eliminate AE 3D antialiasing seam gaps across all zoom keyframes
-        var exactScale = (worldTileSize / tileActualSize) * 100;
-        var oneScreenPixelInWorld = worldTileSize / tileActualSize;
-        var subpixelBleed = oneScreenPixelInWorld * 1.5;
-        var seamSealScale = ((worldTileSize + subpixelBleed) / tileActualSize) * 100;
-        tileLayer.property('Scale').setValue([seamSealScale, seamSealScale, 100]);
+        // Edge extrusion is baked into the source asset; do not scale tile
+        // geometry past its Mercator extent to hide a rasterization seam.
+        tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100]);
         try {
           tileLayer.quality = LayerQuality.BEST;
           tileLayer.samplingQuality = LayerSamplingQuality.BILINEAR;
         } catch (qualityError) {
-          /* layer quality/sampling fallback */
+          /* layer quality fallback */
         }
         try {
           tileLayer.blendingMode = BlendingMode.NORMAL;
@@ -470,9 +474,13 @@ function opengeoCommitCompositionRevision(args) {
             result.assetIds.push(opengeoTilePlacementIdentity(null, tagIndex));
           }
           stageLayer.name = 'final_' + operationId + '_' + tagIndex;
-          stageLayer.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stagePlacement ? 'placement=' + stagePlacement : '');
+          var finalExtra = stagePlacement ? 'placement=' + stagePlacement : '';
+          if (stageOwnership.contentPixels) finalExtra += ';contentPixels=' + stageOwnership.contentPixels;
+          if (stageOwnership.gutterPixels !== undefined) finalExtra += ';gutterPixels=' + stageOwnership.gutterPixels;
+          if (stageOwnership.tileZoom) finalExtra += ';tileZoom=' + stageOwnership.tileZoom;
+          stageLayer.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, finalExtra);
           if (stageLayer.source) {
-            stageLayer.source.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, stagePlacement ? 'placement=' + stagePlacement : '');
+            stageLayer.source.comment = opengeoOwnershipComment(documentId, 'final-active', operationId, finalExtra);
           }
         } catch (tagError) { result.warnings.push('REVISION_TAG_WARNING'); }
       }

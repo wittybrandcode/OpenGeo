@@ -16,7 +16,7 @@ class MegaTileStitcher {
     // Worker Lifecycle Management (Singleton per instance)
     this.supportsWorker = typeof window.Worker !== 'undefined' && typeof OffscreenCanvas !== 'undefined';
     if (this.supportsWorker) {
-      this.worker = new Worker('js/engine/stitcherWorker.js?v=5');
+      this.worker = new Worker('js/engine/stitcherWorker.js?v=6');
       this.jobQueue = new Map();
       this.jobCounter = 0;
       
@@ -91,7 +91,7 @@ class MegaTileStitcher {
     });
   }
 
-  _baseAsset(tile) {
+  _baseAsset(tile, sourceTileSize) {
     return {
       placementKey: tile.placementKey || `legacy-placement/${tile.z}/${tile.x}/${tile.y}`,
       downloadKey: tile.downloadKey || null,
@@ -100,7 +100,11 @@ class MegaTileStitcher {
       z: tile.z,
       sourceZoom: tile.z,
       x: tile.x,
-      y: tile.y
+      y: tile.y,
+      // This is used only after a recoverable stitching failure. It must
+      // retain exact placement rather than pretending a gutter exists.
+      contentPixelSize: sourceTileSize || 256,
+      gutterPixels: 0
     };
   }
 
@@ -113,8 +117,21 @@ class MegaTileStitcher {
       z: group.z,
       sourceZoom: group.children && group.children[0] ? group.children[0].z : group.z,
       x: group.x,
-      y: group.y
+      y: group.y,
+      // Host placement uses the logical content extent and offsets its anchor
+      // by the baked edge gutter. It never scales the geographic image larger.
+      contentPixelSize: canvasSize,
+      gutterPixels: this.artifactStore.gutterPixels
     };
+  }
+
+  async _stitchBaseTile(tile, sourceTileSize) {
+    const group = { z: tile.z, x: tile.x, y: tile.y, children: [tile] };
+    const outputPath = `${this.cacheDir}/mega${sourceTileSize}_${this.compId}_${this.cacheSignature}_${tile.z}_${tile.x}_${tile.y}.png`;
+    const stitchedPath = await this._stitchCanvas(
+      group.children, tile.x, tile.y, sourceTileSize, sourceTileSize, outputPath
+    );
+    return this._megaAsset(group, sourceTileSize, stitchedPath);
   }
 
   _readFileAsync(filePath) {
@@ -155,7 +172,9 @@ class MegaTileStitcher {
       const zTiles = tilesByZ[baseZ];
       
       if (baseZ < 2) {
-        // Base Z too small for MegaTiles
+        // Base Z too small for larger MegaTiles, but still needs an
+        // edge-extruded derivative before it is passed to After Effects.
+        totalGroups += zTiles.length;
         continue;
       }
       
@@ -177,7 +196,15 @@ class MegaTileStitcher {
 
       if (baseZ < 2) {
         for (const t of zTiles) {
-          allOutputTiles.push(this._baseAsset(t));
+          try {
+            allOutputTiles.push(await this._stitchBaseTile(t, sourceTileSize));
+          } catch (_error) {
+            // Keep the old exact-placement fallback for an unavailable Canvas;
+            // it is deliberately marked gutter-free so the host never stretches it.
+            allOutputTiles.push(this._baseAsset(t, sourceTileSize));
+          }
+          done++;
+          if (onProgress) onProgress(done, totalGroups);
         }
         continue;
       }
@@ -197,7 +224,7 @@ class MegaTileStitcher {
           } else {
             // Fallback: if stitching failed, return original base tiles
             for (const child of z3Group.children) {
-              allOutputTiles.push(this._baseAsset(child));
+              allOutputTiles.push(this._baseAsset(child, sourceTileSize));
             }
           }
         } else {
@@ -223,7 +250,7 @@ class MegaTileStitcher {
                 allOutputTiles.push(this._megaAsset(z2Group, canvasSize, stitchedPath));
               } else {
                 for (const child of z2Group.children) {
-                  allOutputTiles.push(this._baseAsset(child));
+                allOutputTiles.push(this._baseAsset(child, sourceTileSize));
                 }
               }
             } else {
@@ -248,13 +275,18 @@ class MegaTileStitcher {
                     allOutputTiles.push(this._megaAsset(z1Group, canvasSize, stitchedPath));
                   } else {
                     for (const child of z1Group.children) {
-                      allOutputTiles.push(this._baseAsset(child));
+                  allOutputTiles.push(this._baseAsset(child, sourceTileSize));
                     }
                   }
                 } else {
-                  // Keep as base 256px tile
+                  // A single source tile still needs an edge-extruded
+                  // derivative; raw 256px footage has no safe sampling border.
                   const t = z1Group.children[0];
-                  allOutputTiles.push(this._baseAsset(t));
+                  try {
+                    allOutputTiles.push(await this._stitchBaseTile(t, sourceTileSize));
+                  } catch (_error) {
+                    allOutputTiles.push(this._baseAsset(t, sourceTileSize));
+                  }
                 }
               }
             }
@@ -371,6 +403,7 @@ class MegaTileStitcher {
               startX: startX,
               startY: startY,
               size: size,
+              gutterPixels: spec.gutterPixels,
               sourceTileSize: sourceTileSize,
               outputPath: outputPath
             }, transferables);
@@ -387,16 +420,16 @@ class MegaTileStitcher {
 
       // Legacy Main Thread Fallback (for older CEP versions < CC 2020)
       const canvas = document.createElement('canvas');
-      canvas.width = size;
-      canvas.height = size;
+      canvas.width = spec.width;
+      canvas.height = spec.height;
       const ctx = canvas.getContext('2d');
       const promises = fingerprintedChildren.map(loaded => {
         const child = loaded.child;
         return new Promise((res) => {
           const img = new Image();
           img.onload = () => {
-            const dx = (child.x - startX) * sourceTileSize;
-            const dy = (child.y - startY) * sourceTileSize;
+            const dx = ((child.x - startX) * sourceTileSize) + spec.gutterPixels;
+            const dy = ((child.y - startY) * sourceTileSize) + spec.gutterPixels;
             ctx.drawImage(img, dx, dy, sourceTileSize, sourceTileSize);
             res({ ok: true, x: child.x - startX, y: child.y - startY });
           };
@@ -417,6 +450,7 @@ class MegaTileStitcher {
             coverageMask: decodedCells
           };
           this.artifactStore._assertReport(spec, report);
+          this._extrudeCanvasGutter(ctx, size, spec.gutterPixels);
           const dataUrl = canvas.toDataURL('image/png');
           const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
           canvas.width = 0;
@@ -433,6 +467,36 @@ class MegaTileStitcher {
         }
       });
     });
+  }
+
+  _extrudeCanvasGutter(ctx, contentSize, gutterPixels) {
+    if (!gutterPixels) return;
+    if (!ctx || typeof ctx.getImageData !== 'function' || typeof ctx.putImageData !== 'function') {
+      throw new Error('Canvas edge extrusion is unavailable.');
+    }
+    const edge = gutterPixels;
+    const right = edge + contentSize - 1;
+    const bottom = edge + contentSize - 1;
+    const topRow = ctx.getImageData(edge, edge, contentSize, 1);
+    const bottomRow = ctx.getImageData(edge, bottom, contentSize, 1);
+    const leftColumn = ctx.getImageData(edge, edge, 1, contentSize);
+    const rightColumn = ctx.getImageData(right, edge, 1, contentSize);
+    const topLeft = ctx.getImageData(edge, edge, 1, 1);
+    const topRight = ctx.getImageData(right, edge, 1, 1);
+    const bottomLeft = ctx.getImageData(edge, bottom, 1, 1);
+    const bottomRight = ctx.getImageData(right, bottom, 1, 1);
+    for (let pixel = 0; pixel < edge; pixel++) {
+      ctx.putImageData(topRow, edge, pixel);
+      ctx.putImageData(bottomRow, edge, bottom + 1 + pixel);
+      ctx.putImageData(leftColumn, pixel, edge);
+      ctx.putImageData(rightColumn, right + 1 + pixel, edge);
+      for (let corner = 0; corner < edge; corner++) {
+        ctx.putImageData(topLeft, corner, pixel);
+        ctx.putImageData(topRight, right + 1 + corner, pixel);
+        ctx.putImageData(bottomLeft, corner, bottom + 1 + pixel);
+        ctx.putImageData(bottomRight, right + 1 + corner, bottom + 1 + pixel);
+      }
+    }
   }
 }
 

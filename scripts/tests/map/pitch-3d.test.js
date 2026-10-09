@@ -165,12 +165,12 @@ const compBuilderCode = fs.readFileSync(path.join(projectRoot, 'host/modules/com
 assert(compBuilderCode.includes('mapPivot.threeDLayer = true;'), 'compBuilder sets mapPivot.threeDLayer = true for 3D coordinate space');
 
 const compositionTilesCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compositionTiles.jsx'), 'utf8');
-assert(compositionTilesCode.includes('tileLayer.threeDLayer = true;'), 'compositionTiles sets tileLayer.threeDLayer = true so collapsed precomps interact with 3D camera');
+assert(compositionTilesCode.includes('tileLayer.threeDLayer = true;'), 'compositionTiles enables 3D on tile layers for true collapsed 3D precomp rendering');
 
 const compositionTransactionCode = fs.readFileSync(path.join(projectRoot, 'host/modules/compositionTransaction.jsx'), 'utf8');
-assert(compositionTransactionCode.includes('tileLayer.threeDLayer = true;'), 'compositionTransaction sets tileLayer.threeDLayer = true on staged tiles');
+assert(compositionTransactionCode.includes('tileLayer.threeDLayer = true;'), 'compositionTransaction enables 3D on staged tile layers');
 
-assert(metadataSyncCode.includes('innerLayer.threeDLayer = true;'), 'metadataSync auto-upgrades existing inner mapComp layers to 3D on sync');
+assert(metadataSyncCode.includes('innerLayer.threeDLayer = true;'), 'metadataSync ensures inner mapComp tile layers are 3D');
 
 const bridgeDispatcherCode = fs.readFileSync(path.join(projectRoot, 'host/modules/bridgeDispatcher.jsx'), 'utf8');
 assert(bridgeDispatcherCode.includes('args.pitch'), 'bridgeDispatcher forwards args.pitch in camera.update and keyframe.add');

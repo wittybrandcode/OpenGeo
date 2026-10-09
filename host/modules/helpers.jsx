@@ -74,6 +74,35 @@ function opengeoIsValidObject(obj) {
   }
 }
 
+// A padded MegaTile contains a one-pixel duplicated border around its actual
+// cartographic content. Keep the world-space scale tied to that content, not
+// to the padded footage dimensions: otherwise every road and coastline is
+// enlarged to hide a seam.
+function opengeoResolveTileGeometry(tile, footageItem, worldTileSize) {
+  var sourcePixels = Number(footageItem && footageItem.width) || TILE_REF_SIZE;
+  var requestedContent = Number(tile && tile.contentPixelSize);
+  var contentPixels = requestedContent > 0 && requestedContent <= sourcePixels ? requestedContent : sourcePixels;
+  var requestedGutter = parseInt(tile && tile.gutterPixels, 10);
+  var gutterPixels = requestedGutter >= 0 && contentPixels + (requestedGutter * 2) <= sourcePixels ? requestedGutter : 0;
+  var exactScale = (worldTileSize / contentPixels) * 100;
+  return {
+    contentPixels: contentPixels,
+    gutterPixels: gutterPixels,
+    exactScale: exactScale
+  };
+}
+
+function opengeoTileGeometryExtra(placement, contentPixels, gutterPixels, tileZoom) {
+  var text = 'placement=' + String(placement || '');
+  var content = parseInt(contentPixels, 10);
+  var gutter = parseInt(gutterPixels, 10);
+  var zoom = parseInt(tileZoom, 10);
+  if (content > 0) text += ';contentPixels=' + content;
+  if (gutter >= 0) text += ';gutterPixels=' + gutter;
+  if (!isNaN(zoom)) text += ';tileZoom=' + zoom;
+  return text;
+}
+
 function ensureComp(compId) {
   if (!app.project) return null;
   if (!compId) return null;

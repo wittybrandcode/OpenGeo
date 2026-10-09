@@ -10,7 +10,10 @@ class MegaTileArtifactStore {
     this.cacheSignature = String(options.cacheSignature || 'default');
     this.operationId = String(options.operationId || 'unknown');
     this.tileMatrix = String(options.tileMatrix || 'webMercator');
-    this.stitchAlgorithmVersion = 'megatile-stitch/2.0';
+    // Each published texture has a one-pixel edge-extrusion gutter. Bump the
+    // algorithm version so an older, unpadded cache entry is never reused.
+    this.stitchAlgorithmVersion = 'megatile-stitch/3.0-edge-gutter';
+    this.gutterPixels = 1;
     this.lockTtlMs = Number(options.lockTtlMs) || 30000;
     this.lockWaitMs = Number(options.lockWaitMs) || 10000;
   }
@@ -49,8 +52,13 @@ class MegaTileArtifactStore {
       operationId: this.operationId,
       tileMatrix: this.tileMatrix,
       stitchAlgorithmVersion: this.stitchAlgorithmVersion,
-      width: size,
-      height: size,
+      // `size` remains the logical map extent. The output bitmap is larger
+      // only because it carries duplicated edge texels for AE sampling.
+      contentWidth: size,
+      contentHeight: size,
+      gutterPixels: this.gutterPixels,
+      width: size + (this.gutterPixels * 2),
+      height: size + (this.gutterPixels * 2),
       sourceTileSize,
       originalExpectedCount: expectedCells.length,
       expectedCells: expectedCells.sort(),
@@ -92,6 +100,9 @@ class MegaTileArtifactStore {
         tileMatrix: spec.tileMatrix,
         sourceTileSize: spec.sourceTileSize,
         stitchAlgorithmVersion: spec.stitchAlgorithmVersion,
+        contentWidth: spec.contentWidth,
+        contentHeight: spec.contentHeight,
+        gutterPixels: spec.gutterPixels,
         width: spec.width,
         height: spec.height,
         expectedCells: spec.expectedCells,
@@ -148,9 +159,12 @@ class MegaTileArtifactStore {
         artifactKind: spec.artifactKind,
         cacheSignature: spec.artifactKind === 'preview-cache' ? spec.cacheSignature : null,
         childIdentities: spec.childIdentities,
+        contentHeight: spec.contentHeight,
+        contentWidth: spec.contentWidth,
         coverageMask: spec.expectedCells,
         decodedCells: spec.expectedCells,
         expectedCells: spec.expectedCells,
+        gutterPixels: spec.gutterPixels,
         height: png.height,
         operationId: spec.artifactKind === 'finalize-revision' ? spec.operationId : null,
         originalExpectedCount: spec.originalExpectedCount,
@@ -202,6 +216,8 @@ class MegaTileArtifactStore {
           manifest.tileMatrix !== spec.tileMatrix ||
           manifest.sourceTileSize !== spec.sourceTileSize ||
           manifest.stitchAlgorithmVersion !== spec.stitchAlgorithmVersion ||
+          manifest.contentWidth !== spec.contentWidth || manifest.contentHeight !== spec.contentHeight ||
+          manifest.gutterPixels !== spec.gutterPixels ||
           manifest.width !== spec.width || manifest.height !== spec.height ||
           manifest.originalExpectedCount !== spec.originalExpectedCount ||
           manifest.outputBytes !== payload.length ||
