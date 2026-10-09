@@ -1,9 +1,10 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-
 const root = path.resolve(__dirname, '..');
-const manifestPath = path.join(root, 'docs', 'BASELINE_MANIFEST.json');
+const manifestPath = fs.existsSync(path.join(root, 'config', 'BASELINE_MANIFEST.json'))
+  ? path.join(root, 'config', 'BASELINE_MANIFEST.json')
+  : path.join(root, 'docs', 'BASELINE_MANIFEST.json');
 const trackedRoots = ['client', 'host', 'scripts'];
 const trackedRootFiles = ['CSXS/manifest.xml', 'package.json'];
 

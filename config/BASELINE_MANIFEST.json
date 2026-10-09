@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "generatedAt": "2026-10-09T14:28:29.606Z",
+  "generatedAt": "2026-10-09T15:24:50.643Z",
   "environment": {
     "node": "v22.18.0",
     "platform": "win32",
@@ -242,7 +242,7 @@
     "scripts/ae-sync-camera-regression.js": "132c8c2342734dce179504bc88b1b8d446edb23b7b57192c0d043ef7f02a2d1b",
     "scripts/artifact-manifest.js": "efee68713d91b94b0d56778e8365bf9c2b170ca6fb7fecbf5e0d3e028733e2a8",
     "scripts/audit-events.js": "e317b957617a96cdde5928c08cb912e0a5993d05e0bb3b4d5978869d4c1672cb",
-    "scripts/baseline-manifest.js": "1f2773d1131df8c932794965ff25d255ce80b275732d1e87549ae090325dce83",
+    "scripts/baseline-manifest.js": "59374d81da190e84a49038969872f37788745d45617b0da5e73ad1b5aeb88e9d",
     "scripts/benchmark-preview.js": "f58badbca034d39ed1714229441a169dab79c8d49d29cc1767f63a838b8f2bf1",
     "scripts/build-land-border-data.js": "eabbcb0f1398e39f88f7ca893dfabcfa74685a1d15cd39a7c5a2be379ff25c7d",
     "scripts/build-vector-data.js": "967c7518735e0adeb669ee3a656c343f8856b7a6a74e03dde4adcada6a233eb5",
@@ -262,7 +262,7 @@
     "scripts/security-audit.js": "b53f3e18d2a72ed346821d433b1e13f966eee71cc3f1f896c9f2964ff6ce52ea",
     "scripts/supply-chain-audit.js": "ae57d7ad21da59325a636204add8da0527abe423aa0b63c1a35b7884e6ecf7ab",
     "scripts/sync-versions.js": "e10ac02b9858310c7f134a11e1e2f7025a8ee0444bfe69750f49b85ec99e167d",
-    "scripts/test.js": "ba88c8882cc947ef5fe49a7b96924084bd2612a124f62d45a1552089b60a3c75",
+    "scripts/test.js": "945b02279debab8ef10805ac7110b44f50359dfad7527da3791f10a33939ed66",
     "scripts/tests/e2e/production-stress.test.js": "f08d9cce6bc2b2b7e0d4572fe49252f96bcab6b3c66a87b2b387fe2c02dd0f4b",
     "scripts/tests/finalize/finalize-decomposition.test.js": "0959545156b03bf4f036e1c6c6f8238cf88717127d209b1df7d179c0fd8c7b5d",
     "scripts/tests/fsm/fsm-lifecycle.test.js": "491cb1122d1e554e00de76de54316e0bd800ed4743df5021e25cbfaf0a7801fd",

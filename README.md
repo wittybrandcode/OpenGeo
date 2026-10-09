@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/OpenGeoLogo.svg" alt="OpenGeo Logo" width="340" />
+  <img src="client/assets/logos/opengeo-logo.svg" alt="OpenGeo Logo" width="340" />
 </p>
 
 <h1 align="center">OpenGeo</h1>
