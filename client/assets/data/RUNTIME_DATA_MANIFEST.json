@@ -3,7 +3,7 @@
   "scope": "client/assets/data",
   "policy": "default-deny",
   "description": "Every packaged OpenGeo data asset must match exactly one group and have an identified runtime or package-audit consumer.",
-  "expectedFileCount": 96,
+  "expectedFileCount": 355,
   "groups": [
     {
       "id": "runtime-data-contract",
@@ -60,6 +60,21 @@
       "path": "vectors/country-outlines-10m.json",
       "purpose": "High-detail local country perimeter drawn from the Search pen action",
       "consumer": "client/js/core/VectorMapManager.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "country-outlines-studio10m-index",
+      "path": "vectors/country-outlines-studio10m-index.json",
+      "purpose": "Studio 10m high-resolution per-country outline index",
+      "consumer": "client/js/core/GeoDataRepository.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "country-outlines-studio10m-countries",
+      "regex": "^vectors/country-outlines-studio10m/[A-Z0-9_]{3}\\.json$",
+      "expectedCount": 258,
+      "purpose": "Studio 10m individual country land outlines",
+      "consumer": "client/js/core/GeoDataRepository.js",
       "origin": "generated-runtime"
     }
   ],

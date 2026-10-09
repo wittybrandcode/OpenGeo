@@ -92,6 +92,10 @@ var OpenGeoConfig = {
 
 
 
+  features: {
+    studioCountryOutlinesEnabled: false
+  },
+
   defaults: {
     tileSource: 'esri',
     tileSize: 256,

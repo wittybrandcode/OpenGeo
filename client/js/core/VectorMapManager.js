@@ -17,12 +17,19 @@ class VectorMapManager {
     this._unsubscribeDraw = typeof globalEventBus !== 'undefined'
       ? globalEventBus.on('search:drawCountryOutline', data => this.drawCountryOutlineFromSearch(data))
       : null;
+    this._unsubscribeStudioDraw = typeof globalEventBus !== 'undefined'
+      ? globalEventBus.on('search:drawStudioCountryOutline', data => this.drawStudioCountryOutlineFromSearch(data))
+      : null;
   }
 
   destroy() {
     if (typeof this._unsubscribeDraw === 'function') {
       this._unsubscribeDraw();
       this._unsubscribeDraw = null;
+    }
+    if (typeof this._unsubscribeStudioDraw === 'function') {
+      this._unsubscribeStudioDraw();
+      this._unsubscribeStudioDraw = null;
     }
   }
 
@@ -105,6 +112,91 @@ class VectorMapManager {
     } catch (error) {
       globalEventBus.emit('toast:show', { message: `Failed to draw local country outline: ${error.message}`, type: 'error' });
       throw error;
+    }
+  }
+
+  async drawStudioCountryOutlineFromSearch(data) {
+    if (!this.app.geoDataRepository) {
+      globalEventBus.emit('toast:show', { message: 'Studio 10m country-outline data is unavailable.', type: 'error' });
+      return;
+    }
+
+    const countryCode = data && data.countryCode;
+    const resolved = await this.app.geoDataRepository.resolveStudioCountryOutlineAsync(countryCode);
+    if (!resolved || !resolved.country) {
+      globalEventBus.emit('toast:show', { message: 'Studio 10m outline is unavailable for this country.', type: 'error' });
+      return;
+    }
+    if (!resolved.features.length) {
+      globalEventBus.emit('toast:show', { message: `${resolved.country.name} has no Studio 10m land outline.`, type: 'info' });
+      return;
+    }
+
+    const vectorLimits = this._validateVectorComplexity(resolved.features);
+    if (!vectorLimits.ok) {
+      globalEventBus.emit('toast:show', { message: vectorLimits.message, type: 'error', duration: 6000 });
+      return;
+    }
+
+    const countryName = resolved.country.nameAr || resolved.country.name || resolved.country.nameLong || resolved.country.iso3;
+    const layerName = `${countryName} (Studio 10m)`;
+    const featureSignature = this._getFeatureSignature(resolved.country, resolved.features, 'studio10m');
+    const labelPoint = resolved.country.label || null;
+    const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
+    const currentZoom = (this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 6;
+    const payload = {
+      dataTier: 'studio10m',
+      dataset: `vectors/country-outlines-studio10m/${resolved.country.iso3}.json`,
+      selectionRule: 'country exterior rings only (high-definition 10m land borders + coastline; no EEZ)',
+      layerName: layerName,
+      displayName: layerName,
+      featureId: `country-${resolved.country.iso3}-studio10m`,
+      sourceId: `${resolved.country.iso3}-studio10m`,
+      featureSignature: featureSignature,
+      referenceZoom: currentZoom,
+      anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
+      strokeWidth: 3,
+      strokeColor: [0.2, 0.8, 1.0, 1.0],
+      fillOpacity: 0,
+      features: resolved.features,
+      provenance: resolved.provenance,
+      layers: [{
+        id: 'country-outline-studio10m',
+        title: 'COUNTRY OUTLINE (STUDIO 10M)',
+        isClosed: true,
+        features: resolved.features,
+        fillOpacity: 0,
+        strokeOpacity: 100
+      }],
+      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label }] : []
+    };
+
+    const activeMapCompId = this.app.compositionController
+      ? await this.app.compositionController.resolveActiveMapTarget()
+      : this.app.activeCompId;
+    if (!activeMapCompId) {
+      if (this.app.featureManager) await this.app.featureManager.registerPreview(payload, 'country');
+      globalEventBus.emit('toast:show', { message: `${layerName} added as a preview map. Create a composition to draw it in AE.`, type: 'info', duration: 5000 });
+      globalEventBus.emit('ui:status', { message: 'Country outline preview only — no active Map composition.', isError: false });
+      return { previewOnly: true, featureId: payload.featureId };
+    }
+
+    try {
+      globalEventBus.emit('ui:status', { message: `Drawing Studio 10m country outline for ${layerName}...`, isError: false });
+      if (!this.app.featureManager) throw new Error('FeatureManager is missing.');
+      const result = await this.app.featureManager.drawPayloadInAE(payload, 'country');
+      if (result.registryDeferred) {
+        globalEventBus.emit('toast:show', { message: `${layerName} was drawn in the original composition. Reopen it to refresh Layers.`, type: 'info', duration: 6000 });
+        return result;
+      }
+      globalEventBus.emit('toast:show', { message: `Studio 10m outline created: ${layerName}`, type: 'success' });
+      globalEventBus.emit('ui:status', { message: `Studio 10m outline created for ${layerName}.`, isError: false });
+      return result;
+    } catch (err) {
+      globalEventBus.emit('toast:show', { message: `Failed to draw Studio 10m country outline: ${err.message}`, type: 'error' });
+      globalEventBus.emit('ui:status', { message: `Vector import failed: ${err.message}`, isError: true });
+      throw err;
     }
   }
 
@@ -325,8 +417,8 @@ class VectorMapManager {
     return hash.toString(36);
   }
 
-  _getFeatureSignature(country, features) {
-    const material = `${country.iso3}|${features.map(feature => feature.id).sort().join('|')}|country-outlines-10m-v1`;
+  _getFeatureSignature(country, features, tier = 'country-outlines-10m-v1') {
+    const material = `${country.iso3}|${features.map(feature => feature.id).sort().join('|')}|${tier}`;
     let hash = 2166136261;
     for (let index = 0; index < material.length; index++) {
       hash ^= material.charCodeAt(index);
@@ -353,6 +445,8 @@ class VectorMapManager {
   dispose() {
     if (this._unsubscribeDraw) this._unsubscribeDraw();
     this._unsubscribeDraw = null;
+    if (this._unsubscribeStudioDraw) this._unsubscribeStudioDraw();
+    this._unsubscribeStudioDraw = null;
   }
 }
 

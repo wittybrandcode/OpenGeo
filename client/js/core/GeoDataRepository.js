@@ -221,6 +221,77 @@ class GeoDataRepository {
   }
 
   /**
+   * Resolves the Studio 10m high-resolution perimeter of one country asynchronously.
+   * Reads from the segmented per-country dataset without blocking the UI.
+   *
+   * @param {string} countryCode ISO3 or ISO2 code
+   * @returns {Promise<{ country: Object, features: Array, provenance: Object } | null>}
+   */
+  async resolveStudioCountryOutlineAsync(countryCode) {
+    const code = String(countryCode || '').trim().toUpperCase();
+    if (!code) return null;
+
+    const index = await this.loadDatasetAsync('vectors/country-outlines-studio10m-index.json', { maxBytes: 1024 * 1024 });
+    if (!index || !index.countries) {
+      console.warn('[GeoDataRepository] Studio 10m index unavailable');
+      return null;
+    }
+
+    let targetIso3 = null;
+    if (index.countries[code]) {
+      targetIso3 = code;
+    } else {
+      const keys = Object.keys(index.countries);
+      for (let i = 0; i < keys.length; i++) {
+        if (index.countries[keys[i]].iso2 === code) {
+          targetIso3 = keys[i];
+          break;
+        }
+      }
+    }
+    if (!targetIso3) return null;
+
+    const entry = index.countries[targetIso3];
+    if (!entry || !entry.relativeFile) return null;
+
+    if (entry.pointCount > 85000 || entry.bytes > 2 * 1024 * 1024) {
+      console.warn(`[GeoDataRepository] Studio 10m country ${targetIso3} exceeds safety budget: points=${entry.pointCount}, bytes=${entry.bytes}`);
+      return null;
+    }
+
+    const countryPath = `vectors/${entry.relativeFile}`;
+    const countryPayload = await this.loadDatasetAsync(countryPath, { maxBytes: 2 * 1024 * 1024 });
+    if (!countryPayload || !Array.isArray(countryPayload.features)) {
+      console.warn(`[GeoDataRepository] Corrupted or missing Studio 10m country payload: ${countryPath}`);
+      return null;
+    }
+
+    // Evict this specific country payload from cache after query to guarantee zero memory leaks across country switching
+    if (this.cache && this.cache.delete) {
+      this.cache.delete(countryPath);
+      if (this.cacheMeta && this.cacheMeta.delete) this.cacheMeta.delete(countryPath);
+    }
+
+    return {
+      country: {
+        iso3: countryPayload.iso3,
+        iso2: countryPayload.iso2,
+        name: countryPayload.name,
+        nameLong: countryPayload.nameLong,
+        nameAr: countryPayload.nameAr,
+        label: countryPayload.label,
+        dataTier: 'studio10m'
+      },
+      features: countryPayload.features,
+      provenance: countryPayload.provenance || {
+        sourceDataset: 'Natural Earth 1:10m Admin-0 Countries',
+        cartographyPolicyVersion: '1.0.0',
+        dataTier: 'studio10m'
+      }
+    };
+  }
+
+  /**
    * Normalizes Arabic text by removing Tashkeel and Tatweel for better search matching.
    */
   normalizeArabic(text) {

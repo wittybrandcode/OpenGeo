@@ -33,6 +33,8 @@ function copyPackagedOutputs(temporaryDataDir) {
   removeTarget('vectors/cartography-policy.json');
   removeTarget('vectors/country-index-10m.json');
   removeTarget('vectors/country-outlines-10m.json');
+  removeTarget('vectors/country-outlines-studio10m-index.json');
+  removeTarget('vectors/country-outlines-studio10m');
   forbiddenArtifacts.forEach(removeTarget);
 
   const packaged = outputRecords(temporaryDataDir).filter(record => classifyOutput(record.path).packaged);

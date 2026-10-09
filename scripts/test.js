@@ -445,7 +445,7 @@ assertDoesNotThrow(() => {
     return fs.existsSync(toolPath) && fs.statSync(toolPath).size === tool.bytes &&
       crypto.createHash('sha256').update(fs.readFileSync(toolPath)).digest('hex') === tool.sha256;
   });
-  if (baseline.schemaVersion !== '1.0.0' || baseline.outputCount !== 97 || expectedRuntimeOutputs.length !== 94 || outputs.length !== expectedRuntimeOutputs.length ||
+  if (baseline.schemaVersion !== '1.0.0' || baseline.outputCount !== 356 || expectedRuntimeOutputs.length !== 353 || outputs.length !== expectedRuntimeOutputs.length ||
       baseline.sourceManifest.sha256 !== sourceManifestSha256 || !buildToolsValid ||
       expectedRuntimeOutputs.some(expected => {
         const actual = outputByPath.get(expected.path);
@@ -463,7 +463,7 @@ assertDoesNotThrow(() => {
   const buildSource = fs.readFileSync(path.resolve(__dirname, 'build.js'), 'utf8');
   const packageVerifier = fs.readFileSync(path.resolve(__dirname, 'verify-package.js'), 'utf8');
   const runtimeBuilder = fs.readFileSync(path.resolve(__dirname, 'build-vector-runtime-data.js'), 'utf8');
-  if (!result.ok || result.fileCount !== 96 || result.manifest.groups.length !== 8 ||
+  if (!result.ok || result.fileCount !== 355 || result.manifest.groups.length !== 10 ||
       !buildSource.includes('isAllowedRuntimeFile') || !packageVerifier.includes('verifyRuntimeData') ||
       !runtimeBuilder.includes('copyPackagedOutputs') || !runtimeBuilder.includes('forbiddenArtifacts')) {
     throw new Error(result.failures.length ? result.failures.join('; ') : 'Runtime data allowlist integration is incomplete');

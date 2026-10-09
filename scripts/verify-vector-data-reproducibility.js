@@ -15,6 +15,7 @@ const buildTools = [
   'scripts/build-vector-data.js',
   'scripts/build-vector-preview-index.js',
   'scripts/build-land-border-data.js',
+  'scripts/build-country-outlines-studio10m.js',
   'scripts/verify-vector-geometry.js',
   'package-lock.json'
 ];
@@ -83,6 +84,12 @@ function classifyOutput(relativePath) {
       relativePath === 'vectors/country-outlines-10m.json') {
     return { classification: 'runtime', packaged: true, purpose: 'country identity, policy or drawing geometry' };
   }
+  if (relativePath === 'vectors/country-outlines-studio10m-index.json') {
+    return { classification: 'runtime', packaged: true, purpose: 'Studio 10m high-resolution per-country outline index' };
+  }
+  if (relativePath.indexOf('vectors/country-outlines-studio10m/') === 0) {
+    return { classification: 'runtime', packaged: true, purpose: 'Studio 10m individual country land outlines' };
+  }
   if (relativePath === 'world_vector_layers_10m.json') {
     return { classification: 'build-intermediate', packaged: false, purpose: 'monolithic input used only to generate 10m preview chunks' };
   }
@@ -147,6 +154,7 @@ function buildCleanData(dataDirectory) {
   runBuilder('build-vector-data.js', ['--scale=10m'], dataDirectory);
   runBuilder('build-vector-preview-index.js', [], dataDirectory);
   runBuilder('build-land-border-data.js', [], dataDirectory);
+  runBuilder('build-country-outlines-studio10m.js', [], dataDirectory);
   const geometry = verifyGeometry({ dataDir: dataDirectory });
   if (!geometry.ok) throw new Error(`Generated geometry failed: ${geometry.failures.join('; ')}`);
   console.log(`  [OpenGeo] Generated geometry: ${geometry.checks} golden checks passed.`);

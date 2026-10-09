@@ -25,7 +25,8 @@ const suites = [
   { name: 'FSM Governance & Lifecycle Safety Suite', script: 'scripts/tests/fsm/fsm-lifecycle.test.js' },
   { name: 'Tile Zoom Blending & Color Discrepancy Suite', script: 'scripts/tests/tile-pipeline/tile-blending.test.js' },
   { name: 'Navigation Drift & Screen-Space Velocity Suite', script: 'scripts/tests/map/navigation-drift.test.js' },
-  { name: 'Finalize Decomposition & Delegate Wiring Suite', script: 'scripts/tests/finalize/finalize-decomposition.test.js' }
+  { name: 'Finalize Decomposition & Delegate Wiring Suite', script: 'scripts/tests/finalize/finalize-decomposition.test.js' },
+  { name: 'Vector Studio 10m Quality & Isolation Suite', script: 'scripts/tests/vector/vector-studio-quality.test.js' }
 ];
 
 console.log('================================================================');

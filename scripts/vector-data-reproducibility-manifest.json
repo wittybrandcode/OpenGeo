@@ -32,6 +32,11 @@
       "sha256": "eabbcb0f1398e39f88f7ca893dfabcfa74685a1d15cd39a7c5a2be379ff25c7d"
     },
     {
+      "path": "scripts/build-country-outlines-studio10m.js",
+      "bytes": 15228,
+      "sha256": "519b92f7085a9697af5c3365ebd2432abfcce6f5003d3da5def41c00918c1460"
+    },
+    {
       "path": "scripts/verify-vector-geometry.js",
       "bytes": 15287,
       "sha256": "9fadd3c2ad83a6341c8e8323dbeecc46798773da5310a80de9a3abfa5d6f3a70"
@@ -42,9 +47,9 @@
       "sha256": "5d2b1fc483777b75ba71a0f5a799b284875783abac6d3f50ee4158710ff8a57d"
     }
   ],
-  "outputCount": 97,
-  "outputBytes": 51395972,
-  "aggregateSha256": "8e14c2f0eb2651c60cd9117ad2fdd8e36e2c000271e2467dff770e14c6f0f1d2",
+  "outputCount": 356,
+  "outputBytes": 62978558,
+  "aggregateSha256": "675b9e9ebf8bd7af12218fd83c332809b98953ff12750b751de9e9255852a698",
   "outputs": [
     {
       "path": "vector-preview/10m/borders-000.json",
@@ -789,6 +794,2078 @@
       "classification": "runtime",
       "packaged": true,
       "purpose": "country identity, policy or drawing geometry"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m-index.json",
+      "bytes": 92229,
+      "sha256": "aab8a3e9503ce8b92808774d04d1fcf41ad9d665cba71b6c1cd9dbdd067c1499",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m high-resolution per-country outline index"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ABW.json",
+      "bytes": 989,
+      "sha256": "329115ec0a477534fddc7265e355b506f76bef61981ef206fd65729fff6870ca",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AFG.json",
+      "bytes": 33797,
+      "sha256": "aba0fa8cd671b37fac5d414c3a03e03455125e61c6841ca973d787460472e2e6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AGO.json",
+      "bytes": 36105,
+      "sha256": "c9adfebf76c80f1ae6809118ee64986946271f6182817feebeabd0323d30535a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AIA.json",
+      "bytes": 1691,
+      "sha256": "b65ee8181d5d948fa7b9490b3a1cd119a54f4070bf6cc3f79cbaf7fd003140d7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ALA.json",
+      "bytes": 9975,
+      "sha256": "a7c5404b2762eafa3849ff0863c410aacd28ff62dbabb48f608aa2311c7eb72c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ALB.json",
+      "bytes": 11955,
+      "sha256": "a8f15213ce57bb02e119a99a284b557410311d5222e71feb6dbc75bbdd8b78ac",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AND.json",
+      "bytes": 1508,
+      "sha256": "bb08aa196691fc5020b80451af963fd0642f4b904148a6d2b2eb5ab22496f244",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ARE.json",
+      "bytes": 17268,
+      "sha256": "a88dd3bc2bc6e6b4a47c9255598938ccf5a390e09fdbc39b501b1e7544cb912a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ARG.json",
+      "bytes": 97430,
+      "sha256": "283548634e24a0ab424a873f650fd458e9d8862613e1ea5dc31562c241a32eec",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ARM.json",
+      "bytes": 9108,
+      "sha256": "da05362124676820f7a989222ae30cedcf9f05ca4ff34c2cd5ba9a6daed783b5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ASM.json",
+      "bytes": 1620,
+      "sha256": "c50808ea66e8c671549023598fa7ae37c973b3448d316123f577ca52b92eced0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ATA.json",
+      "bytes": 499289,
+      "sha256": "d891be4cb19203c64920f80cb9d5c6b0950d0c712dea8b706f8e2e2c7116fc98",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ATC.json",
+      "bytes": 616,
+      "sha256": "6ee8185ece6161660dad7bb1f5e4ef821f12053070b102c2e54975cddef84536",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ATF.json",
+      "bytes": 11797,
+      "sha256": "c6533d46b5bd11eebe70bf43be3b3956816f7ae634b6d386dcd509e791a422af",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ATG.json",
+      "bytes": 2900,
+      "sha256": "58625074657285345b08dbcc2532fe50d5f86991062af28b901953f8867323fb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AUS.json",
+      "bytes": 295606,
+      "sha256": "89ef6bb1a370a8e8fe123690e6e21586ed11f611f83d8d5ba162b0389df10443",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AUT.json",
+      "bytes": 23168,
+      "sha256": "1248f3afe3e1eb4a2af29f1eb1cb56fa60dcf69b9987303248624ef77e21f6a4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/AZE.json",
+      "bytes": 20179,
+      "sha256": "d1ea6186478a952421581be08e1205299f6b7cfdea5c81ac6f498005dde702e1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BDI.json",
+      "bytes": 7141,
+      "sha256": "e0de5f62497f6086982d5e804bf96d467c10e2464aeb3e044f05bf88888f39a1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BEL.json",
+      "bytes": 13882,
+      "sha256": "59fe07b217bb850322fcb36d831fb30208ce90f77bf274abd1d64b07a454b61b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BEN.json",
+      "bytes": 13852,
+      "sha256": "a13673d67c8ea6365fdb71242c200208ddbfd88f9970b167f2da5b91e20bef8f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BFA.json",
+      "bytes": 24612,
+      "sha256": "afe3a616de5f58e479ede6fc8b545ea0a4c89690592bfb0ba726c00a98db281a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BGD.json",
+      "bytes": 49652,
+      "sha256": "71d0762b38cd4040af0b6551f2ee89f6b61323ef4a4e777bda37fe90d995166e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BGR.json",
+      "bytes": 18689,
+      "sha256": "a3950bd3a52806e89ca5d50add91e83a8de2c2482a9f2579247e5615878812de",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BHR.json",
+      "bytes": 3530,
+      "sha256": "56482800112c1b227ca4cda74d89169e391bdd22b9f2dd8be8100979d6c360d4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BHS.json",
+      "bytes": 33500,
+      "sha256": "1188011a2be0f6cb424c11b48bbda3fcd06fe299b232fb52eeafc75619f4dc6e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BIH.json",
+      "bytes": 13285,
+      "sha256": "a021cf668af114a4fe72f334b3d4ca1adecdde0a90c1933c895cf7366308814a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BJN.json",
+      "bytes": 601,
+      "sha256": "95f56644e758b22b8a6e75c92b2e752cd2c52da3f6f61f5422adc1bcc5209b31",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BLM.json",
+      "bytes": 710,
+      "sha256": "5c0d0747aa858e5cb8a0341785ff85e49f7058b2dfb6be2998725e3876c2a7a3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BLR.json",
+      "bytes": 24746,
+      "sha256": "423794d5336d6c962764ad04e5876b3fdfd3e7e5f59d8fae3ba41842c15a1deb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BLZ.json",
+      "bytes": 10509,
+      "sha256": "cc69bd2e41eea8ad2cbc015d66aa653e73d809aa42c9dedd7ba8f113bc9a09c7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BMU.json",
+      "bytes": 2199,
+      "sha256": "7e0f90957f5546857949d51eb6d222b3ef47d0a01e7d17f7e0ba8ee10e4e4ddb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BOL.json",
+      "bytes": 31422,
+      "sha256": "1365d67feb10a1810aa69053ab168cc236915b303d0be661d0f5b31c17f43b67",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BRA.json",
+      "bytes": 232135,
+      "sha256": "d910c567614d888797006b1bdb3223d0fee1b58ec45ecab78404e8c7b7419817",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BRB.json",
+      "bytes": 1184,
+      "sha256": "7bd80da12264b8264d85eca70c8b154efeabdc1ecd7cac4caef2428caa836fd2",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BRI.json",
+      "bytes": 587,
+      "sha256": "ff112ba5ab9ec2f09177b8a4df317edd5dd38c7fdfb28be55d06ff6959a3f8cc",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BRN.json",
+      "bytes": 3844,
+      "sha256": "659881327b108c2aa0187d3d2cd8214b72d188aa5594a7a661db7499f60c46ff",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BRT.json",
+      "bytes": 739,
+      "sha256": "280d5cd2348c1bb662220ebb0bb3113a8196dd5d9d006a112c16587482a42739",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BTN.json",
+      "bytes": 7554,
+      "sha256": "14c4625bccd625d5187c24c3fcdbf8943c00cd733543e75e731a742035000ab3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/BWA.json",
+      "bytes": 21305,
+      "sha256": "38e2cec05367242e31188636f11e3b47f16bc51a43ca2a1a160da38327961d09",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CAF.json",
+      "bytes": 39501,
+      "sha256": "5c0b17fea00d8f46119b98ed10f67cbb3f4629e90bdb39992ac89ae90e8b2a70",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CAN.json",
+      "bytes": 1340305,
+      "sha256": "a08d5148db7e5e81527f77048e6827060e0242d3343dabd1350ae062adfb2d03",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CHE.json",
+      "bytes": 15994,
+      "sha256": "5c30fc823cc4c7d687caf9d19f3fa3d5f62c025312d10263eba86732a7f85003",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CHL.json",
+      "bytes": 354407,
+      "sha256": "d90cec800cdd14843d6a07a4bdc33ffe7570d5fe9cb992b08470d63cecb76b7a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CHN.json",
+      "bytes": 302327,
+      "sha256": "c2082e6f37de374c479db25bc62b4ef39e6f25054fd7c736af610788f44984b7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CIV.json",
+      "bytes": 35240,
+      "sha256": "8d7d2f41f0abe212f4ffc2bc0a095ba73a347b93f660ab4bb16577869df86dcd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CLP.json",
+      "bytes": 626,
+      "sha256": "b728d778bdda4b2366fc4057e873af65059b74c409b983819b3147d5e1cfdd86",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CMR.json",
+      "bytes": 32153,
+      "sha256": "0885b2360275b1d58a9cc1542a384d27ad84efdf0c6dbd715719f4f9379ba02a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CNM.json",
+      "bytes": 5323,
+      "sha256": "0de35ad6a0a2f9297403d6baf2e52adf5dedb8e11b9b6de6f2dc3969a75ed524",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/COD.json",
+      "bytes": 62885,
+      "sha256": "6e7c3b4dac219a28f7cdd17449a6730cedfc4a6cdfb34a0ed73ead620aafa88d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/COG.json",
+      "bytes": 29784,
+      "sha256": "895b897d9ea3e4a16436aec275c37e6ce53393d59d590c3b440ca2eb843857d5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/COK.json",
+      "bytes": 2946,
+      "sha256": "831a60eb063c1d1912629c837f3a9d3830be8ff64efa0956b25422f14711e62d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/COL.json",
+      "bytes": 68453,
+      "sha256": "e3938ac4d522e46e3a15e6a13aa1be56a5f1df9c45bdbe1bcc58e2d8984de9fb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/COM.json",
+      "bytes": 3185,
+      "sha256": "366381177d9ca9cd5e430ab97254c59580974f8946f447d088f125194984a815",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CPV.json",
+      "bytes": 9715,
+      "sha256": "94fb61b3121e3ac31abd55e0ee0dc13ec3efe7c2172dc4dba315c2f675787c86",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CRI.json",
+      "bytes": 17582,
+      "sha256": "cad9a0369aa4c3f5c04b87954ee0fab1f1665ba965f77308e1b8f1424d92a81a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CSI.json",
+      "bytes": 567,
+      "sha256": "9f1130b4dbaaeb9895bd2a761eb518bee5c239c3ba3f00218ac192edbe45ad41",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CUB.json",
+      "bytes": 55742,
+      "sha256": "65efca6bc4c1d0125ae27fa484235441335d75fe98d788232a9c778037e7202d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CUW.json",
+      "bytes": 1374,
+      "sha256": "fa5d3e7c090c7dfcdd53e0c9c6c4486239f676338c4f5d54b2b5cf87bb414060",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CYM.json",
+      "bytes": 2107,
+      "sha256": "11f6c030278ac8aca4c431fbf66ecc650046f36c72786d87dc085c7e71780ca5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CYN.json",
+      "bytes": 4855,
+      "sha256": "cf789b9ea1b65b9a3f6616ba82ef37fc93a803332339cfd01746d5251e651892",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CYP.json",
+      "bytes": 6937,
+      "sha256": "22b088c1c083e7981dcf5a6949553b90a806ba4a40a63de0eb680d9ac223dc9d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/CZE.json",
+      "bytes": 19580,
+      "sha256": "cae0a0e1d37bc4525a23aa6c0298bfdd44cbb6cbee7f307a1b8df2d74282d6a5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DEU.json",
+      "bytes": 62834,
+      "sha256": "7248421d617d358fee86d627e76c685e4b6634537d41177ffc099d2ed6f0e4df",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DJI.json",
+      "bytes": 4998,
+      "sha256": "3d2e56d6d36a5b646ebcbe107e8b288a94252123474bbd47241c2055c8673c6b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DMA.json",
+      "bytes": 2007,
+      "sha256": "cad8d13d0abfccb0e42799eabc3058fd18ed44823b34dbbbc21a6d442c4da943",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DNK.json",
+      "bytes": 45459,
+      "sha256": "5384d89b4c3c7b738a747202982ae9a1a7bd0bb242a58a090febee9b75642474",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DOM.json",
+      "bytes": 12534,
+      "sha256": "265a9c43422ccd3a97c33e12901e20743159d9b3d078f5786370e715d40ea40d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/DZA.json",
+      "bytes": 27639,
+      "sha256": "efdf769e5143c0b0b5062962f323929484deea21837a5f9945814ec2f30f91bf",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ECU.json",
+      "bytes": 31628,
+      "sha256": "322bc85ee68b6c6c6e15d3dfb120a609f987182638016dc9ecb43472cfea8cfb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/EGY.json",
+      "bytes": 42131,
+      "sha256": "639aeef279b572bdd8bc33bf489ae30ac89bd2bea683e117ded88bfb6a25020d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ERI.json",
+      "bytes": 22400,
+      "sha256": "08c94f39441f0157724c1600c74912187d65380169046ad027a2783201a0b51d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ESB.json",
+      "bytes": 2586,
+      "sha256": "6fdf24b78c6ce22df9fcbbc241a7e2277826c7e711ca8822da673552f462f108",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ESH.json",
+      "bytes": 5477,
+      "sha256": "d17317a1f72c55217162d9e7bc97ff524649b3b0eb12780e839104b51dc12b0a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ESP.json",
+      "bytes": 63010,
+      "sha256": "6046656995bda3ffbc4b1681dcd6e07bab046486604da832e1dc0cccc02e09ee",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/EST.json",
+      "bytes": 22062,
+      "sha256": "c869322c4d6a1fe039f452c5d4ca8656565ef8e45ca75bf8d2635aca4c24a78f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ETH.json",
+      "bytes": 23830,
+      "sha256": "317a0e85da76ae92d976aa48d696334e91f0275ac0c2feacdee2ad8729d1f83a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FIN.json",
+      "bytes": 66663,
+      "sha256": "a2ab87eb5e3fdf8c221b5168d2e0a39798ae9d6dc17de15ced4b8bd13203ab8c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FJI.json",
+      "bytes": 30995,
+      "sha256": "3077f06c1e0a279a5667556094bc67522d8bca99e39db9bc8cd03a84ba789c7d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FLK.json",
+      "bytes": 28015,
+      "sha256": "1b99fb277a85c59324925e5073f282359c177d4fb64edface5e1568eb4378937",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FRA.json",
+      "bytes": 96346,
+      "sha256": "7bff46a8b610e5fb1b40b9d03b1a10c4edf2f28c6dbc3b790f6af7906c56668b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FRO.json",
+      "bytes": 10357,
+      "sha256": "cfbb6cde8b87234e3beb843b33f16d207edc27b58a257305297bcab1c3601310",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/FSM.json",
+      "bytes": 5652,
+      "sha256": "add3855a8888877517f7c20d7e7ab43dcdae571181635d5ba69be45f1eb20e97",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GAB.json",
+      "bytes": 32236,
+      "sha256": "d3952cb6ca3fb87323627c40846ba560f0c751a3e3dd0ef970c73bbe9bd5cf80",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GBR.json",
+      "bytes": 146990,
+      "sha256": "e01f2ad2d35fcd8fd32906ac9529beabce92943eb3fbfa94bdb7669f5cebf572",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GEO.json",
+      "bytes": 11542,
+      "sha256": "540c1b73574e060b970ec281bb6f14196be1e71a81191f5fbcb11a344f2e6581",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GGY.json",
+      "bytes": 1622,
+      "sha256": "a36090ee30eff72a9a7aa305367a48384d577e49e25619e941a2e5e27025643f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GHA.json",
+      "bytes": 18459,
+      "sha256": "22ad8b36b30a71b82561e5913da6263d95afac9712115e88ac2c3a4435856534",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GIB.json",
+      "bytes": 613,
+      "sha256": "d57bc2f304a7f54a0e5b7ee88713dafaa76f5b5af9bb21b5dafe6b58a0c76c2c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GIN.json",
+      "bytes": 35913,
+      "sha256": "7473ecceb9e79cb7f2fd5e817c5825d54317c3ffe33bc7452dbfa9534be23970",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GMB.json",
+      "bytes": 9280,
+      "sha256": "e8aab130575eef502f4329535e7505d952fa1c832a9c3741c5e5fe842ed42607",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GNB.json",
+      "bytes": 28159,
+      "sha256": "74cb473221ef18b5a92732207bd2260f8d35cedcfab01a352441da37ec6be330",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GNQ.json",
+      "bytes": 5902,
+      "sha256": "cb1068111f90ec1db968c34da9a44c7c1f25d68b92900d00d6f4a3f6a1011c1a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GRC.json",
+      "bytes": 130000,
+      "sha256": "407d72637a8dc3308a4507b16554d85138939a880015d74fa476e84f8fb6be74",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GRD.json",
+      "bytes": 1770,
+      "sha256": "fd6ff1d9ac25365d096516dd639220cfc36f7e589300960749c168b3d206e644",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GRL.json",
+      "bytes": 405008,
+      "sha256": "d19278aa1ae5ee9460a86f9ef3e1be82d18214915dd3eaa03ba0b942c972c89c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GTM.json",
+      "bytes": 10010,
+      "sha256": "41becaa0ee0689d1fb9fb0e2811a9c73a2c1622b47a272fb91539a2191b295dd",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GUM.json",
+      "bytes": 1505,
+      "sha256": "06ed41b080c4337b791d9ad96580099bcce8b0ac1e23292d95121f87cf149053",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/GUY.json",
+      "bytes": 23704,
+      "sha256": "8aa70f63e7375824cd9614acd48aaae418dae9b613a4ec9fa26e8f7e03d91284",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HKG.json",
+      "bytes": 9065,
+      "sha256": "c14f6b0a0fc0545aa3522d4bf84931e875ffb6dd3f635a5db3c1dbfe47c903d2",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HMD.json",
+      "bytes": 1704,
+      "sha256": "86d5e2ebcee3e253478bbe600baba186ce2464a8a094972a203eee0a32066c41",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HND.json",
+      "bytes": 24941,
+      "sha256": "6d92b1aba7dfc2ca7a4a0228bf5c4c39409edce6acab99dca2d4458f65ab5ef3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HRV.json",
+      "bytes": 48588,
+      "sha256": "d71f146c0ba39fbe5dc40f76584194db83c89d498b5be54bab56fb749950db53",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HTI.json",
+      "bytes": 13904,
+      "sha256": "4759e4d2979c734e22ae48eab5f3a851d36c43aed5aa53b78bec42346d9aa255",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/HUN.json",
+      "bytes": 18056,
+      "sha256": "a2bc66887c3af0e440cf50809769364b4ad0cefa975d2bc6c6b55bdff7d9dbf0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IDN.json",
+      "bytes": 420871,
+      "sha256": "f5158264533a9eb9afc7019c156978b2d0a768e7518d036b4e83bd11c164bf29",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IMN.json",
+      "bytes": 1983,
+      "sha256": "41a04e61b495c08798b90619c4030dbbfa04033203949bc2557a805aa58dd63f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IND.json",
+      "bytes": 168209,
+      "sha256": "8ad581fbee4b0b05e55e4def34981739fd53e5fcb1e9c2515d6508408fd85a60",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IOA.json",
+      "bytes": 1658,
+      "sha256": "9d7a90b8865feee0d8fc0fde56f9c2adf12a2c72600564623601ba645c53e181",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IOT.json",
+      "bytes": 2572,
+      "sha256": "87e9fa89dd54a8618fe4c21a52bcf81bb460ea7452136bc0745878b75339d701",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IRL.json",
+      "bytes": 50062,
+      "sha256": "08dc969a9c42515f73c2308a02378216c97f67421d0810c1156be51f12e3e1ee",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IRN.json",
+      "bytes": 59466,
+      "sha256": "249e342b30dd4a437c776aa43aa2ae7e349a7ad517ea51f53b64be85e10d1422",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/IRQ.json",
+      "bytes": 18755,
+      "sha256": "555aea75128420a93d10b2d2679b0db7dba729edf4761112b34b3431a46b4930",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ISL.json",
+      "bytes": 65042,
+      "sha256": "c07302edeb5b636f9fd6bb2c5d468e1bbdbabaa123d40e9f3eebb2c874562884",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ISR.json",
+      "bytes": 10689,
+      "sha256": "4743d3fcd4805fe33be06bed31a7605c6a8762e173faa8fe20f03ae57a2c0c2b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ITA.json",
+      "bytes": 69909,
+      "sha256": "2664079736810157cdfa7b53b2e72f8a57800444b077c98ccff0dfa5f6b2dfaf",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/JAM.json",
+      "bytes": 5728,
+      "sha256": "8349cc24edb0ffa94192fa69cf9c5cafba4eeabb3bb1a10dc6f850893cc0bd78",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/JEY.json",
+      "bytes": 1421,
+      "sha256": "593706d08fe66b5c8b6aa88236fd9cbe673b43d05189ee6af024a80a52112c33",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/JOR.json",
+      "bytes": 8379,
+      "sha256": "603012ad538ed18f3f4d3a67406bf09a03718ccb282a8a9df6770d7c79d14369",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/JPN.json",
+      "bytes": 148456,
+      "sha256": "33a2105a95246649e14c3d363b15cf70015c4f9d16f92caf5d7e57f49dac1119",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KAB.json",
+      "bytes": 1815,
+      "sha256": "b3d938ee5a854bbcb24f7269fb38657e50df0becc3b0f07e99a02da8697628e6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KAS.json",
+      "bytes": 1321,
+      "sha256": "dc9ddb76a3c3f00f597a632336276bb79faaf61f67d43d0b4c49a1939861af2a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KAZ.json",
+      "bytes": 86497,
+      "sha256": "96529fa9b223c41176715aefea8bd3b9b5a1b416223bdc2d780e69dbb1b55a97",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KEN.json",
+      "bytes": 19514,
+      "sha256": "de7864c6315cb740a9ca8ab2ed0a981ada25ff627784bf43d4921f377d725e24",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KGZ.json",
+      "bytes": 23842,
+      "sha256": "3f514ee6db5db1aa96251c8b190296cdd231ff1a049ff182cb8498e518c45c3f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KHM.json",
+      "bytes": 26651,
+      "sha256": "0fe05bd40a488b58c8e6137ed7737be2f2993a3233816ee86a7bba23555bf710",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KIR.json",
+      "bytes": 14878,
+      "sha256": "33485702542f52f3bad3fb9210773a0c21bd6eb950ac31f08ddc5db9723132da",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KNA.json",
+      "bytes": 1372,
+      "sha256": "bbd4a86333393e72148cd348a857155bce4afc45be30753f9515c8d7a4d0bf6d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KOR.json",
+      "bytes": 66048,
+      "sha256": "2939c03f287c3143f4d69d1536699c0986d25e0c516fd1733a5afa05c13573f5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KOS.json",
+      "bytes": 6065,
+      "sha256": "f75341166cf32abbe7316e07b81aeacc84e0a27960af8485ebbcce22cb93ef66",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/KWT.json",
+      "bytes": 5777,
+      "sha256": "316f1b3995ca7b6e6158406fa53e960e20b6175132c0b592d37df45de265c495",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LAO.json",
+      "bytes": 38783,
+      "sha256": "c90f015270a52f6878bc8f0ec7da6161e022bc791e1a8994aff492f4c3dd76ae",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LBN.json",
+      "bytes": 7243,
+      "sha256": "e24e907de8571d6b51e14ec3e186d2953bb6ab53bf17ac01cc3d5f0d3a9d58e9",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LBR.json",
+      "bytes": 15670,
+      "sha256": "a2cd97285a90812455307f52d057d96abb9819f08c2c58405519ea000a4df113",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LBY.json",
+      "bytes": 14788,
+      "sha256": "ad30ef12448e530b14abc0a30d639a2f6dc96e1173a654356e72e972616024e8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LCA.json",
+      "bytes": 1508,
+      "sha256": "132e3b6571955fd1d8bb822ec46f7b580ecc11d2a546b96aa9cf8159e18ec283",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LIE.json",
+      "bytes": 1078,
+      "sha256": "ea2b7b0b67cf058a743b1f78df39708df6e97cc48611007c4a87f32b50a0356e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LKA.json",
+      "bytes": 19342,
+      "sha256": "76447e08adb9101e992eb6c7d2fce007959b1984999b9aff03b9201a82144e0f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LSO.json",
+      "bytes": 7505,
+      "sha256": "ed6d955a1c194979ec4e42f6d2d6991cf3e615f7d6e5268c549178cdedfc3f3b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LTU.json",
+      "bytes": 12111,
+      "sha256": "515efd60c58c8f8d46c1f13b1e845764ff1662d63a62b8e18f9673697e09205f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LUX.json",
+      "bytes": 4547,
+      "sha256": "175bd30e483a5192b004eea7ce5926ad080622fbf87082151c34579555df5ecb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/LVA.json",
+      "bytes": 11743,
+      "sha256": "fb241f28e53762c491c6763307426e02f0dd8317358665c466f6e6efc950e933",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MAC.json",
+      "bytes": 2419,
+      "sha256": "594fe145f5aa9cacc3eac2eee02f196b78b11762b105c1bbc1de516288213f8c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MAF.json",
+      "bytes": 938,
+      "sha256": "8337c36244ecfe0befdd58edb5865ac8129b2f3b3cb521168fa7546eb8639de4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MAR.json",
+      "bytes": 5124,
+      "sha256": "08f6042e74c328fec1292cbd0e1d2854b26baa4400320f5d3b94384dd8254392",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MCO.json",
+      "bytes": 699,
+      "sha256": "4c273a8c416a897c3eb8a1025f0ed396aeafdc44be599cf67c9c1ae2f1d040d8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MDA.json",
+      "bytes": 15415,
+      "sha256": "ad344abdcb34c1472362950e722f40edb045727da8ddadad5406a455d18ca89a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MDG.json",
+      "bytes": 36322,
+      "sha256": "3dd9152ed53a0fe1cd072dd3f0431ef39b17a346714d57a7495ca1d78b223a9c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MDV.json",
+      "bytes": 28655,
+      "sha256": "bc865a3c9b167c6535cc9aef3bad75800d5247bc3e9da4f125c3c3694043a6ce",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MEX.json",
+      "bytes": 153592,
+      "sha256": "7ca1b20b90afa2bdfd1e92eee326f0e4246fd2de0c824eb5253ab7f5e4b54f63",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MHL.json",
+      "bytes": 4662,
+      "sha256": "887d50f8a714e856beda24817b9660eb716a5579b1fe422b90a06596cbc28bd9",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MKD.json",
+      "bytes": 8011,
+      "sha256": "2b2cd54cdadaee83a564727a315f9f72ce46e30d8ba4437098496fa4b269ebf1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MLI.json",
+      "bytes": 38485,
+      "sha256": "5b9cabc9df9934425483ee7438e2cd767e45d7a7e4d091e32c5c13b5ad5d0bb5",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MLT.json",
+      "bytes": 1625,
+      "sha256": "d157efdd84d8b0b0a02e9e6036906af329f88d4bb7e6b8a07a766e5b0466589d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MMR.json",
+      "bytes": 99810,
+      "sha256": "01fce7dd0f8edb0cd51e3fefed0b271e3dd5f9e1248f02a84c392507aa03441a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MNE.json",
+      "bytes": 7884,
+      "sha256": "7475e073f2539b4f549fdf4757ac687c8e4a2bb293ca3cf5309c835382434999",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MNG.json",
+      "bytes": 31472,
+      "sha256": "c68c2be3611ca32ad225962f157f8648be743d219e11e4d136cbef641d1d8fca",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MNP.json",
+      "bytes": 4270,
+      "sha256": "ea5971b8c337d3f5eee06c9d07ed2e96d4541b3f22e27951710766a55b3fde87",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MOZ.json",
+      "bytes": 50573,
+      "sha256": "1269de0c5dca30e4aba6c2e9b0a935fec6379b174b2b753491600242aec859a0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MRT.json",
+      "bytes": 25304,
+      "sha256": "606cf5763aaf6611d77ee89d2aff267f6806fa1d063b7199af4c64ca45c49edf",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MSR.json",
+      "bytes": 943,
+      "sha256": "1bae05201338814ee3a3cb630faee07eae240a29546358ddc748ad302a0ae9fe",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MUS.json",
+      "bytes": 2883,
+      "sha256": "58827fe7dbfafb6e1cf8ea76bcf7d272b4eb31987139f5c4867430a361fd2950",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MWI.json",
+      "bytes": 18142,
+      "sha256": "6f3414b85d72864dc432059519dad986f8fd1f4ba0aa8e2af32ebf61cb3435b6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/MYS.json",
+      "bytes": 55656,
+      "sha256": "35e1aea038f8d89ea5cdd349bcd9964bc1dbd63edd6a856bc227aa92c7163dae",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NAM.json",
+      "bytes": 26215,
+      "sha256": "33ed19f4a4e4c972ca2dd67e7df108b93e3533f4b404ff35a971cfc37db144c0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NCL.json",
+      "bytes": 21745,
+      "sha256": "4e6290453c013b3feb840d3238182eb0fa68c4cba1adb366c47ae9b5ae521627",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NER.json",
+      "bytes": 23128,
+      "sha256": "34b57cff05c83dc469b11af4b2d63147da79b23d17089a4f89d04c78f6d1ba84",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NFK.json",
+      "bytes": 1051,
+      "sha256": "b0e7a9ae871792967f175d8105a8473c90379fee2b48476d7160cc9fb086f414",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NGA.json",
+      "bytes": 38988,
+      "sha256": "6a9e1e06029e4bfb3f827299f2c20d5370878f2d3721e02fabbd39e381d66955",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NIC.json",
+      "bytes": 19851,
+      "sha256": "1b7d2f2b8f3e8e085b9423e85a5a8baa1a1e95135e58d767676007ea4ba3055a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NIU.json",
+      "bytes": 1159,
+      "sha256": "b5f2441922132ea55f225569605d3332a17ca97644b9d2ce15623fa6e128bc71",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NLD.json",
+      "bytes": 17963,
+      "sha256": "5bfbaecc5094e91e8a7b2865aacfda688ca221bf0b7ade4419781fe4d92a6d8c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NOR.json",
+      "bytes": 326584,
+      "sha256": "c14381aa2b195a86c76cceefcd13ca47c611b1d13789a14bfe293d29acacde19",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NPL.json",
+      "bytes": 22655,
+      "sha256": "72f56825c7d442a346b67f0e534aaf88f41a111e56ee9d9fcc981a2b47995fd7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NRU.json",
+      "bytes": 643,
+      "sha256": "b72e713243fa73725e55207eff512a759162a0726ecf77a9c682f55047efc04f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/NZL.json",
+      "bytes": 98134,
+      "sha256": "d8aa044960cf6952b5d7a5b09cb8848d75996dae3763f2668a05690cf444c720",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/OMN.json",
+      "bytes": 22636,
+      "sha256": "a873726148acea13cde6b1444c5987b0510f474fe7ad72d0c6b23d7a2aebf558",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PAK.json",
+      "bytes": 47030,
+      "sha256": "6ecbbbf3ea3e40000b7d0cfdafedbdb37687d897e9a71f337b5748977b770ca7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PAN.json",
+      "bytes": 41644,
+      "sha256": "e69d92c51584a418c8e70b62b919baab91d21c050a6b116c0e711c28320368a1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PCN.json",
+      "bytes": 1210,
+      "sha256": "ea42bf2c6f5282331b47456d1a9bb0b58affdd8bae9066d3b24031ae9945b4c8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PER.json",
+      "bytes": 50645,
+      "sha256": "db6c9e4baad14c9322a1125dd4415d1d86e92b11f7033a8501d7f0e164692d6b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PGA.json",
+      "bytes": 2471,
+      "sha256": "330530bef73b7c2cb9b6ff5e720df42a120ac9a167c2a6dd4fbf3b5a0d27c136",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PHL.json",
+      "bytes": 159752,
+      "sha256": "82d20d60f8b7099857e9e4025bf2e654e73a019a819a06dbc95b5f54d319fbe8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PLW.json",
+      "bytes": 3877,
+      "sha256": "78afae0136ea9aa457d350e37aa185b07eab163a5757005c06fc94740aee61a6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PNG.json",
+      "bytes": 103634,
+      "sha256": "f63546cef4a8e4b85e3885905fa2caed1a82b255f9adb0a0174420f79789fbad",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/POL.json",
+      "bytes": 28088,
+      "sha256": "345dc34efc5cfd47964de5d9f3cb0d11ef960df64c78c327155c794504513e31",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PRI.json",
+      "bytes": 6698,
+      "sha256": "72e083fdfa9fc1eae70f8a7fae63c0bd0dd6791d65627c4071d996d7bb6520b6",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PRK.json",
+      "bytes": 37931,
+      "sha256": "cdf7db55e44c5ecf732a8f8db1ade6d3fa54ade6d91b752595db16cbbe4dbd7c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PRT.json",
+      "bytes": 26952,
+      "sha256": "979fdbbebb79c6d61e801e41717dd2ece546d067a1fff203cce8957eb0704ab7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PRY.json",
+      "bytes": 24128,
+      "sha256": "94fdac1a45f34e0457684578dee89aec1c5ac0a672e44d3a2c459f563cb6f2de",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PSE.json",
+      "bytes": 5521,
+      "sha256": "d3674319ae7cae2fa35865b3625efb8c4f2ae714dc5221150cb2fe134f733a64",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/PYF.json",
+      "bytes": 20517,
+      "sha256": "ee1173bcd2741d7baf9f4b0026ff5d3f6cff7c096bb9f0514e6d8e0bd2a339e8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/QAT.json",
+      "bytes": 5680,
+      "sha256": "a241e83f96b4a7fac761dece31ceefdf2c58f8aac90f11f0e39d9dcdd2249952",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ROU.json",
+      "bytes": 25312,
+      "sha256": "bd410d02b440b8ea106464b133f47809b7d6fae37f1a4c1bf35221d3825a6f58",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/RUS.json",
+      "bytes": 756361,
+      "sha256": "933344a4b764fd78313fe814cbb7f11e5529b89114a0e73fb1865931eeb5a3a0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/RWA.json",
+      "bytes": 7464,
+      "sha256": "93a9861ce9ba5e88ca5cda35a0cbd5d877e7fdaf2c727b444aa39e51c0bcfee3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SAU.json",
+      "bytes": 51817,
+      "sha256": "46bce56b73a806b4b61b21e4aa961034268e204012a874ba9c47a02134630764",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SCR.json",
+      "bytes": 588,
+      "sha256": "715b3d2347a7d1f9c6a39e48782a4870e9356ae16afe8da0084da5bd86d7247c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SDN.json",
+      "bytes": 26049,
+      "sha256": "5fe376dfdc0db0feead915dc7fa33b6c1d8e60395aeae6d6d711d8b88ed16a03",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SEN.json",
+      "bytes": 30403,
+      "sha256": "1189664439858eda117b4a7a56de8b712f2a3ef0e98d3d6fce5e5a495137879e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SER.json",
+      "bytes": 558,
+      "sha256": "c93e802c44ea412228718142e5175afe4855095748aa7ca29425d9b98384222f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SGP.json",
+      "bytes": 1331,
+      "sha256": "365c67bba333b3cc8934a3ad046d350e9450d89f18df07d651b42f611ce750a8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SGS.json",
+      "bytes": 13074,
+      "sha256": "edccd2304e80bc8e20f04f443b9683637e52a0a2aee1680f1223172a4f02802c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SHN.json",
+      "bytes": 2216,
+      "sha256": "13c54f01deed68dd094f9f7ea0c91f442698a1f89d8bad0fc94418d6ab401bdc",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SLB.json",
+      "bytes": 46912,
+      "sha256": "2f2a88ea74f5cea8f512e5c15c07378a0eb59538dc1feadac60b309310cb1deb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SLE.json",
+      "bytes": 15563,
+      "sha256": "8c3669f1a6083df3ee894d5dfead520d41c23d28ca6fd7f7cba08429e11cc856",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SLV.json",
+      "bytes": 8327,
+      "sha256": "59e02b637cb8badb5eea5fc1bb88ead1fe1b10cfe7e6863da00e7824c9efd1c2",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SMR.json",
+      "bytes": 860,
+      "sha256": "b1483f20467acd702b4ca447c6701bd50996b58d4db6d0d87c177e96ae53cf1e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SOL.json",
+      "bytes": 7408,
+      "sha256": "e559b65cbfa3e943365cbb6239cde1714a4de7243912ed315ffe39606e6e7bee",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SOM.json",
+      "bytes": 15010,
+      "sha256": "c83e825d1d82be610c2c40020be674955bef4a6facbc5a72d6497c60d33fbf0c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SPI.json",
+      "bytes": 1360,
+      "sha256": "c425ccc90a6008a7e17954164478954600a343749f4ebd682a88578bad560436",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SPM.json",
+      "bytes": 2110,
+      "sha256": "66da37a993ff8366881a6932bb3d341173ba82df2a69b795b05a684b81b1aaa3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SRB.json",
+      "bytes": 19965,
+      "sha256": "bb353353bef063209b011738c028332f8deeacf46edbfd6bbbb22e8240ef0205",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SSD.json",
+      "bytes": 25660,
+      "sha256": "91a40923ab8391c7506ee5eaaced9f1fe4035ec0ac5b71b808645d75d00d43af",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/STP.json",
+      "bytes": 2581,
+      "sha256": "0b7c477f0a55dacdca3e42a7f31517a499eb5e8f7c12279afffd22dd67ed9082",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SUR.json",
+      "bytes": 15758,
+      "sha256": "373642e4c941dc5bac13d45e899fe4e7e09654a4dd60defdfc7a83627407cc4f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SVK.json",
+      "bytes": 12334,
+      "sha256": "1ce07f7173c977f6d9a27dc4e3426b6d7d15eb7b196a5a52114bdc0c9e780839",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SVN.json",
+      "bytes": 11216,
+      "sha256": "0d0b1138fb1615c3e818b2c7916b67059e307d2735019f8024000d1adc686490",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SWE.json",
+      "bytes": 96518,
+      "sha256": "a1331c127d139a38ab3a2e8523608609ab2f118c6ae7f84ce615da9d183fcbc1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SWZ.json",
+      "bytes": 2324,
+      "sha256": "f3c820ca5d0b62b4afc0c1ca7233777fff9c4b837feb0894a4deb6544fc7d82e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SXM.json",
+      "bytes": 656,
+      "sha256": "7b0ff4301b127e871a5e2aba763776137e396d13085acc598d9caa1981ea31a4",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SYC.json",
+      "bytes": 7132,
+      "sha256": "f9020dd0f0163b129b3fd1ce42cf38f8cf3029d4cc42c1f5f8c2cde788573e8e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/SYR.json",
+      "bytes": 13287,
+      "sha256": "ad081d37ed711987e339142a0dfd77fbf76ec1dff035f00efe14902a0f13caf1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TCA.json",
+      "bytes": 4718,
+      "sha256": "bc9b6ed2d27896371aa1fdce6be982a02bfd88fdf2ed35743f3b20d220b8a855",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TCD.json",
+      "bytes": 26900,
+      "sha256": "a1945b3d5f73bb3d418f2ed5004c7569205bf6cc013c524cf55109085ab9ec33",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TGO.json",
+      "bytes": 11003,
+      "sha256": "e7da816605dea39a448b710ea26270f11e3bba665cf9d533a18ffc6f8cac0b58",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/THA.json",
+      "bytes": 72220,
+      "sha256": "c7d2b53d18b04d7cfcf9a3f500d2bcb5c490b506e33e772eceb4c7481183d34b",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TJK.json",
+      "bytes": 27271,
+      "sha256": "998623bb277ac5e320cabb9a65bcd6c3a601a444b73b64bd57d221f1ba5413c2",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TKM.json",
+      "bytes": 35678,
+      "sha256": "f5cb1be184845204d83c53d9e04b3a41afffea09bbfc03bc08d6c9903dc810ae",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TLS.json",
+      "bytes": 6515,
+      "sha256": "9a601a1384d8f0739fa451a4eb8f22839ab508a87c91ce7b2e7ab89211d789df",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TON.json",
+      "bytes": 4477,
+      "sha256": "14dcb4e274118d288da34e4925b73cdccd2d1b654948eb44aa40332b4e68d2af",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TTO.json",
+      "bytes": 4540,
+      "sha256": "4d151172b667d09645c421d31ccf5a4f9f99c2f70f1dde626ef0d61c488503df",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TUN.json",
+      "bytes": 15657,
+      "sha256": "ae429a6d9432e92db96222777663cf8f85469af731d97bdd2e013d741f3bdc83",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TUR.json",
+      "bytes": 77871,
+      "sha256": "93690a91fd4133e3a7776596f530ba34f7df64d66c2b5d8b051c26c110754674",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TUV.json",
+      "bytes": 1793,
+      "sha256": "962b60a5dac14d6d83108f72bf0151cb2de8d056fa9ea97b31ccbd22d4c79d63",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TWN.json",
+      "bytes": 12530,
+      "sha256": "394a7c675321b03529f7a901fb971ea14c5f6a59d9c932cbee7f11f18ea72996",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/TZA.json",
+      "bytes": 38708,
+      "sha256": "664618b975d09919810b0a4cb1e40b0d5d81857343a82eebaf73f6dbc0814da9",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/UGA.json",
+      "bytes": 13741,
+      "sha256": "da5b2ed80957c1c89fbf9c30ca9e508f699fac85c397d3e14b17bbcca3fa1583",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/UKR.json",
+      "bytes": 55619,
+      "sha256": "bb3ce9b194f80c8d0ee7bab6f14ef012d45de93c8186636894f405858546151e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/UMI.json",
+      "bytes": 2821,
+      "sha256": "e33243054b4689456c7550b9f4b685aeb670e8f6f291abff5a2020e6f69ea1df",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/URY.json",
+      "bytes": 12608,
+      "sha256": "343732c3eb87f1eb6995b0f1cece11a00ad432d4e95df6ecea2c74b48ffbde87",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/USA.json",
+      "bytes": 714236,
+      "sha256": "a9afda785791d8e35052ae9f909ab820a5beabede180371716fbbdb8b5b7b895",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/USG.json",
+      "bytes": 1399,
+      "sha256": "a9df1cfbf1695416f3a8e991bd1e1c9bc45e01dc48656f89f4169acb582ab59f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/UZB.json",
+      "bytes": 34987,
+      "sha256": "d1d8dde9d625454e7637aec18014bfffe855154d27989308c4673c5c031208e3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VAT.json",
+      "bytes": 602,
+      "sha256": "b50cdf47fb4286ae2d185f8fd0758b4d74e50dc54f10804fb67a7532be475959",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VCT.json",
+      "bytes": 2162,
+      "sha256": "ebca0b177e4678b2326d25dd9b46ec2b3238d94d3f1aa6a6e52a3b75af77264f",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VEN.json",
+      "bytes": 66370,
+      "sha256": "b438b6da0a4e5ced10ad3118105e4227ad7b2c1a9c742a5ece457732e212871d",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VGB.json",
+      "bytes": 2351,
+      "sha256": "847f473140f027a7e75d6b295d112518cf75dc4f14f3556e26f1a85b77f8dcda",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VIR.json",
+      "bytes": 1942,
+      "sha256": "4bf1059bf465ddda54e8832313d08f2f025144e9ec7371b57375bea5d61820fe",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VNM.json",
+      "bytes": 90649,
+      "sha256": "9358643c2d5d7ca1ad5e172b42123754753974df274c76918814b68f2410b2fb",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/VUT.json",
+      "bytes": 22024,
+      "sha256": "f82135a7e02852f75a725b9e4fa3da48bbdfbebc6d1431f19e3489961a37d6cc",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/WLF.json",
+      "bytes": 1229,
+      "sha256": "e89aa617cf25b0666d62310e393fe161786919094cea1722fc3317485f7cdaa8",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/WSB.json",
+      "bytes": 1478,
+      "sha256": "867dfd6f687b12668de0b5df281957ce7c9fd5f2a9f39c59f759c86ecdcf0b50",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/WSM.json",
+      "bytes": 3032,
+      "sha256": "f9e8e7fe5011013a88bd8305d2c7f6533dfff3b849dbf25f024bf63b8966dc1c",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/YEM.json",
+      "bytes": 22676,
+      "sha256": "5512aa9b9e81cc19a707fee1163a6ad7499f1523597c09cd9ed202998584e1e0",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ZAF.json",
+      "bytes": 41421,
+      "sha256": "4985427d19fe535ca01f1672542511a8e40a9dbdcff8dbe81be4fba263190f61",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ZMB.json",
+      "bytes": 33266,
+      "sha256": "c62920037d7549ca255eaa4a97cb62a3fe0e869f891b487ab62a530d66056be1",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
+    },
+    {
+      "path": "vectors/country-outlines-studio10m/ZWE.json",
+      "bytes": 17136,
+      "sha256": "16be2d67ea71f243ac5b0598e1a3ba9c0a0a31bc49284168198eae60c8c5fa36",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "Studio 10m individual country land outlines"
     },
     {
       "path": "vectors/land-borders-10m.json",

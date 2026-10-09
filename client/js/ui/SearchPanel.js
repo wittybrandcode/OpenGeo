@@ -560,6 +560,22 @@ class SearchPanel {
             }
           });
           actionsDiv.appendChild(drawBtn);
+
+          // Studio 10m Ultra-Resolution action (guarded by feature flag)
+          if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features && OpenGeoConfig.features.studioCountryOutlinesEnabled) {
+            const studioBtn = createBtn('sparkles', 'Draw Studio 10m country outline (High-Definition)', '#00e5ff', '24px', () => {
+              this.hideResults();
+              if (typeof globalEventBus !== 'undefined') {
+                globalEventBus.emit('search:drawStudioCountryOutline', {
+                  countryCode: identity.drawingIso3,
+                  searchName: name,
+                  item: item,
+                  identity: identity
+                });
+              }
+            });
+            actionsDiv.appendChild(studioBtn);
+          }
         }
         
         row.appendChild(nameDiv);
