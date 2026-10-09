@@ -548,7 +548,7 @@ class SearchPanel {
         // borders plus the coastline that bounds the country's land. It is
         // also valid for a city result: the enclosing country is used.
         if (identity.drawingIso3 !== 'UNKNOWN') {
-          const drawBtn = createBtn('pen-tool', 'Draw local 10m country outline (land borders + coastline)', 'var(--accent-color)', '24px', () => {
+          const drawBtn = createBtn('pen-tool', 'Draw standard 10m country outline (Fast & lightweight)', 'var(--accent-color)', '24px', () => {
             this.hideResults();
             if (typeof globalEventBus !== 'undefined') {
               globalEventBus.emit('search:drawCountryOutline', {
@@ -561,9 +561,13 @@ class SearchPanel {
           });
           actionsDiv.appendChild(drawBtn);
 
-          // Studio 10m Ultra-Resolution action (guarded by feature flag)
-          if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features && OpenGeoConfig.features.studioCountryOutlinesEnabled) {
-            const studioBtn = createBtn('sparkles', 'Draw Studio 10m country outline (High-Definition)', '#00e5ff', '24px', () => {
+          // Studio 10m Ultra-Resolution action (active by default or via Settings)
+          const isStudioEnabled = (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features)
+            ? !!OpenGeoConfig.features.studioCountryOutlinesEnabled
+            : true;
+
+          if (isStudioEnabled) {
+            const studioBtn = createBtn('sparkles', 'Draw Studio 10m country outline (Ultra-HD High-Definition)', '#00e5ff', '24px', () => {
               this.hideResults();
               if (typeof globalEventBus !== 'undefined') {
                 globalEventBus.emit('search:drawStudioCountryOutline', {

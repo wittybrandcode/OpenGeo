@@ -97,6 +97,7 @@ class ToolbarController {
     const modal = document.getElementById('provider-settings-modal');
     const fields = document.getElementById('provider-key-fields');
     const customUrl = document.getElementById('provider-custom-url');
+    const studioToggle = document.getElementById('setting-studio-outlines-toggle');
     this._renderProviderKeyFields(fields);
     if (!modal || !manager) return;
 
@@ -105,11 +106,27 @@ class ToolbarController {
       const settings = manager.getSettings();
       this._fillProviderKeys(settings);
       if (customUrl) customUrl.value = settings.customUrl || '';
+      if (studioToggle) {
+        let isStudioEnabled = true;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            const saved = localStorage.getItem('opengeo_studio_outlines_enabled');
+            if (saved !== null) isStudioEnabled = saved === 'true';
+          }
+        } catch (_e) {}
+        if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features && typeof OpenGeoConfig.features.studioCountryOutlinesEnabled === 'boolean') {
+          isStudioEnabled = OpenGeoConfig.features.studioCountryOutlinesEnabled;
+        }
+        studioToggle.checked = isStudioEnabled;
+      }
       modal.style.display = 'flex';
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons({ root: modal });
+      }
     });
     this._listen(document.getElementById('provider-settings-close'), 'click', close);
     this._listen(document.getElementById('provider-settings-cancel'), 'click', close);
-    this._listen(document.getElementById('provider-settings-save'), 'click', () => {
+    this._listen(document.getElementById('provider-settings-save'), () => {
       const result = manager.saveSettings({
         keys: this._readProviderKeys(),
         customUrl: customUrl ? customUrl.value : ''
@@ -117,6 +134,23 @@ class ToolbarController {
       if (!result.ok) {
         globalEventBus.emit('toast:show', { message: result.message, type: 'error' });
         return;
+      }
+      if (studioToggle) {
+        const isEnabled = !!studioToggle.checked;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('opengeo_studio_outlines_enabled', isEnabled ? 'true' : 'false');
+          }
+        } catch (_err) {}
+        if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features) {
+          OpenGeoConfig.features.studioCountryOutlinesEnabled = isEnabled;
+        }
+        if (typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('toast:show', {
+            message: isEnabled ? 'Studio 10m Outlines enabled' : 'Studio 10m Outlines disabled (Standard 10m only)',
+            type: 'info'
+          });
+        }
       }
       close();
     });

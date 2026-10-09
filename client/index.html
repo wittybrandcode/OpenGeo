@@ -524,6 +524,23 @@
           <label class="settings-label" style="margin-bottom: 4px;">Custom XYZ URL</label>
           <input type="text" class="search-input" id="provider-custom-url" placeholder="https://server.com/{z}/{x}/{y}.jpg" title="Custom XYZ tile server URL template" style="width: 100%; padding: 4px 8px;">
         </div>
+
+        <div class="settings-group" style="margin-bottom: 14px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label class="settings-label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="sparkles" style="width: 13px; height: 13px; color: #00e5ff;"></i>
+              <span>Vector Map Quality</span>
+            </label>
+            <span style="font-size: 10px; color: #00e5ff; font-weight: 600;">Studio 10m HD</span>
+          </div>
+          <label class="pin-check-row" style="cursor: pointer; display: flex; align-items: flex-start; gap: 8px;">
+            <input type="checkbox" id="setting-studio-outlines-toggle" checked style="margin-top: 2px;">
+            <span class="pin-check-text">
+              <strong style="color: var(--text-primary); font-size: 11px;">Enable Studio 10m Outlines</strong>
+              <small style="color: var(--text-dim); font-size: 10px; display: block; line-height: 1.3;">Shows the Studio 10m Ultra-HD action button in search results with full coastline details (up to 85,000 vertices per country, 100% offline).</small>
+            </span>
+          </label>
+        </div>
         
         <div style="display: flex; gap: 8px; margin-top: 15px; justify-content: flex-end;">
           <button class="bottom-btn" id="provider-settings-cancel" title="Cancel and discard changes" aria-label="Cancel and discard changes">Cancel</button>

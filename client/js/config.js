@@ -93,7 +93,15 @@ var OpenGeoConfig = {
 
 
   features: {
-    studioCountryOutlinesEnabled: false
+    studioCountryOutlinesEnabled: (function() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          var val = localStorage.getItem('opengeo_studio_outlines_enabled');
+          if (val !== null) return val === 'true';
+        }
+      } catch (_e) {}
+      return true;
+    })()
   },
 
   defaults: {
