@@ -17,8 +17,9 @@ class OsmBoundaryService {
   constructor(geoDataRepository) {
     this.geoDataRepository = geoDataRepository || null;
     this.MAP_SIZE = 262144;
-    this.MAX_POINTS = 85000;
+    this.MAX_POINTS = 3500; // Safe ceiling for After Effects Shape Layers to prevent freezing
     this._memoryCache = new Map();
+    this._rawGeometryCache = new Map();
   }
 
   projectPoint(point) {
@@ -120,11 +121,17 @@ class OsmBoundaryService {
     return count > 0 ? [Math.round((sumX / count) * 100) / 100, Math.round((sumY / count) * 100) / 100] : null;
   }
 
-  async resolveCountryBoundaryAsync(countryCode, countryName, searchItem) {
+  async resolveCountryBoundaryAsync(countryCode, countryName, searchItem, options = {}) {
     const iso3 = String(countryCode || '').trim().toUpperCase();
     if (!iso3) {
       return { ok: false, message: 'Country code is required.', fallbackRequired: false };
     }
+
+    const targetZoom = (options && Number.isFinite(options.compZoom))
+      ? options.compZoom
+      : ((options && Number.isFinite(options.zoom)) ? options.zoom : 6);
+    const zoomBucket = Math.round(targetZoom);
+    const cacheKey = `${iso3}_z${zoomBucket}`;
 
     // Cartography Policy enforcement:
     // Morocco and Western Sahara have pinned locked profiles in CARTOGRAPHY_POLICY.json.
@@ -142,19 +149,27 @@ class OsmBoundaryService {
       }
     }
 
-    // Check in-memory cache
-    if (this._memoryCache.has(iso3)) {
-      return this._memoryCache.get(iso3);
+    // Check in-memory LOD cache for this zoom
+    if (this._memoryCache.has(cacheKey)) {
+      return this._memoryCache.get(cacheKey);
+    }
+
+    // Check if raw full geometry is already in memory
+    if (this._rawGeometryCache.has(iso3)) {
+      const cachedRaw = this._rawGeometryCache.get(iso3);
+      const res = this._buildResultFromRaw(iso3, countryName, cachedRaw.meta, cachedRaw.allRings, targetZoom);
+      this._memoryCache.set(cacheKey, res);
+      return res;
     }
 
     // Check persistent storage cache if localStorage is available
     try {
       if (typeof localStorage !== 'undefined') {
-        const cachedRaw = localStorage.getItem(`opengeo_osm_country_${iso3}`);
+        const cachedRaw = localStorage.getItem(`opengeo_osm_country_${cacheKey}`);
         if (cachedRaw) {
           const parsed = JSON.parse(cachedRaw);
           if (parsed && parsed.ok && Array.isArray(parsed.features)) {
-            this._memoryCache.set(iso3, parsed);
+            this._memoryCache.set(cacheKey, parsed);
             return parsed;
           }
         }
@@ -178,13 +193,7 @@ class OsmBoundaryService {
         return { ok: false, message: `No Ultra-HD boundary metadata found for ${iso3}.`, fallbackRequired: true };
       }
 
-      // Select full unsimplified or simplified GeoJSON URL based on vertex budget
-      const expectedVertices = Number(meta.meanVertices) || 0;
-      let downloadUrl = meta.gjDownloadURL;
-      if (expectedVertices > this.MAX_POINTS && meta.simplifiedGeometryGeoJSON) {
-        downloadUrl = meta.simplifiedGeometryGeoJSON;
-      }
-
+      const downloadUrl = meta.gjDownloadURL || meta.simplifiedGeometryGeoJSON;
       if (!downloadUrl) {
         return { ok: false, message: `No boundary download URL found for ${iso3}.`, fallbackRequired: true };
       }
@@ -224,47 +233,18 @@ class OsmBoundaryService {
         return { ok: false, message: `Could not parse polygon rings for ${iso3}.`, fallbackRequired: true };
       }
 
-      const outerRings = this.decimateRings(allRings);
+      // Cache raw rings in memory so subsequent zooms never hit network
+      this._rawGeometryCache.set(iso3, { meta, allRings });
 
-      let pointCount = 0;
-      for (let r = 0; r < outerRings.length; r++) {
-        pointCount += outerRings[r].length;
-      }
-
-      const centroid = this.computeCentroid(outerRings);
-      const displayName = meta.boundaryName || countryName || iso3;
-
-      const result = {
-        ok: true,
-        tier: 'ultra-osm',
-        country: {
-          iso3: iso3,
-          name: displayName,
-          nameAr: countryName || displayName,
-          label: centroid
-        },
-        features: [
-          {
-            id: `ultra-${iso3.toLowerCase()}-exterior`,
-            rings: outerRings,
-            properties: {
-              source: meta.boundarySource || 'GeoBoundaries / OpenStreetMap',
-              boundaryID: meta.boundaryID,
-              vertices: pointCount
-            }
-          }
-        ],
-        pointCount: pointCount,
-        provenance: `GeoBoundaries gbOpen High-Resolution (${meta.boundarySource || 'OSM'})`
-      };
+      const result = this._buildResultFromRaw(iso3, countryName, meta, allRings, targetZoom);
 
       // Store in memory cache
-      this._memoryCache.set(iso3, result);
+      this._memoryCache.set(cacheKey, result);
 
       // Store in persistent cache (capped size)
       try {
         if (typeof localStorage !== 'undefined' && JSON.stringify(result).length < 2 * 1024 * 1024) {
-          localStorage.setItem(`opengeo_osm_country_${iso3}`, JSON.stringify(result));
+          localStorage.setItem(`opengeo_osm_country_${cacheKey}`, JSON.stringify(result));
         }
       } catch (_saveErr) {}
 
@@ -277,6 +257,51 @@ class OsmBoundaryService {
         fallbackRequired: true
       };
     }
+  }
+
+  _buildResultFromRaw(iso3, countryName, meta, allRings, targetZoom) {
+    let PolylineMathClass = typeof PolylineMath !== 'undefined' ? PolylineMath : null;
+    if (!PolylineMathClass && typeof window !== 'undefined' && window.PolylineMath) {
+      PolylineMathClass = window.PolylineMath;
+    }
+
+    const outerRings = PolylineMathClass
+      ? PolylineMathClass.simplifyRingsForZoom(allRings, targetZoom, this.MAX_POINTS)
+      : this.decimateRings(allRings, this.MAX_POINTS);
+
+    let pointCount = 0;
+    for (let r = 0; r < outerRings.length; r++) {
+      pointCount += outerRings[r].length;
+    }
+
+    const centroid = this.computeCentroid(outerRings);
+    const displayName = (meta && meta.boundaryName) || countryName || iso3;
+    const roundedZ = Math.round(targetZoom * 10) / 10;
+
+    return {
+      ok: true,
+      tier: 'ultra-osm',
+      country: {
+        iso3: iso3,
+        name: displayName,
+        nameAr: countryName || displayName,
+        label: centroid
+      },
+      features: [
+        {
+          id: `ultra-${iso3.toLowerCase()}-exterior`,
+          rings: outerRings,
+          properties: {
+            source: (meta && meta.boundarySource) || 'GeoBoundaries / OpenStreetMap',
+            boundaryID: meta && meta.boundaryID,
+            vertices: pointCount,
+            lodZoom: roundedZ
+          }
+        }
+      ],
+      pointCount: pointCount,
+      provenance: `GeoBoundaries gbOpen High-Resolution (OSM, Altitude LOD Z${roundedZ})`
+    };
   }
 
   async _fetchJson(url) {
@@ -300,6 +325,7 @@ class OsmBoundaryService {
 
   clearCache() {
     this._memoryCache.clear();
+    this._rawGeometryCache.clear();
     try {
       if (typeof localStorage !== 'undefined') {
         const keysToRemove = [];

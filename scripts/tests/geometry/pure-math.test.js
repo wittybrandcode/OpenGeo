@@ -11,6 +11,7 @@ const path = require('path');
 const MercatorMath = require('../../../client/js/core/geometry/MercatorMath');
 const FrustumMath = require('../../../client/js/core/geometry/FrustumMath');
 const TileMath = require('../../../client/js/core/geometry/TileMath');
+const PolylineMath = require('../../../client/js/core/geometry/PolylineMath');
 
 let passed = 0;
 let failed = 0;
@@ -178,6 +179,61 @@ test('tileBounds returns valid geographic bounding box', () => {
   assert.ok(bounds.east > bounds.west, 'East must be greater than West');
   assert.strictEqual(bounds.west, -180);
   assert.strictEqual(bounds.east, 0);
+});
+
+// 4. PolylineMath Tests
+console.log('--- 4. PolylineMath Verification ---');
+
+test('sqDist and sqDistToSegment calculate accurate Euclidean distances', () => {
+  assert.strictEqual(PolylineMath.sqDist([0, 0], [3, 4]), 25);
+  // Point (1, 1) to segment (0, 0) - (2, 0) has perpendicular distance 1 -> sqDist = 1
+  assert.strictEqual(PolylineMath.sqDistToSegment([1, 1], [0, 0], [2, 0]), 1);
+  // Point (3, 4) past segment (0, 0) - (2, 0) clamps to end (2, 0) -> dist (1, 4) -> sqDist 17
+  assert.strictEqual(PolylineMath.sqDistToSegment([3, 4], [0, 0], [2, 0]), 17);
+});
+
+test('simplifyDouglasPeucker preserves endpoints, simplifies colinear points, and keeps closed rings closed', () => {
+  const line = [[0, 0], [1, 0.05], [2, 0], [3, -0.05], [4, 0]];
+  const simplified = PolylineMath.simplifyDouglasPeucker(line, 0.1);
+  assert.strictEqual(simplified.length, 2);
+  assert.deepStrictEqual(simplified[0], [0, 0]);
+  assert.deepStrictEqual(simplified[1], [4, 0]);
+
+  const closedRing = [[0, 0], [10, 0], [10, 10], [0, 10], [0, 0]];
+  const simplifiedClosed = PolylineMath.simplifyDouglasPeucker(closedRing, 0.5);
+  assert.strictEqual(simplifiedClosed.length, 5);
+  assert.deepStrictEqual(simplifiedClosed[0], simplifiedClosed[simplifiedClosed.length - 1]);
+});
+
+test('calculateZoomTolerance scales inversely with camera zoom', () => {
+  const tolZ3 = PolylineMath.calculateZoomTolerance(3);
+  const tolZ7 = PolylineMath.calculateZoomTolerance(7);
+  const tolZ11 = PolylineMath.calculateZoomTolerance(11);
+  assert(tolZ3 > tolZ7, 'Zoom 3 tolerance must be greater than Zoom 7');
+  assert(tolZ7 > tolZ11, 'Zoom 7 tolerance must be greater than Zoom 11');
+  assert.strictEqual(tolZ11, 0.75); // Bounded at minimum 0.75 units
+});
+
+test('simplifyRingsForZoom enforces safe vertex ceiling (<= 3500 points)', () => {
+  const hugeRing = [];
+  for (let i = 0; i < 10000; i++) {
+    hugeRing.push([i * 0.05, Math.sin(i * 0.1) * 2]);
+  }
+  hugeRing.push(hugeRing[0]);
+
+  const simplified = PolylineMath.simplifyRingsForZoom([hugeRing], 6, 3500);
+  let totalPts = 0;
+  for (let r = 0; r < simplified.length; r++) totalPts += simplified[r].length;
+  assert(totalPts <= 3500, `Expected <= 3500 points, got ${totalPts}`);
+});
+
+test('calculateViewportWorldBBox computes valid bounds around center coordinate', () => {
+  const bbox = PolylineMath.calculateViewportWorldBBox(36.75, 3.05, 10, 1920, 1080);
+  assert.strictEqual(bbox.length, 4);
+  const [minX, minY, maxX, maxY] = bbox;
+  assert(minX < maxX, 'minX must be less than maxX');
+  assert(minY < maxY, 'minY must be less than maxY');
+  assert(minX >= 0 && maxX <= 262144, 'Bounds must be within mapSize');
 });
 
 console.log('\n======================================================');

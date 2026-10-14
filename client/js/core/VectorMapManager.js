@@ -223,11 +223,20 @@ class VectorMapManager {
       this.osmBoundaryService = osmService;
     }
 
+    const currentZoom = (this.app && this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 6;
+    const center = (this.app && this.app.session && this.app.session.mapState && this.app.session.mapState.center)
+      ? this.app.session.mapState.center : null;
+
     if (typeof globalEventBus !== 'undefined') {
-      globalEventBus.emit('ui:status', { message: `Fetching Ultra OSM boundary for ${countryName}...`, isError: false });
+      globalEventBus.emit('ui:status', { message: `Fetching Ultra OSM boundary for ${countryName} (adapting to Zoom ${currentZoom.toFixed(1)})...`, isError: false });
     }
 
-    let resolved = await osmService.resolveCountryBoundaryAsync(countryCode, countryName, data && data.item);
+    let resolved = await osmService.resolveCountryBoundaryAsync(countryCode, countryName, data && data.item, {
+      compZoom: currentZoom,
+      centerLat: center ? center.lat : null,
+      centerLng: center ? center.lng : null
+    });
 
     // If Ultra OSM query fails or network is offline, report error clearly
     if (!resolved || !resolved.ok || !resolved.features || !resolved.features.length) {
@@ -256,8 +265,6 @@ class VectorMapManager {
     const featureSignature = this._getFeatureSignature(resolved.country, resolved.features, 'ultra-osm');
     const labelPoint = resolved.country.label || null;
     const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
-    const currentZoom = (this.app && this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
-      ? this.app.session.mapState.compZoom : 6;
 
     const payload = {
       dataTier: 'ultra-osm',

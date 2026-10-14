@@ -41,7 +41,7 @@ async function runAsyncTest(name, fn) {
   runTest('OsmBoundaryService instantiates with default limits', () => {
     const service = new OsmBoundaryService();
     assert.strictEqual(service.MAP_SIZE, 262144);
-    assert.strictEqual(service.MAX_POINTS, 85000);
+    assert.strictEqual(service.MAX_POINTS, 3500);
   });
 
   runTest('projectPoint produces bounded Web Mercator coordinates with 2 decimals', () => {
@@ -181,7 +181,46 @@ async function runAsyncTest(name, fn) {
     assert.strictEqual(res.tier, 'ultra-osm');
     assert.strictEqual(res.features.length, 1);
     assert(res.features[0].rings[0].length >= 4);
-    assert.strictEqual(service._memoryCache.has('DZA'), true);
+    assert.strictEqual(service._memoryCache.has('DZA_z6'), true);
+    assert.strictEqual(service._rawGeometryCache.has('DZA'), true);
+  });
+
+  await runAsyncTest('Altitude-LOD: adapts vertex density according to camera zoom and enforces AE safe limit', async () => {
+    const service = new OsmBoundaryService();
+    const denseCoords = [];
+    for (let i = 0; i < 5000; i++) {
+      denseCoords.push([i * 0.001, 30 + Math.sin(i * 0.05) * 0.01]);
+    }
+    denseCoords.push(denseCoords[0]);
+
+    const mockMeta = {
+      boundaryID: 'TEST-LOD',
+      boundaryISO: 'TST',
+      boundaryName: 'Testland',
+      gjDownloadURL: 'https://example.test/test-lod.geojson'
+    };
+    const mockGeoJson = {
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', geometry: { type: 'Polygon', coordinates: [denseCoords] } }]
+    };
+
+    global.TileTransport = {
+      request: (url) => ({
+        promise: Promise.resolve(Buffer.from(JSON.stringify(url.includes('/ADM0/') ? mockMeta : mockGeoJson), 'utf8')),
+        abort: () => {}
+      })
+    };
+
+    // Zoom 3 (Continental altitude)
+    const resZ3 = await service.resolveCountryBoundaryAsync('TST', 'Testland', null, { compZoom: 3 });
+    assert.strictEqual(resZ3.ok, true);
+    assert(resZ3.pointCount <= 3500, 'Points must be <= 3500');
+
+    // Zoom 10 (Regional altitude)
+    const resZ10 = await service.resolveCountryBoundaryAsync('TST', 'Testland', null, { compZoom: 10 });
+    assert.strictEqual(resZ10.ok, true);
+    assert(resZ10.pointCount <= 3500, 'Points must be <= 3500');
+    assert(resZ10.pointCount >= resZ3.pointCount, 'Zoom 10 detail must be >= Zoom 3');
   });
 
   console.log('\n================================================================');
