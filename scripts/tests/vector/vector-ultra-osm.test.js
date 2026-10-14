@@ -141,25 +141,37 @@ async function runAsyncTest(name, fn) {
     assert(outerRings[0].length <= 600); // Decimated from 2000 points
   });
 
-  await runAsyncTest('resolveCountryBoundaryAsync fetches and parses valid GeoJSON polygon', async () => {
+  await runAsyncTest('resolveCountryBoundaryAsync fetches and parses valid GeoBoundaries gbOpen payload', async () => {
     const service = new OsmBoundaryService();
-    const mockOsmPayload = [
-      {
-        osm_id: 12345,
-        osm_type: 'relation',
-        display_name: 'Algeria, North Africa',
-        geojson: {
-          type: 'Polygon',
-          coordinates: [
-            [[0, 30], [5, 30], [5, 35], [0, 35], [0, 30]]
-          ]
+    const mockMetaPayload = {
+      boundaryID: 'DZA-ADM0-test',
+      boundaryISO: 'DZA',
+      boundaryName: 'Algeria',
+      boundarySource: 'OpenStreetMap, Wambacher',
+      meanVertices: 45000,
+      gjDownloadURL: 'https://example.test/geoBoundaries-DZA-ADM0.geojson'
+    };
+    const mockGeoJsonPayload = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [[0, 30], [5, 30], [5, 35], [0, 35], [0, 30]]
+            ]
+          }
         }
-      }
-    ];
+      ]
+    };
 
     global.TileTransport = {
-      request: async () => {
-        return Buffer.from(JSON.stringify(mockOsmPayload), 'utf8');
+      request: (url) => {
+        return {
+          promise: Promise.resolve(Buffer.from(JSON.stringify(url.includes('/ADM0/') ? mockMetaPayload : mockGeoJsonPayload), 'utf8')),
+          abort: () => {}
+        };
       }
     };
 

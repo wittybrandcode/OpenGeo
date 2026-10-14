@@ -161,61 +161,78 @@ class OsmBoundaryService {
       }
     } catch (_storageErr) {}
 
-    // Build Nominatim query
-    const queryName = countryName || searchItem?.name || iso3;
-    const requestUrl = `https://nominatim.openstreetmap.org/search?country=${encodeURIComponent(queryName)}&polygon_geojson=1&format=json&limit=1`;
+    // Query GeoBoundaries gbOpen High-Resolution OSM-Derived Boundaries
+    const apiUrl = `https://www.geoboundaries.org/api/current/gbOpen/${encodeURIComponent(iso3)}/ADM0/`;
     
-    const validation = typeof NetworkPolicy !== 'undefined'
-      ? NetworkPolicy.validateHttpsUrl(requestUrl)
-      : { ok: /^https:\/\//i.test(requestUrl), url: requestUrl };
+    const apiValidation = typeof NetworkPolicy !== 'undefined'
+      ? NetworkPolicy.validateHttpsUrl(apiUrl)
+      : { ok: /^https:\/\//i.test(apiUrl), url: apiUrl };
 
-    if (!validation.ok) {
-      return { ok: false, message: 'OSM query URL rejected by network policy.', fallbackRequired: true };
+    if (!apiValidation.ok) {
+      return { ok: false, message: 'GeoBoundaries API URL rejected by network policy.', fallbackRequired: true };
     }
 
     try {
-      const geojsonResult = await this._fetchJson(validation.url);
-      if (!Array.isArray(geojsonResult) || !geojsonResult.length) {
-        return { ok: false, message: `No OSM boundary found for ${queryName}.`, fallbackRequired: true };
+      const meta = await this._fetchJson(apiValidation.url);
+      if (!meta || !meta.boundaryISO) {
+        return { ok: false, message: `No Ultra-HD boundary metadata found for ${iso3}.`, fallbackRequired: true };
       }
 
-      // Find relation or best polygon entry
-      const entry = geojsonResult.find(item => item.osm_type === 'relation' && item.geojson) ||
-                    geojsonResult.find(item => item.geojson && (item.geojson.type === 'Polygon' || item.geojson.type === 'MultiPolygon')) ||
-                    geojsonResult[0];
-
-      if (!entry || !entry.geojson) {
-        return { ok: false, message: `No vector polygon returned by OSM for ${queryName}.`, fallbackRequired: true };
+      // Select full unsimplified or simplified GeoJSON URL based on vertex budget
+      const expectedVertices = Number(meta.meanVertices) || 0;
+      let downloadUrl = meta.gjDownloadURL;
+      if (expectedVertices > this.MAX_POINTS && meta.simplifiedGeometryGeoJSON) {
+        downloadUrl = meta.simplifiedGeometryGeoJSON;
       }
 
-      const outerRings = this.extractOuterRings(entry.geojson);
-      if (!outerRings.length) {
-        return { ok: false, message: `Could not parse polygon rings for ${queryName}.`, fallbackRequired: true };
+      if (!downloadUrl) {
+        return { ok: false, message: `No boundary download URL found for ${iso3}.`, fallbackRequired: true };
       }
+
+      const downloadValidation = typeof NetworkPolicy !== 'undefined'
+        ? NetworkPolicy.validateHttpsUrl(downloadUrl)
+        : { ok: /^https:\/\//i.test(downloadUrl), url: downloadUrl };
+
+      if (!downloadValidation.ok) {
+        return { ok: false, message: 'Boundary download URL rejected by network policy.', fallbackRequired: true };
+      }
+
+      const geojsonData = await this._fetchJson(downloadValidation.url);
+      if (!geojsonData) {
+        return { ok: false, message: `Failed to load boundary geometry for ${iso3}.`, fallbackRequired: true };
+      }
+
+      // Extract geometry from FeatureCollection or Feature or Geometry
+      const allRings = [];
+      if (geojsonData.type === 'FeatureCollection' && Array.isArray(geojsonData.features)) {
+        for (let fi = 0; fi < geojsonData.features.length; fi++) {
+          const feat = geojsonData.features[fi];
+          if (feat && feat.geometry) {
+            const rings = this.extractOuterRings(feat.geometry);
+            for (let ri = 0; ri < rings.length; ri++) allRings.push(rings[ri]);
+          }
+        }
+      } else if (geojsonData.type === 'Feature' && geojsonData.geometry) {
+        const rings = this.extractOuterRings(geojsonData.geometry);
+        for (let ri = 0; ri < rings.length; ri++) allRings.push(rings[ri]);
+      } else if (geojsonData.type === 'Polygon' || geojsonData.type === 'MultiPolygon') {
+        const rings = this.extractOuterRings(geojsonData);
+        for (let ri = 0; ri < rings.length; ri++) allRings.push(rings[ri]);
+      }
+
+      if (!allRings.length) {
+        return { ok: false, message: `Could not parse polygon rings for ${iso3}.`, fallbackRequired: true };
+      }
+
+      const outerRings = this.decimateRings(allRings);
 
       let pointCount = 0;
       for (let r = 0; r < outerRings.length; r++) {
         pointCount += outerRings[r].length;
       }
 
-      // If point count exceeds MAX_POINTS (85,000), decimate safely every nth point on dense rings
-      if (pointCount > this.MAX_POINTS) {
-        const step = Math.ceil(pointCount / this.MAX_POINTS);
-        for (let r = 0; r < outerRings.length; r++) {
-          const ring = outerRings[r];
-          if (ring.length > 100) {
-            const decimated = [];
-            for (let p = 0; p < ring.length - 1; p += step) {
-              decimated.push(ring[p]);
-            }
-            decimated.push(ring[ring.length - 1]); // keep closed
-            outerRings[r] = decimated;
-          }
-        }
-      }
-
       const centroid = this.computeCentroid(outerRings);
-      const displayName = entry.display_name ? entry.display_name.split(',')[0] : queryName;
+      const displayName = meta.boundaryName || countryName || iso3;
 
       const result = {
         ok: true,
@@ -223,22 +240,22 @@ class OsmBoundaryService {
         country: {
           iso3: iso3,
           name: displayName,
-          nameAr: displayName,
+          nameAr: countryName || displayName,
           label: centroid
         },
         features: [
           {
-            id: `osm-${iso3.toLowerCase()}-exterior`,
+            id: `ultra-${iso3.toLowerCase()}-exterior`,
             rings: outerRings,
             properties: {
-              source: 'OpenStreetMap',
-              osm_id: entry.osm_id,
-              osm_type: entry.osm_type
+              source: meta.boundarySource || 'GeoBoundaries / OpenStreetMap',
+              boundaryID: meta.boundaryID,
+              vertices: pointCount
             }
           }
         ],
         pointCount: pointCount,
-        provenance: 'OpenStreetMap Nominatim Admin Level 2 Boundary'
+        provenance: `GeoBoundaries gbOpen High-Resolution (${meta.boundarySource || 'OSM'})`
       };
 
       // Store in memory cache
@@ -256,7 +273,7 @@ class OsmBoundaryService {
     } catch (fetchErr) {
       return {
         ok: false,
-        message: `OSM boundary fetch failed: ${fetchErr.message}`,
+        message: `Ultra OSM boundary fetch failed: ${fetchErr.message}`,
         fallbackRequired: true
       };
     }
@@ -270,11 +287,14 @@ class OsmBoundaryService {
     if (!transport) {
       throw new Error('TileTransport is required for network operations.');
     }
-    const buffer = await transport.request(url, {
-      timeoutMs: 15000,
-      maxBytes: 10 * 1024 * 1024
+    const res = transport.request(url, {
+      timeoutMs: 20000,
+      maxBytes: 16 * 1024 * 1024
     });
-    const text = new TextDecoder('utf-8').decode(new Uint8Array(buffer));
+    const buffer = res && res.promise ? await res.promise : await res;
+    const text = typeof Buffer !== 'undefined' && Buffer.isBuffer(buffer)
+      ? buffer.toString('utf8')
+      : new TextDecoder('utf-8').decode(new Uint8Array(buffer));
     return JSON.parse(text);
   }
 

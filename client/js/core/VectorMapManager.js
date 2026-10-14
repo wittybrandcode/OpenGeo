@@ -229,17 +229,18 @@ class VectorMapManager {
 
     let resolved = await osmService.resolveCountryBoundaryAsync(countryCode, countryName, data && data.item);
 
-    // If OSM query fails or network is offline, fallback to Studio 10m
+    // If Ultra OSM query fails or network is offline, report error clearly
     if (!resolved || !resolved.ok || !resolved.features || !resolved.features.length) {
-      const fallbackReason = (resolved && resolved.message) || 'OSM service unavailable';
+      const failureReason = (resolved && resolved.message) || 'Ultra OSM boundary unavailable.';
       if (typeof globalEventBus !== 'undefined') {
         globalEventBus.emit('toast:show', {
-          message: `${fallbackReason}. Falling back to Studio 10m...`,
-          type: 'info',
-          duration: 5000
+          message: `Ultra OSM failed: ${failureReason}`,
+          type: 'error',
+          duration: 6000
         });
+        globalEventBus.emit('ui:status', { message: `Ultra OSM fetch failed: ${failureReason}`, isError: true });
       }
-      return this.drawStudioCountryOutlineFromSearch(data);
+      return { ok: false, error: failureReason };
     }
 
     const vectorLimits = this._validateVectorComplexity(resolved.features);
