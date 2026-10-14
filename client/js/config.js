@@ -101,6 +101,15 @@ var OpenGeoConfig = {
         }
       } catch (_e) {}
       return true;
+    })(),
+    ultraOsmCountryOutlinesEnabled: (function() {
+      try {
+        if (typeof localStorage !== 'undefined') {
+          var val = localStorage.getItem('opengeo_ultra_osm_outlines_enabled');
+          if (val !== null) return val === 'true';
+        }
+      } catch (_e) {}
+      return true;
     })()
   },
 

@@ -580,6 +580,26 @@ class SearchPanel {
             });
             actionsDiv.appendChild(studioBtn);
           }
+
+          // Ultra OSM Meter-Level action (active by default or via Settings)
+          const isUltraEnabled = (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features)
+            ? !!OpenGeoConfig.features.ultraOsmCountryOutlinesEnabled
+            : true;
+
+          if (isUltraEnabled) {
+            const ultraBtn = createBtn('zap', 'Draw Ultra OSM country outline (True high-definition ~25,000+ points)', '#d070ff', '24px', () => {
+              this.hideResults();
+              if (typeof globalEventBus !== 'undefined') {
+                globalEventBus.emit('search:drawUltraOsmCountryOutline', {
+                  countryCode: identity.drawingIso3,
+                  searchName: name,
+                  item: item,
+                  identity: identity
+                });
+              }
+            });
+            actionsDiv.appendChild(ultraBtn);
+          }
         }
         
         row.appendChild(nameDiv);

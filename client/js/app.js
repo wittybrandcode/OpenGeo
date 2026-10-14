@@ -10,6 +10,8 @@ class App {
     
     // Initialize New Core Foundation Services
     this.geoDataRepository = typeof GeoDataRepository !== 'undefined' ? new GeoDataRepository() : null;
+    this.osmBoundaryService = typeof OsmBoundaryService !== 'undefined'
+      ? new OsmBoundaryService(this.geoDataRepository) : null;
     this.cartographyPolicy = typeof CartographyPolicy !== 'undefined'
       ? new CartographyPolicy(this.geoDataRepository) : null;
     this.geographyIdentityResolver = typeof GeographyIdentityResolver !== 'undefined'

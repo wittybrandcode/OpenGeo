@@ -20,6 +20,9 @@ class VectorMapManager {
     this._unsubscribeStudioDraw = typeof globalEventBus !== 'undefined'
       ? globalEventBus.on('search:drawStudioCountryOutline', data => this.drawStudioCountryOutlineFromSearch(data))
       : null;
+    this._unsubscribeUltraDraw = typeof globalEventBus !== 'undefined'
+      ? globalEventBus.on('search:drawUltraOsmCountryOutline', data => this.drawUltraOsmCountryOutlineFromSearch(data))
+      : null;
   }
 
   destroy() {
@@ -30,6 +33,10 @@ class VectorMapManager {
     if (typeof this._unsubscribeStudioDraw === 'function') {
       this._unsubscribeStudioDraw();
       this._unsubscribeStudioDraw = null;
+    }
+    if (typeof this._unsubscribeUltraDraw === 'function') {
+      this._unsubscribeUltraDraw();
+      this._unsubscribeUltraDraw = null;
     }
   }
 
@@ -196,6 +203,124 @@ class VectorMapManager {
     } catch (err) {
       globalEventBus.emit('toast:show', { message: `Failed to draw Studio 10m country outline: ${err.message}`, type: 'error' });
       globalEventBus.emit('ui:status', { message: `Vector import failed: ${err.message}`, isError: true });
+      throw err;
+    }
+  }
+
+  async drawUltraOsmCountryOutlineFromSearch(data) {
+    const countryCode = data && data.countryCode;
+    const countryName = data && (data.searchName || (data.identity && data.identity.displayLabel) || countryCode);
+
+    let osmService = (this.app && this.app.osmBoundaryService) || this.osmBoundaryService;
+    if (!osmService) {
+      const OsmBoundaryServiceClass = typeof OsmBoundaryService !== 'undefined'
+        ? OsmBoundaryService
+        : (typeof window !== 'undefined' ? window.OsmBoundaryService : null);
+      if (!OsmBoundaryServiceClass) {
+        throw new Error('OsmBoundaryService is unavailable.');
+      }
+      osmService = new OsmBoundaryServiceClass(this.app ? this.app.geoDataRepository : this.geoDataRepository);
+      this.osmBoundaryService = osmService;
+    }
+
+    if (typeof globalEventBus !== 'undefined') {
+      globalEventBus.emit('ui:status', { message: `Fetching Ultra OSM boundary for ${countryName}...`, isError: false });
+    }
+
+    let resolved = await osmService.resolveCountryBoundaryAsync(countryCode, countryName, data && data.item);
+
+    // If OSM query fails or network is offline, fallback to Studio 10m
+    if (!resolved || !resolved.ok || !resolved.features || !resolved.features.length) {
+      const fallbackReason = (resolved && resolved.message) || 'OSM service unavailable';
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', {
+          message: `${fallbackReason}. Falling back to Studio 10m...`,
+          type: 'info',
+          duration: 5000
+        });
+      }
+      return this.drawStudioCountryOutlineFromSearch(data);
+    }
+
+    const vectorLimits = this._validateVectorComplexity(resolved.features);
+    if (!vectorLimits.ok) {
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', { message: vectorLimits.message, type: 'error', duration: 6000 });
+      }
+      return;
+    }
+
+    const displayName = resolved.country.nameAr || resolved.country.name || countryName || countryCode;
+    const layerName = `${displayName} (Ultra OSM)`;
+    const featureSignature = this._getFeatureSignature(resolved.country, resolved.features, 'ultra-osm');
+    const labelPoint = resolved.country.label || null;
+    const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
+    const currentZoom = (this.app && this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 6;
+
+    const payload = {
+      dataTier: 'ultra-osm',
+      dataset: `osm-boundaries/${countryCode}.json`,
+      selectionRule: 'OpenStreetMap Admin Level 2 exterior boundary with high-precision coastline',
+      layerName: layerName,
+      displayName: layerName,
+      featureId: `country-${countryCode}-ultra-osm`,
+      sourceId: `${countryCode}-ultra-osm`,
+      featureSignature: featureSignature,
+      referenceZoom: currentZoom,
+      anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
+      strokeWidth: 3,
+      strokeColor: [0.82, 0.44, 1.0, 1.0], // Royal purple
+      fillOpacity: 0,
+      features: resolved.features,
+      provenance: resolved.provenance,
+      layers: [{
+        id: 'country-outline-ultra-osm',
+        title: 'COUNTRY OUTLINE (ULTRA OSM)',
+        isClosed: true,
+        features: resolved.features,
+        fillOpacity: 0,
+        strokeOpacity: 100
+      }],
+      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label }] : []
+    };
+
+    const activeMapCompId = this.app && this.app.compositionController
+      ? await this.app.compositionController.resolveActiveMapTarget()
+      : (this.app ? this.app.activeCompId : null);
+
+    if (!activeMapCompId) {
+      if (this.app && this.app.featureManager) await this.app.featureManager.registerPreview(payload, 'country');
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', { message: `${layerName} added as preview map. Create a composition to draw it in AE.`, type: 'info', duration: 5000 });
+        globalEventBus.emit('ui:status', { message: 'Country outline preview only — no active Map composition.', isError: false });
+      }
+      return { previewOnly: true, featureId: payload.featureId };
+    }
+
+    try {
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('ui:status', { message: `Drawing Ultra OSM outline for ${layerName}...`, isError: false });
+      }
+      if (!this.app || !this.app.featureManager) throw new Error('FeatureManager is missing.');
+      const result = await this.app.featureManager.drawPayloadInAE(payload, 'country');
+      if (result.registryDeferred) {
+        if (typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('toast:show', { message: `${layerName} drawn in original composition. Reopen it to refresh Layers.`, type: 'info', duration: 6000 });
+        }
+        return result;
+      }
+      const ptCount = resolved.pointCount ? ` (${resolved.pointCount.toLocaleString()} points)` : '';
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', { message: `Ultra OSM outline created: ${layerName}${ptCount}`, type: 'success' });
+        globalEventBus.emit('ui:status', { message: `Ultra OSM outline created for ${layerName}.`, isError: false });
+      }
+      return result;
+    } catch (err) {
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', { message: `Failed to draw Ultra OSM outline: ${err.message}`, type: 'error' });
+        globalEventBus.emit('ui:status', { message: `Vector import failed: ${err.message}`, isError: true });
+      }
       throw err;
     }
   }
@@ -447,6 +572,8 @@ class VectorMapManager {
     this._unsubscribeDraw = null;
     if (this._unsubscribeStudioDraw) this._unsubscribeStudioDraw();
     this._unsubscribeStudioDraw = null;
+    if (this._unsubscribeUltraDraw) this._unsubscribeUltraDraw();
+    this._unsubscribeUltraDraw = null;
   }
 }
 

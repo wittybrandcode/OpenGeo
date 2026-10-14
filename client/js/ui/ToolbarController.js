@@ -98,6 +98,7 @@ class ToolbarController {
     const fields = document.getElementById('provider-key-fields');
     const customUrl = document.getElementById('provider-custom-url');
     const studioToggle = document.getElementById('setting-studio-outlines-toggle');
+    const ultraToggle = document.getElementById('setting-ultra-osm-outlines-toggle');
     this._renderProviderKeyFields(fields);
     if (!modal || !manager) return;
 
@@ -118,6 +119,19 @@ class ToolbarController {
           isStudioEnabled = OpenGeoConfig.features.studioCountryOutlinesEnabled;
         }
         studioToggle.checked = isStudioEnabled;
+      }
+      if (ultraToggle) {
+        let isUltraEnabled = true;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            const saved = localStorage.getItem('opengeo_ultra_osm_outlines_enabled');
+            if (saved !== null) isUltraEnabled = saved === 'true';
+          }
+        } catch (_e) {}
+        if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features && typeof OpenGeoConfig.features.ultraOsmCountryOutlinesEnabled === 'boolean') {
+          isUltraEnabled = OpenGeoConfig.features.ultraOsmCountryOutlinesEnabled;
+        }
+        ultraToggle.checked = isUltraEnabled;
       }
       modal.style.display = 'flex';
       if (typeof lucide !== 'undefined') {
@@ -145,12 +159,23 @@ class ToolbarController {
         if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features) {
           OpenGeoConfig.features.studioCountryOutlinesEnabled = isEnabled;
         }
-        if (typeof globalEventBus !== 'undefined') {
-          globalEventBus.emit('toast:show', {
-            message: isEnabled ? 'Studio 10m Outlines enabled' : 'Studio 10m Outlines disabled (Standard 10m only)',
-            type: 'info'
-          });
+      }
+      if (ultraToggle) {
+        const isEnabled = !!ultraToggle.checked;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('opengeo_ultra_osm_outlines_enabled', isEnabled ? 'true' : 'false');
+          }
+        } catch (_err) {}
+        if (typeof OpenGeoConfig !== 'undefined' && OpenGeoConfig.features) {
+          OpenGeoConfig.features.ultraOsmCountryOutlinesEnabled = isEnabled;
         }
+      }
+      if (typeof globalEventBus !== 'undefined') {
+        globalEventBus.emit('toast:show', {
+          message: 'Settings saved successfully',
+          type: 'info'
+        });
       }
       close();
     });

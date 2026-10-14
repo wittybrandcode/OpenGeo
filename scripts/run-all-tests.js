@@ -26,7 +26,8 @@ const suites = [
   { name: 'Tile Zoom Blending & Color Discrepancy Suite', script: 'scripts/tests/tile-pipeline/tile-blending.test.js' },
   { name: 'Navigation Drift & Screen-Space Velocity Suite', script: 'scripts/tests/map/navigation-drift.test.js' },
   { name: 'Finalize Decomposition & Delegate Wiring Suite', script: 'scripts/tests/finalize/finalize-decomposition.test.js' },
-  { name: 'Vector Studio 10m Quality & Isolation Suite', script: 'scripts/tests/vector/vector-studio-quality.test.js' }
+  { name: 'Vector Studio 10m Quality & Isolation Suite', script: 'scripts/tests/vector/vector-studio-quality.test.js' },
+  { name: 'Vector Ultra OSM Quality & Integration Suite', script: 'scripts/tests/vector/vector-ultra-osm.test.js' }
 ];
 
 console.log('================================================================');
