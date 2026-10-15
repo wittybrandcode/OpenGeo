@@ -9,6 +9,7 @@ class SearchPanel {
     this._requestGeneration = 0;
     this._domUnsubscribers = [];
     this._detectedTarget = null;
+    this._highlightedIso3 = null;
 
     this.clearBtn = document.getElementById('search-clear-btn');
     this.pasteBtn = document.getElementById('search-paste-btn');
@@ -133,6 +134,12 @@ class SearchPanel {
         this.clearBtn.style.display = 'none';
         this.hideDetectedBadge();
         this.hideResults();
+        if (this._highlightedIso3) {
+          this._highlightedIso3 = null;
+          if (typeof globalEventBus !== 'undefined') {
+            globalEventBus.emit('search:countryHighlight', null);
+          }
+        }
         this.input.focus();
       });
     }
@@ -184,6 +191,12 @@ class SearchPanel {
       if (event.key === 'Escape') {
         this.hideResults();
         this.hideDetectedBadge();
+        if (this._highlightedIso3) {
+          this._highlightedIso3 = null;
+          if (typeof globalEventBus !== 'undefined') {
+            globalEventBus.emit('search:countryHighlight', null);
+          }
+        }
       } else if (event.key === 'Enter') {
         if (this._detectedTarget) {
           this.jumpToDetectedTarget();
@@ -214,7 +227,36 @@ class SearchPanel {
     if (!query) {
       this.hideDetectedBadge();
       this.hideResults();
+      if (this._highlightedIso3) {
+        this._highlightedIso3 = null;
+        if (typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('search:countryHighlight', null);
+        }
+      }
       return;
+    }
+
+    // Live Instant Country Map Vector Preview Detection
+    const countryMatch = this.identityResolver && typeof this.identityResolver.resolveCountryQuery === 'function'
+      ? this.identityResolver.resolveCountryQuery(query) : null;
+    if (countryMatch) {
+      if (this._highlightedIso3 !== countryMatch.iso3) {
+        this._highlightedIso3 = countryMatch.iso3;
+        if (typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('search:countryHighlight', {
+            countryCode: countryMatch.iso3,
+            country: countryMatch.country,
+            autoFit: true
+          });
+        }
+      }
+    } else {
+      if (this._highlightedIso3) {
+        this._highlightedIso3 = null;
+        if (typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('search:countryHighlight', null);
+        }
+      }
     }
 
     const directLoc = this._parseUniversalLocation(query);
@@ -550,6 +592,12 @@ class SearchPanel {
         if (identity.drawingIso3 !== 'UNKNOWN') {
           const drawBtn = createBtn('pen-tool', 'Draw standard 10m country outline (Fast & lightweight)', 'var(--accent-color)', '24px', () => {
             this.hideResults();
+            if (this._highlightedIso3) {
+              this._highlightedIso3 = null;
+              if (typeof globalEventBus !== 'undefined') {
+                globalEventBus.emit('search:countryHighlight', null);
+              }
+            }
             if (typeof globalEventBus !== 'undefined') {
               globalEventBus.emit('search:drawCountryOutline', {
                 countryCode: identity.drawingIso3,
@@ -569,6 +617,12 @@ class SearchPanel {
           if (isStudioEnabled) {
             const studioBtn = createBtn('sparkles', 'Draw Studio 10m country outline (Ultra-HD High-Definition)', '#00e5ff', '24px', () => {
               this.hideResults();
+              if (this._highlightedIso3) {
+                this._highlightedIso3 = null;
+                if (typeof globalEventBus !== 'undefined') {
+                  globalEventBus.emit('search:countryHighlight', null);
+                }
+              }
               if (typeof globalEventBus !== 'undefined') {
                 globalEventBus.emit('search:drawStudioCountryOutline', {
                   countryCode: identity.drawingIso3,
@@ -589,6 +643,12 @@ class SearchPanel {
           if (isUltraEnabled) {
             const ultraBtn = createBtn('zap', 'Draw Ultra OSM country outline (True high-definition ~25,000+ points)', '#d070ff', '24px', () => {
               this.hideResults();
+              if (this._highlightedIso3) {
+                this._highlightedIso3 = null;
+                if (typeof globalEventBus !== 'undefined') {
+                  globalEventBus.emit('search:countryHighlight', null);
+                }
+              }
               if (typeof globalEventBus !== 'undefined') {
                 globalEventBus.emit('search:drawUltraOsmCountryOutline', {
                   countryCode: identity.drawingIso3,

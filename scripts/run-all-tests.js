@@ -27,7 +27,8 @@ const suites = [
   { name: 'Navigation Drift & Screen-Space Velocity Suite', script: 'scripts/tests/map/navigation-drift.test.js' },
   { name: 'Finalize Decomposition & Delegate Wiring Suite', script: 'scripts/tests/finalize/finalize-decomposition.test.js' },
   { name: 'Vector Studio 10m Quality & Isolation Suite', script: 'scripts/tests/vector/vector-studio-quality.test.js' },
-  { name: 'Vector Ultra OSM Quality & Integration Suite', script: 'scripts/tests/vector/vector-ultra-osm.test.js' }
+  { name: 'Vector Ultra OSM Quality & Integration Suite', script: 'scripts/tests/vector/vector-ultra-osm.test.js' },
+  { name: 'Live Country Highlight & Vector Preview Suite', script: 'scripts/tests/vector/live-country-highlight.test.js' }
 ];
 
 console.log('================================================================');

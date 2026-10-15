@@ -65,6 +65,8 @@ class App {
     
     // Initialize Overlays
     this.markerLayer = new MarkerLayer(this.viewport);
+    this.countryHighlightLayer = typeof CountryHighlightLayer !== 'undefined'
+      ? new CountryHighlightLayer(this.viewport, this.geoDataRepository) : null;
     this.geoJSONValidator = typeof GeoJSONValidator !== 'undefined' ? new GeoJSONValidator() : null;
     this.geoJSONLayer = new GeoJSONLayer(this.viewport, this.geoJSONValidator);
     this.featureOverlayLayer = new FeatureOverlayLayer(this.viewport, this.featureRegistry);
@@ -188,6 +190,7 @@ class App {
     if (this.projectMapsPanel) this.projectMapsPanel.dispose();
     if (this.dialog) this.dialog.dispose();
     if (this.markerLayer) this.markerLayer.dispose();
+    if (this.countryHighlightLayer && typeof this.countryHighlightLayer.clearHighlight === 'function') this.countryHighlightLayer.clearHighlight();
     if (this.geoJSONLayer) this.geoJSONLayer.dispose();
     if (this.vectorPreviewLayer) this.vectorPreviewLayer.dispose();
     if (this.previewController) this.previewController.dispose();

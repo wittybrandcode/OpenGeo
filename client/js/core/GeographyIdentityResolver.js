@@ -21,6 +21,10 @@ class GeographyIdentityResolver {
       .normalize('NFKC')
       .trim()
       .toLocaleLowerCase()
+      .replace(/[\u064B-\u065F\u0670]/g, '')
+      .replace(/[إأآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي')
       .replace(/[._-]+/g, ' ')
       .replace(/\s+/g, ' ');
   }
@@ -33,6 +37,38 @@ class GeographyIdentityResolver {
         if (!normalized || this._countryAliases.has(normalized)) return;
         this._countryAliases.set(normalized, iso3);
       });
+    });
+
+    const commonArabicAliases = {
+      USA: ['امريكا', 'أمريكا', 'الولايات المتحدة', 'الولايات المتحدة الامريكية', 'الولايات المتحدة الأمريكية', 'United States', 'USA', 'US'],
+      SAU: ['السعودية', 'السعوديه', 'المملكة العربية السعودية', 'المملكه العربيه السعوديه'],
+      ARE: ['الامارات', 'الإمارات', 'الامارات العربية المتحدة', 'الإمارات العربية المتحدة'],
+      GBR: ['بريطانيا', 'المملكة المتحدة', 'المملكه المتحده', 'انجلترا', 'إنجلترا', 'UK', 'United Kingdom'],
+      RUS: ['روسيا', 'الاتحاد الروسي'],
+      EGY: ['مصر', 'جمهورية مصر العربية'],
+      DEU: ['المانيا', 'ألمانيا'],
+      FRA: ['فرنسا', 'الجمهورية الفرنسية', 'FR'],
+      ESP: ['اسبانيا', 'إسبانيا'],
+      ITA: ['ايطاليا', 'إيطاليا'],
+      TUR: ['تركيا'],
+      CHN: ['الصين', 'جمهورية الصين الشعبية'],
+      JPN: ['اليابان'],
+      CAN: ['كندا'],
+      AUS: ['استراليا', 'أستراليا'],
+      BRA: ['البرازيل'],
+      IND: ['الهند'],
+      KOR: ['كوريا الجنوبية', 'كوريا'],
+      ZAF: ['جنوب افريقيا', 'جنوب أفريقيا']
+    };
+    Object.keys(commonArabicAliases).forEach(iso3 => {
+      if (this.countries[iso3]) {
+        commonArabicAliases[iso3].forEach(alias => {
+          const normalized = this._normalize(alias);
+          if (normalized && !this._countryAliases.has(normalized)) {
+            this._countryAliases.set(normalized, iso3);
+          }
+        });
+      }
     });
 
     const overrides = this.registry.identityOverrides || {};
@@ -49,6 +85,32 @@ class GeographyIdentityResolver {
       const iso3 = String(relations[key] || '').toUpperCase();
       if (this.countries[iso3]) this._relationIdentities.set(this._normalize(key), iso3);
     });
+  }
+
+  resolveCountryQuery(query) {
+    if (!query || typeof query !== 'string') return null;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return null;
+
+    const directCode = this._resolveCode(trimmed);
+    if (directCode && this.countries[directCode]) {
+      return { iso3: directCode, country: this.countries[directCode] };
+    }
+
+    const exactIso3 = this._resolveExactAlias(trimmed, false);
+    if (exactIso3 && this.countries[exactIso3]) {
+      return { iso3: exactIso3, country: this.countries[exactIso3] };
+    }
+
+    const norm = this._normalize(trimmed);
+    if (norm) {
+      const foundIso3 = this._countryAliases.get(norm);
+      if (foundIso3 && this.countries[foundIso3]) {
+        return { iso3: foundIso3, country: this.countries[foundIso3] };
+      }
+    }
+
+    return null;
   }
 
   _resolveCode(code) {

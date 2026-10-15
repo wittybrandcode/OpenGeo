@@ -17,11 +17,12 @@ class PreviewController {
 
   render(tiles) {
     if (this.mode === 'vector') {
-      const overlays = [this.app.vectorPreviewLayer, this.app.geoJSONLayer, this.app.featureOverlayLayer, this.app.markerLayer].filter(Boolean);
+      const overlays = [this.app.vectorPreviewLayer, this.app.geoJSONLayer, this.app.featureOverlayLayer, this.app.countryHighlightLayer, this.app.markerLayer].filter(Boolean);
       this.app.mapRenderer.renderVector(overlays);
       return;
     }
-    this.app.mapRenderer.render(tiles || this.app.tileManager.getTilesForRender(), [this.app.geoJSONLayer, this.app.featureOverlayLayer, this.app.markerLayer]);
+    const overlays = [this.app.geoJSONLayer, this.app.featureOverlayLayer, this.app.countryHighlightLayer, this.app.markerLayer].filter(Boolean);
+    this.app.mapRenderer.render(tiles || this.app.tileManager.getTilesForRender(), overlays);
   }
 
   scheduleRender(tiles) {

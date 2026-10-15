@@ -33,6 +33,16 @@ class ApplicationCoordinator {
     this.lifecycle.subscribe('settings:tileSizeChanged', size => this._onTileSizeChanged(size));
     this.lifecycle.subscribe('sync:compChanged', data => this._onCompositionChanged(data));
     this.lifecycle.subscribe('sync:aeCamera', camera => this._onAeCamera(camera));
+    this.lifecycle.subscribe('search:countryHighlight', data => {
+      if (app.countryHighlightLayer) {
+        if (!data || !data.countryCode) {
+          app.countryHighlightLayer.clearHighlight();
+        } else {
+          app.countryHighlightLayer.setHighlight(data.countryCode, data.autoFit !== false);
+        }
+        app._schedulePreviewRender();
+      }
+    });
   }
 
   _onProvidersUpdated() {
