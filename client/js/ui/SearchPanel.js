@@ -73,6 +73,12 @@ class SearchPanel {
   }
 
   jumpToDetectedTarget() {
+    if (this._highlightedIso3 && typeof globalEventBus !== 'undefined') {
+      globalEventBus.emit('search:countryJump', { countryCode: this._highlightedIso3 });
+      this.hideDetectedBadge();
+      this.hideResults();
+      return;
+    }
     if (!this._detectedTarget || !this.viewport) return;
     const { lat, lng, zoom, source } = this._detectedTarget;
     if (typeof lat === 'number' && typeof lng === 'number') {
@@ -198,7 +204,10 @@ class SearchPanel {
           }
         }
       } else if (event.key === 'Enter') {
-        if (this._detectedTarget) {
+        if (this._highlightedIso3 && typeof globalEventBus !== 'undefined') {
+          globalEventBus.emit('search:countryJump', { countryCode: this._highlightedIso3 });
+          this.hideResults();
+        } else if (this._detectedTarget) {
           this.jumpToDetectedTarget();
         } else if (this.input.value && this.input.value.trim().length >= 2) {
           this._geocode(this.input.value.trim());
@@ -236,7 +245,7 @@ class SearchPanel {
       return;
     }
 
-    // Live Instant Country Map Vector Preview Detection
+    // Live Instant Country Map Vector Preview Detection (Highlight without auto-jump)
     const countryMatch = this.identityResolver && typeof this.identityResolver.resolveCountryQuery === 'function'
       ? this.identityResolver.resolveCountryQuery(query) : null;
     if (countryMatch) {
@@ -246,7 +255,7 @@ class SearchPanel {
           globalEventBus.emit('search:countryHighlight', {
             countryCode: countryMatch.iso3,
             country: countryMatch.country,
-            autoFit: true
+            autoFit: false
           });
         }
       }
@@ -553,6 +562,9 @@ class SearchPanel {
              btn.style.color = defaultColor;
           });
           
+          btn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+          });
           btn.addEventListener('click', (e) => {
             e.stopPropagation();
             onClick(btn);
@@ -561,6 +573,9 @@ class SearchPanel {
         };
         
         const jumpToLocation = () => {
+          if (this._highlightedIso3 && typeof globalEventBus !== 'undefined') {
+            globalEventBus.emit('search:countryJump', { countryCode: this._highlightedIso3 });
+          }
           const bbox = item.boundingbox;
           if (bbox && bbox.length === 4) {
             // Nominatim bbox is [south, north, west, east]
@@ -666,6 +681,10 @@ class SearchPanel {
         row.appendChild(actionsDiv);
         
         // Default click on row = Jump
+        row.addEventListener('mousedown', (e) => {
+          if (e.target && typeof e.target.closest === 'function' && e.target.closest('button')) return;
+          e.preventDefault();
+        });
         row.addEventListener('click', () => {
           jumpToLocation();
         });
@@ -674,6 +693,9 @@ class SearchPanel {
       });
       
       this.showResults();
+      if (document.activeElement === this.input) {
+        this.input.focus();
+      }
       
       if (typeof lucide !== 'undefined' && this.resultsList) {
         lucide.createIcons({ root: this.resultsList });

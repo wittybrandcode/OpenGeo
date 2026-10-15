@@ -38,9 +38,17 @@ class ApplicationCoordinator {
         if (!data || !data.countryCode) {
           app.countryHighlightLayer.clearHighlight();
         } else {
-          app.countryHighlightLayer.setHighlight(data.countryCode, data.autoFit !== false);
+          app.countryHighlightLayer.setHighlight(data.countryCode, !!(data && data.autoFit === true));
         }
         app._schedulePreviewRender();
+      }
+    });
+    this.lifecycle.subscribe('search:countryJump', () => {
+      if (app.countryHighlightLayer && typeof app.countryHighlightLayer.zoomToHighlight === 'function') {
+        const jumped = app.countryHighlightLayer.zoomToHighlight(48);
+        if (jumped) {
+          app._schedulePreviewRender();
+        }
       }
     });
   }

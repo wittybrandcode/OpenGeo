@@ -44,6 +44,15 @@ class CountryHighlightLayer {
     }
   }
 
+  zoomToHighlight(padding = 48) {
+    if (this.activeHighlight && this.activeHighlight.bounds && this.viewport && typeof this.viewport.fitBounds === 'function') {
+      const b = this.activeHighlight.bounds;
+      this.viewport.fitBounds(b.south, b.north, b.west, b.east, padding);
+      return true;
+    }
+    return false;
+  }
+
   clearHighlight() {
     this.activeHighlight = null;
   }

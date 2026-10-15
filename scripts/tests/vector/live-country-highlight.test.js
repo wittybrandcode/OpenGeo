@@ -187,6 +187,40 @@ runTest('EventContracts validates search:countryHighlight event specifications',
   assert(!EventContracts.isValid('search:countryHighlight', 'invalid'), 'String payload must be invalid');
 });
 
+runTest('CountryHighlightLayer zoomToHighlight fits bounds when highlight is active', () => {
+  let fitBoundsCalled = false;
+  let fittedPadding = 0;
+  const mockViewport = {
+    zoom: 5,
+    tileSize: 256,
+    width: 800,
+    height: 600,
+    fitBounds: (s, n, w, e, p) => {
+      fitBoundsCalled = true;
+      fittedPadding = p;
+    }
+  };
+
+  const layer = new CountryHighlightLayer(mockViewport, repo);
+  assert.strictEqual(layer.zoomToHighlight(), false, 'zoomToHighlight must return false when no highlight');
+
+  layer.setHighlight('DZA', false); // No auto-fit on typing
+  assert.strictEqual(fitBoundsCalled, false, 'fitBounds must NOT be called on typing when autoFit is false');
+
+  const jumped = layer.zoomToHighlight(48);
+  assert.strictEqual(jumped, true, 'zoomToHighlight must return true when highlight is set');
+  assert.strictEqual(fitBoundsCalled, true, 'fitBounds must be called upon explicit zoomToHighlight');
+  assert.strictEqual(fittedPadding, 48, 'Padding must match 48');
+});
+
+runTest('EventContracts validates search:countryJump event specifications', () => {
+  assert(EventContracts.isKnown('search:countryJump'), 'search:countryJump must be a known event');
+  assert.strictEqual(EventContracts.events.SEARCH_COUNTRY_JUMP, 'search:countryJump');
+  assert(EventContracts.isValid('search:countryJump', { countryCode: 'DZA' }), 'Valid country jump payload');
+  assert(!EventContracts.isValid('search:countryJump', null), 'Null payload must be invalid');
+  assert(!EventContracts.isValid('search:countryJump', {}), 'Empty object must be invalid');
+});
+
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
 if (failed > 0) {
   process.exit(1);
