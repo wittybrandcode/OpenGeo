@@ -164,15 +164,15 @@ class CountryHighlightLayer {
         }
         ctx.closePath();
 
-        // Subtle modern glass fill
-        ctx.fillStyle = 'rgba(0, 229, 255, 0.14)';
+        // Subtle modern glass fill - emerald identity #10b981
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.35)';
         ctx.fill();
 
-        // High-definition neon glow stroke
+        // High-definition white stroke with subtle emerald glow
         ctx.save();
-        ctx.shadowColor = '#00e5ff';
+        ctx.shadowColor = '#10b981';
         ctx.shadowBlur = 8;
-        ctx.strokeStyle = '#00e5ff';
+        ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2.2;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
@@ -219,7 +219,7 @@ class CountryHighlightLayer {
         ctx.fillStyle = 'rgba(10, 16, 26, 0.88)';
         ctx.fill();
 
-        ctx.strokeStyle = 'rgba(0, 229, 255, 0.65)';
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.75)';
         ctx.lineWidth = 1;
         ctx.stroke();
 

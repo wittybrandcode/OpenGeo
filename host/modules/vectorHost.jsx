@@ -328,10 +328,10 @@ function opengeoVectorCreateShapeLayer(outerComp, mapLayerName, payload, definit
     opengeoVectorAddSlider(fx, "Anchor Latitude", Number(anchor.lat) || 0);
     opengeoVectorAddSlider(fx, "Anchor Longitude", Number(anchor.lng) || 0);
     opengeoVectorAddCheckbox(fx, "Show Fill", fillVisible);
-    opengeoVectorAddColor(fx, "Fill Color", payload.fillColor || [0.12, 0.28, 0.42, 1.0]);
-    opengeoVectorAddSlider(fx, "Fill Opacity", definition.fillOpacity !== undefined ? definition.fillOpacity : 15);
+    opengeoVectorAddColor(fx, "Fill Color", payload.fillColor || (definition && definition.fillColor) || [16 / 255, 185 / 255, 129 / 255, 1.0]);
+    opengeoVectorAddSlider(fx, "Fill Opacity", definition.fillOpacity !== undefined ? definition.fillOpacity : 75);
     opengeoVectorAddCheckbox(fx, "Show Stroke", strokeVisible);
-    opengeoVectorAddColor(fx, "Stroke Color", payload.strokeColor || [1.0, 0.8, 0.2, 1.0]);
+    opengeoVectorAddColor(fx, "Stroke Color", payload.strokeColor || (definition && definition.strokeColor) || [1.0, 1.0, 1.0, 1.0]);
     opengeoVectorAddSlider(fx, "Stroke Width", payload.strokeWidth || 3);
     opengeoVectorAddSlider(fx, "Stroke Opacity", definition.strokeOpacity !== undefined ? definition.strokeOpacity : 100);
     opengeoVectorAddSlider(fx, "Trim Start", 0);
@@ -400,7 +400,7 @@ function opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, 
     var sourceText = textLayer.property("ADBE Text Properties").property("ADBE Text Document");
     var document = sourceText.value;
     document.fontSize = 22;
-    document.fillColor = payload.labelColor || [0.86, 0.93, 0.97];
+    document.fillColor = (label && label.color) || payload.labelColor || [1.0, 1.0, 1.0];
     document.justification = ParagraphJustification.CENTER_JUSTIFY;
     sourceText.setValue(document);
   } catch (textStyleError) {
@@ -854,10 +854,10 @@ function opengeoNormalizeVectorFeatureControls(compId) {
       var visible = Number(opengeoVectorReadEffectValue(controller, 'Visible', opengeoVectorReadEffectValue(firstShape, 'Visible', 1))) === 0 ? 0 : 1;
       var anchorLatitude = Number(opengeoVectorReadEffectValue(controller, 'Anchor Latitude', opengeoVectorReadEffectValue(firstShape, 'Anchor Latitude', 0))) || 0;
       var anchorLongitude = Number(opengeoVectorReadEffectValue(controller, 'Anchor Longitude', opengeoVectorReadEffectValue(firstShape, 'Anchor Longitude', 0))) || 0;
-      var strokeColor = opengeoVectorReadEffectValue(controller, 'Stroke Color', opengeoVectorReadEffectValue(firstShape, 'Stroke Color', [1, 0.8, 0.2, 1]));
+      var strokeColor = opengeoVectorReadEffectValue(controller, 'Stroke Color', opengeoVectorReadEffectValue(firstShape, 'Stroke Color', [1.0, 1.0, 1.0, 1.0]));
       var strokeWidth = Number(opengeoVectorReadEffectValue(controller, 'Stroke Width', opengeoVectorReadEffectValue(firstShape, 'Stroke Width', 3))) || 3;
-      var fillColor = opengeoVectorReadEffectValue(controller, 'Fill Color', opengeoVectorReadEffectValue(firstShape, 'Fill Color', [0.12, 0.28, 0.42, 1]));
-      var fillOpacity = Number(opengeoVectorReadEffectValue(controller, 'Fill Opacity', opengeoVectorReadEffectValue(firstShape, 'Fill Opacity', 0))) || 0;
+      var fillColor = opengeoVectorReadEffectValue(controller, 'Fill Color', opengeoVectorReadEffectValue(firstShape, 'Fill Color', [16 / 255, 185 / 255, 129 / 255, 1.0]));
+      var fillOpacity = Number(opengeoVectorReadEffectValue(controller, 'Fill Opacity', opengeoVectorReadEffectValue(firstShape, 'Fill Opacity', 75))) || 75;
 
       for (var shapeIndex = 0; shapeIndex < group.shapes.length; shapeIndex++) {
         var shape = group.shapes[shapeIndex];

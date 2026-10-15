@@ -298,12 +298,25 @@ class FeatureManager {
       selectionRule: 'country exterior rings only (international land borders + coastline; no EEZ)',
       featureId: item.id, featureSignature: item.featureSignature,
       layerName: item.layerName, displayName: item.name, sourceId: item.sourceId,
-      strokeWidth: 3, strokeColor: [1, 0.8, 0.2, 1], fillOpacity: 0,
+      strokeWidth: 3,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
       referenceZoom: currentZoom,
       anchor: latLng ? { lat: latLng.lat, lng: latLng.lng, point } : null,
       features: resolved.features,
-      layers: [{ id: 'country-outline', title: 'COUNTRY OUTLINE', isClosed: true, features: resolved.features, fillOpacity: 0, strokeOpacity: 100 }],
-      labels: point ? [{ name: item.name, point }] : []
+      layers: [{
+        id: 'country-outline',
+        title: 'COUNTRY OUTLINE',
+        isClosed: true,
+        features: resolved.features,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
+      }],
+      labels: point ? [{ name: item.name, point, color: [1.0, 1.0, 1.0] }] : []
     };
   }
 

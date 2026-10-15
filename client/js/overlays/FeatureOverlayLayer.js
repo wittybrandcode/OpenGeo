@@ -17,8 +17,8 @@ class FeatureOverlayLayer {
 
   _renderPayload(ctx, payload) {
     const layers = payload.layers || [];
-    const stroke = this._cssColor(payload.strokeColor, '#1473e6', 1);
-    const fill = this._cssColor(payload.fillColor || payload.strokeColor, '#1473e6', 1);
+    const stroke = this._cssColor(payload.strokeColor, '#ffffff', 1);
+    const fill = this._cssColor(payload.fillColor || payload.strokeColor, '#10b981', 1);
     for (let layerIndex = 0; layerIndex < layers.length; layerIndex++) {
       const definition = layers[layerIndex] || {};
       const closed = definition.isClosed !== false;

@@ -253,6 +253,25 @@ runTest('EventContracts validates search:countryJump event specifications', () =
   assert(!EventContracts.isValid('search:countryJump', {}), 'Empty object must be invalid');
 });
 
+runTest('Vector map default styling enforces identity green fill (#10b981), 75% opacity, white stroke and white labels', () => {
+  const VectorMapManager = require(path.join(root, 'client', 'js', 'core', 'VectorMapManager.js'));
+  const mockApp = { geoDataRepository: repo };
+  const vmm = new VectorMapManager(mockApp);
+
+  // Test _buildGeoJSONPayload defaults
+  const mockValidation = {
+    ok: true,
+    features: [{ geometry: { type: 'Polygon', coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]] } }]
+  };
+  const payload = vmm._buildGeoJSONPayload(mockValidation, 'TestGeoJSON');
+  assert.deepStrictEqual(payload.strokeColor, [1.0, 1.0, 1.0, 1.0], 'Default stroke color must be white');
+  assert(Math.abs(payload.fillColor[0] - 16 / 255) < 1e-4, 'Default fill red channel must match #10b981');
+  assert(Math.abs(payload.fillColor[1] - 185 / 255) < 1e-4, 'Default fill green channel must match #10b981');
+  assert(Math.abs(payload.fillColor[2] - 129 / 255) < 1e-4, 'Default fill blue channel must match #10b981');
+  assert.strictEqual(payload.fillOpacity, 75, 'Default fill opacity must be 75');
+  assert.deepStrictEqual(payload.labelColor, [1.0, 1.0, 1.0], 'Default label color must be white');
+});
+
 console.log(`\nResults: ${passed} passed, ${failed} failed`);
 if (failed > 0) {
   process.exit(1);

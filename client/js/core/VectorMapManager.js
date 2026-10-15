@@ -80,18 +80,22 @@ class VectorMapManager {
       referenceZoom: currentZoom,
       anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
       strokeWidth: 3,
-      strokeColor: [1.0, 0.8, 0.2, 1.0],
-      fillOpacity: 0,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
       features: resolved.features,
       layers: [{
         id: 'country-outline',
         title: 'COUNTRY OUTLINE',
         isClosed: true,
         features: resolved.features,
-        fillOpacity: 0,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
         strokeOpacity: 100
       }],
-      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label }] : []
+      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label, color: [1.0, 1.0, 1.0] }] : []
     };
 
     const activeMapCompId = this.app.compositionController
@@ -164,8 +168,10 @@ class VectorMapManager {
       referenceZoom: currentZoom,
       anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
       strokeWidth: 3,
-      strokeColor: [0.2, 0.8, 1.0, 1.0],
-      fillOpacity: 0,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
       features: resolved.features,
       provenance: resolved.provenance,
       layers: [{
@@ -173,10 +179,12 @@ class VectorMapManager {
         title: 'COUNTRY OUTLINE',
         isClosed: true,
         features: resolved.features,
-        fillOpacity: 0,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
         strokeOpacity: 100
       }],
-      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label }] : []
+      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label, color: [1.0, 1.0, 1.0] }] : []
     };
 
     const activeMapCompId = this.app.compositionController
@@ -279,8 +287,10 @@ class VectorMapManager {
       referenceZoom: currentZoom,
       anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
       strokeWidth: 3,
-      strokeColor: [0.82, 0.44, 1.0, 1.0], // Royal purple
-      fillOpacity: 0,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
       features: resolved.features,
       provenance: resolved.provenance,
       layers: [{
@@ -288,10 +298,12 @@ class VectorMapManager {
         title: 'COUNTRY OUTLINE',
         isClosed: true,
         features: resolved.features,
-        fillOpacity: 0,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
         strokeOpacity: 100
       }],
-      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label }] : []
+      labels: resolved.country.label ? [{ name: layerName, point: resolved.country.label, color: [1.0, 1.0, 1.0] }] : []
     };
 
     const activeMapCompId = this.app && this.app.compositionController
@@ -376,21 +388,29 @@ class VectorMapManager {
       layers.push({
         id: 'geojson-polygons', title: 'POLYGONS', isClosed: true,
         features: [{ id: 'geojson-polygons', name: 'Polygons', isClosed: true, rings: groups.polygons }],
-        fillOpacity: 15, strokeOpacity: 100
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
       });
     }
     if (groups.lines.length) {
       layers.push({
         id: 'geojson-lines', title: 'LINES', isClosed: false,
         features: [{ id: 'geojson-lines', name: 'Lines', isClosed: false, rings: groups.lines }],
-        fillOpacity: 0, strokeOpacity: 100
+        fillOpacity: 0,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
       });
     }
     if (groups.points.length) {
       layers.push({
         id: 'geojson-points', title: 'POINTS', isClosed: true,
         features: [{ id: 'geojson-points', name: 'Points', isClosed: true, rings: groups.points }],
-        fillOpacity: 100, strokeOpacity: 100
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 100,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
       });
     }
     if (!layers.length) {
@@ -409,8 +429,10 @@ class VectorMapManager {
       featureId: featureSignature,
       featureSignature,
       strokeWidth: 3,
-      strokeColor: [0.078, 0.451, 0.902, 1.0],
-      fillColor: [0.078, 0.451, 0.902, 1.0],
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
       layers,
       labels: []
     };
