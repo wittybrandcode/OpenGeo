@@ -507,7 +507,10 @@ class SearchPanel {
         const identity = this.identityResolver
           ? this.identityResolver.resolve(item, query)
           : { drawingIso3: 'UNKNOWN', displayLabel: String(item.display_name || item.name || ''), confidence: 0, ruleId: 'identity.resolver-unavailable' };
-        const displayName = identity.displayLabel;
+        let displayName = identity.displayLabel;
+        if (identity.drawingIso3 !== 'UNKNOWN' && this.identityResolver && typeof this.identityResolver.isCountryItem === 'function' && this.identityResolver.isCountryItem(item, identity.drawingIso3)) {
+          displayName = this.identityResolver.formatCountryName(identity.drawingIso3) || displayName;
+        }
         const name = displayName.split(',')[0] || item.name || 'Location';
         
         // Left side: Name

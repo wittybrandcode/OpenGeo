@@ -185,6 +185,42 @@ class GeographyIdentityResolver {
     });
   }
 
+  formatCountryName(countryOrIso3) {
+    const country = typeof countryOrIso3 === 'string'
+      ? this.countries[countryOrIso3]
+      : (countryOrIso3 || null);
+    if (!country) return '';
+    const nameAr = (country.nameAr || '').trim();
+    const nameEn = (country.name || country.nameLong || country.iso3 || '').trim();
+    if (nameAr && nameEn && nameAr !== nameEn) {
+      return `${nameAr} ${nameEn}`;
+    }
+    return nameAr || nameEn || '';
+  }
+
+  isCountryItem(item, iso3) {
+    if (!item) return false;
+    if (item.addresstype === 'country' || item.type === 'country') return true;
+    if (item.class === 'boundary' && item.type === 'administrative') {
+      const address = item.address || {};
+      if (!address.city && !address.town && !address.village && !address.county) {
+        return true;
+      }
+    }
+    if (iso3 && this.countries[iso3]) {
+      const c = this.countries[iso3];
+      const normName = this._normalize(item.name || item.display_name);
+      if (
+        normName === this._normalize(c.name) ||
+        normName === this._normalize(c.nameAr) ||
+        normName === this._normalize(c.nameLong)
+      ) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   _getDisplayLabel(item, iso3) {
     const rawLabel = String(item.display_name || item.name || '').trim();
     if (!rawLabel || !iso3) return rawLabel;

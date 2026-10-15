@@ -190,17 +190,14 @@ class CountryHighlightLayer {
       );
 
       if (isVisible) {
-        const nameAr = country.nameAr || '';
-        const nameEn = country.name || country.iso3 || '';
-        const labelText = nameAr && nameEn && nameAr !== nameEn ? `${nameAr} • ${nameEn}` : (nameAr || nameEn);
+        const nameAr = (country.nameAr || '').trim();
+        const nameEn = (country.name || country.iso3 || '').trim();
+        const labelText = nameAr && nameEn && nameAr !== nameEn ? `${nameAr} ${nameEn}` : (nameAr || nameEn);
 
         ctx.font = '600 11px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
         const textMetrics = ctx.measureText(labelText);
-        const paddingX = 10;
-        const paddingY = 6;
-        const dotRadius = 3.5;
-        const dotSpacing = 8;
-        const badgeWidth = textMetrics.width + (paddingX * 2) + (dotRadius * 2) + dotSpacing;
+        const paddingX = 14;
+        const badgeWidth = textMetrics.width + (paddingX * 2);
         const badgeHeight = 24;
         const badgeX = labelScreen.x - (badgeWidth / 2);
         const badgeY = labelScreen.y - (badgeHeight / 2);
@@ -226,23 +223,11 @@ class CountryHighlightLayer {
         ctx.lineWidth = 1;
         ctx.stroke();
 
-        // Draw glowing cyan dot indicator
-        const dotX = badgeX + paddingX + dotRadius;
-        const dotY = badgeY + (badgeHeight / 2);
-        ctx.save();
-        ctx.shadowColor = '#00e5ff';
-        ctx.shadowBlur = 6;
-        ctx.fillStyle = '#00e5ff';
-        ctx.beginPath();
-        ctx.arc(dotX, dotY, dotRadius, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-
-        // Draw label text
+        // Draw label text (pure Arabic [space] English with no symbols or bullets)
         ctx.fillStyle = '#ffffff';
         ctx.textBaseline = 'middle';
-        ctx.textAlign = 'left';
-        ctx.fillText(labelText, dotX + dotRadius + dotSpacing, badgeY + (badgeHeight / 2));
+        ctx.textAlign = 'center';
+        ctx.fillText(labelText, labelScreen.x, badgeY + (badgeHeight / 2));
       }
     }
 

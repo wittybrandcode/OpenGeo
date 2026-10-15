@@ -62,8 +62,8 @@ class VectorMapManager {
       return;
     }
 
-    const countryName = resolved.country.nameAr || resolved.country.name || resolved.country.nameLong || resolved.country.iso3;
-    const layerName = String(countryName);
+    const countryName = this._formatCountryName(resolved.country);
+    const layerName = countryName;
     const featureSignature = this._getFeatureSignature(resolved.country, resolved.features);
     const labelPoint = resolved.country.label || null;
     const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
@@ -145,8 +145,8 @@ class VectorMapManager {
       return;
     }
 
-    const countryName = resolved.country.nameAr || resolved.country.name || resolved.country.nameLong || resolved.country.iso3;
-    const layerName = `${countryName} (Studio 10m)`;
+    const countryName = this._formatCountryName(resolved.country);
+    const layerName = countryName;
     const featureSignature = this._getFeatureSignature(resolved.country, resolved.features, 'studio10m');
     const labelPoint = resolved.country.label || null;
     const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
@@ -170,7 +170,7 @@ class VectorMapManager {
       provenance: resolved.provenance,
       layers: [{
         id: 'country-outline-studio10m',
-        title: 'COUNTRY OUTLINE (STUDIO 10M)',
+        title: 'COUNTRY OUTLINE',
         isClosed: true,
         features: resolved.features,
         fillOpacity: 0,
@@ -261,8 +261,8 @@ class VectorMapManager {
       return;
     }
 
-    const displayName = resolved.country.nameAr || resolved.country.name || countryName || countryCode;
-    const layerName = `${displayName} (Ultra OSM)`;
+    const formattedCountryName = this._formatCountryName(resolved.country) || countryName;
+    const layerName = formattedCountryName;
     const featureSignature = this._getFeatureSignature(resolved.country, resolved.features, 'ultra-osm');
     const labelPoint = resolved.country.label || null;
     const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
@@ -285,7 +285,7 @@ class VectorMapManager {
       provenance: resolved.provenance,
       layers: [{
         id: 'country-outline-ultra-osm',
-        title: 'COUNTRY OUTLINE (ULTRA OSM)',
+        title: 'COUNTRY OUTLINE',
         isClosed: true,
         features: resolved.features,
         fillOpacity: 0,
@@ -574,6 +574,24 @@ class VectorMapManager {
     return points <= maxPoints
       ? { ok: true, points: points }
       : { ok: false, message: `Country-outline import exceeds ${maxPoints.toLocaleString()} points.` };
+  }
+
+  _formatCountryName(country) {
+    if (!country) return '';
+    let c = country;
+    const iso3 = country.iso3;
+    if (this.app && this.app.geoDataRepository && iso3) {
+      const canonical = this.app.geoDataRepository.getCountryOutline(iso3);
+      if (canonical && canonical.country) {
+        c = Object.assign({}, canonical.country, country);
+      }
+    }
+    const nameAr = (c.nameAr || '').trim();
+    const nameEn = (c.name || c.nameLong || c.iso3 || '').trim();
+    if (nameAr && nameEn && nameAr !== nameEn) {
+      return `${nameAr} ${nameEn}`;
+    }
+    return nameAr || nameEn || '';
   }
 
   dispose() {

@@ -99,6 +99,35 @@ runTest('GeographyIdentityResolver rejects non-country queries cleanly', () => {
   }
 });
 
+runTest('GeographyIdentityResolver formats country names strictly as Arabic space English', () => {
+  const tests = [
+    { iso3: 'DZA', expected: 'الجزائر Algeria' },
+    { iso3: 'EGY', expected: 'مصر Egypt' },
+    { iso3: 'FRA', expected: 'فرنسا France' },
+    { iso3: 'SAU', expected: 'السعودية Saudi Arabia' },
+    { iso3: 'TUN', expected: 'تونس Tunisia' }
+  ];
+
+  for (const t of tests) {
+    const formatted = resolver.formatCountryName(t.iso3);
+    assert.strictEqual(formatted, t.expected, `Formatted country for ${t.iso3} should be "${t.expected}", got "${formatted}"`);
+    assert(!/[•()/\-_]/.test(formatted), `Country name "${formatted}" must not contain symbols or bullets`);
+  }
+
+  // Also test resolution and formatting for country item
+  const mockCountryItem = {
+    name: 'Algeria',
+    display_name: 'Algeria',
+    class: 'boundary',
+    type: 'administrative',
+    addresstype: 'country'
+  };
+  const decision = resolver.resolve(mockCountryItem, 'Algeria');
+  assert.strictEqual(decision.drawingIso3, 'DZA');
+  assert(resolver.isCountryItem(mockCountryItem, decision.drawingIso3), 'mockCountryItem must be recognized as country');
+  assert.strictEqual(resolver.formatCountryName(decision.drawingIso3), 'الجزائر Algeria');
+});
+
 runTest('CountryHighlightLayer computes bounds and stores country outline', () => {
   let fitBoundsCalled = false;
   let fitted = null;
@@ -173,6 +202,9 @@ runTest('CountryHighlightLayer renders smoothly without errors on mock 2D contex
   assert(drawCalls.length > 10, 'Render must produce draw calls');
   assert(drawCalls.includes('fill'), 'Render must include fill for polygon and badge');
   assert(drawCalls.includes('stroke'), 'Render must include stroke for glowing outline');
+  const fillTextCalls = drawCalls.filter(c => c.startsWith('fillText'));
+  assert(fillTextCalls.includes('fillText(الجزائر Algeria)'), 'Badge text must be strictly "الجزائر Algeria"');
+  assert(!fillTextCalls.some(c => c.includes('•')), 'Badge text must not contain bullet symbol');
 });
 
 runTest('EventContracts validates search:countryHighlight event specifications', () => {
