@@ -238,18 +238,19 @@ class VectorMapManager {
       centerLng: center ? center.lng : null
     });
 
-    // If Ultra OSM query fails or network is offline, report error clearly
+    // If Ultra OSM query fails or network is offline, gracefully fall back to Studio 10m Ultra-HD
     if (!resolved || !resolved.ok || !resolved.features || !resolved.features.length) {
       const failureReason = (resolved && resolved.message) || 'Ultra OSM boundary unavailable.';
+      console.warn(`[VectorMapManager] Ultra OSM unavailable (${failureReason}). Falling back to Studio 10m Ultra-HD.`);
       if (typeof globalEventBus !== 'undefined') {
         globalEventBus.emit('toast:show', {
-          message: `Ultra OSM failed: ${failureReason}`,
-          type: 'error',
+          message: `Ultra OSM network unavailable: drawing Studio 10m Ultra-HD (Offline) instead.`,
+          type: 'info',
           duration: 6000
         });
-        globalEventBus.emit('ui:status', { message: `Ultra OSM fetch failed: ${failureReason}`, isError: true });
+        globalEventBus.emit('ui:status', { message: 'Ultra OSM network offline — drawing Studio 10m Ultra-HD.', isError: false });
       }
-      return { ok: false, error: failureReason };
+      return this.drawStudioCountryOutlineFromSearch(data);
     }
 
     const vectorLimits = this._validateVectorComplexity(resolved.features);

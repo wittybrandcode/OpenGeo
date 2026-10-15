@@ -193,11 +193,26 @@ class OsmBoundaryService {
         return { ok: false, message: `No Ultra-HD boundary metadata found for ${iso3}.`, fallbackRequired: true };
       }
 
-      const downloadUrl = meta.gjDownloadURL || meta.simplifiedGeometryGeoJSON;
-      if (!downloadUrl) {
+      const rawDownloadUrl = meta.gjDownloadURL || meta.simplifiedGeometryGeoJSON;
+      if (!rawDownloadUrl) {
         return { ok: false, message: `No boundary download URL found for ${iso3}.`, fallbackRequired: true };
       }
 
+      // GitHub raw URLs return HTTP 302 without CORS headers, which causes Chromium XHR to fail.
+      // Transforming directly to media.githubusercontent.com bypasses the redirect and provides CORS: *.
+      const normalizeUrl = (urlStr) => {
+        if (!urlStr) return '';
+        let u = String(urlStr);
+        if (u.indexOf('https://github.com/wmgeolab/geoBoundaries/raw/') === 0) {
+          u = u.replace(
+            'https://github.com/wmgeolab/geoBoundaries/raw/',
+            'https://media.githubusercontent.com/media/wmgeolab/geoBoundaries/'
+          );
+        }
+        return u;
+      };
+
+      const downloadUrl = normalizeUrl(rawDownloadUrl);
       const downloadValidation = typeof NetworkPolicy !== 'undefined'
         ? NetworkPolicy.validateHttpsUrl(downloadUrl)
         : { ok: /^https:\/\//i.test(downloadUrl), url: downloadUrl };
@@ -206,7 +221,22 @@ class OsmBoundaryService {
         return { ok: false, message: 'Boundary download URL rejected by network policy.', fallbackRequired: true };
       }
 
-      const geojsonData = await this._fetchJson(downloadValidation.url);
+      let geojsonData = null;
+      try {
+        geojsonData = await this._fetchJson(downloadValidation.url);
+      } catch (primaryErr) {
+        if (meta.simplifiedGeometryGeoJSON && rawDownloadUrl !== meta.simplifiedGeometryGeoJSON) {
+          const simplifiedUrl = normalizeUrl(meta.simplifiedGeometryGeoJSON);
+          try {
+            geojsonData = await this._fetchJson(simplifiedUrl);
+          } catch (_secErr) {
+            throw primaryErr;
+          }
+        } else {
+          throw primaryErr;
+        }
+      }
+
       if (!geojsonData) {
         return { ok: false, message: `Failed to load boundary geometry for ${iso3}.`, fallbackRequired: true };
       }

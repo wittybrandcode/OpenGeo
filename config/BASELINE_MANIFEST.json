@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "generatedAt": "2026-10-15T10:53:36.393Z",
+  "generatedAt": "2026-10-15T12:02:11.469Z",
   "environment": {
     "node": "v22.18.0",
     "platform": "win32",
@@ -419,7 +419,7 @@
     "client/js/core/NodeRuntime.js": "0198fc292d56126718574936e5735d0224d23fcd121fd538964d9ffd79ef845c",
     "client/js/core/OperationLogger.js": "56b9795a12daa7d902c32ede603d5a8e7489e72c647e3ea400554de5b5186abf",
     "client/js/core/OperationSnapshot.js": "e48343f05037130388cecd1e115b76fbd587243f5eee36f77ed47fd992a14349",
-    "client/js/core/OsmBoundaryService.js": "3fc978231620b2bd23e6fc8654b61adb97ff0a03c5feee8124e09fda87d937f1",
+    "client/js/core/OsmBoundaryService.js": "347b86a9256181d7d9bea90f5404eabd12fc70e4934ad00c9f97c91afa8e2ebf",
     "client/js/core/PreferencesStore.js": "f2e63b90a1a1558060cff9e1270e55abb897f5520cd4590d5540ef3626b5b719",
     "client/js/core/PreviewController.js": "64942a4845f8f976af00905461df87e29a20572ffb9d7172f5125a0044b39acd",
     "client/js/core/ProviderManager.js": "4b6d1390d89e5d46823119c3b8ed880ab59ff44639a865f09422494ce4a2a16e",
@@ -428,7 +428,7 @@
     "client/js/core/StateHydrator.js": "bf114ae088677a2270d779c58de543dfdb51464d5e9aea4566a487170466df9b",
     "client/js/core/SyncManager.js": "e97e9a90348bfeb007c27063bf272d01331184b9846b6e2ca3fe1deba7ecf801",
     "client/js/core/ThumbnailProcessor.js": "5d70f5ab43c41fbf32cef0e4cf1b976b80f67cb7db6ce4f67c62ee2a582d4294",
-    "client/js/core/VectorMapManager.js": "b55f72de909c4901cbfc3ca699a556ab2a06a47dac25795d5732c822cb6c4f0b",
+    "client/js/core/VectorMapManager.js": "9b81163c2fdd85af01abdf165c838abe5729eda6a872718be38ad9254fd176b2",
     "client/js/core/VersionMigrations.js": "e4c97945954beec0a49a477224204f2d247643314b713c952a5c0341a1603ba4",
     "client/js/core/fsm/FinalizeStateMachine.js": "5d7cdf95822de2f152577b6761cce0e8f66aef4094bcddbb9f85dd45113171bf",
     "client/js/core/fsm/SyncStateMachine.js": "2f335996437f85967026f743d76e14ed96c8c8e21183979d53dff54c694861bf",
