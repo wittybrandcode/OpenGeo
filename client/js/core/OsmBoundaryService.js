@@ -81,12 +81,22 @@ class OsmBoundaryService {
   }
 
   decimateRings(outerRings, maxLimit) {
+    if (!Array.isArray(outerRings) || !outerRings.length) return [];
     const limit = maxLimit || this.MAX_POINTS;
     let pointCount = 0;
     for (let r = 0; r < outerRings.length; r++) {
-      pointCount += outerRings[r].length;
+      if (Array.isArray(outerRings[r])) pointCount += outerRings[r].length;
     }
     if (pointCount <= limit) return outerRings;
+
+    let PolylineMathClass = typeof PolylineMath !== 'undefined' ? PolylineMath : null;
+    if (!PolylineMathClass && typeof window !== 'undefined' && window.PolylineMath) {
+      PolylineMathClass = window.PolylineMath;
+    }
+
+    if (PolylineMathClass && typeof PolylineMathClass.simplifyRingsForZoom === 'function') {
+      return PolylineMathClass.simplifyRingsForZoom(outerRings, 6, limit);
+    }
 
     const step = Math.ceil(pointCount / limit);
     const result = [];

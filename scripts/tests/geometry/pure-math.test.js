@@ -227,6 +227,65 @@ test('simplifyRingsForZoom enforces safe vertex ceiling (<= 3500 points)', () =>
   assert(totalPts <= 3500, `Expected <= 3500 points, got ${totalPts}`);
 });
 
+test('computeTriangleCurvatureWeight assigns 0 to collinear points and boosts sharp turns', () => {
+  // Straight line points
+  const collinearW = PolylineMath.computeTriangleCurvatureWeight([0, 0], [5, 0], [10, 0]);
+  assert.strictEqual(collinearW, 0, 'Collinear points must have weight 0');
+
+  // Gentle turn with area = 10
+  const gentleW = PolylineMath.computeTriangleCurvatureWeight([0, 0], [10, 1], [20, 0]);
+  // Sharp 90-degree turn with identical area = 10
+  const sharpW = PolylineMath.computeTriangleCurvatureWeight([0, 4.472], [0, 0], [4.472, 0]);
+
+  assert(sharpW > gentleW * 5, 'Sharp 90-degree corner must have substantially higher weight than gentle turn of equal area');
+});
+
+test('simplifyVisvalingam strictly pins cardinal extrema and preserves prominent capes/corners', () => {
+  // Create a polygon with known extrema and intermediate collinear noise
+  const ring = [
+    [0, 10],   // start / west
+    [1, 10],   // collinear
+    [2, 10],   // collinear
+    [5, 50],   // Northernmost cape (maxY=50)
+    [8, 10],   // collinear
+    [10, 10],  // Eastmost point (maxX=10)
+    [10, 0],   // Southeast corner (minY=0)
+    [0, 0],    // Southwest corner (minX=0)
+    [0, 10]    // close ring
+  ];
+
+  const simplified = PolylineMath.simplifyVisvalingam(ring, 5);
+  assert.strictEqual(simplified.length, 5); // Matches target budget
+
+  // Verify cardinal extrema are strictly preserved
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const pt of simplified) {
+    if (pt[0] < minX) minX = pt[0];
+    if (pt[0] > maxX) maxX = pt[0];
+    if (pt[1] < minY) minY = pt[1];
+    if (pt[1] > maxY) maxY = pt[1];
+  }
+  assert.strictEqual(minX, 0, 'minX must be strictly preserved');
+  assert.strictEqual(maxX, 10, 'maxX must be strictly preserved');
+  assert.strictEqual(minY, 0, 'minY must be strictly preserved');
+  assert.strictEqual(maxY, 50, 'Prominent cape apex (maxY=50) must be strictly preserved');
+});
+
+test('simplifyRingsForZoom preserves small island rings in multi-ring configurations', () => {
+  const mainland = [];
+  for (let i = 0; i < 4000; i++) mainland.push([i, Math.sin(i * 0.1) * 10]);
+  mainland.push(mainland[0]);
+
+  const island1 = [[100, 100], [110, 100], [110, 110], [100, 110], [100, 100]];
+  const island2 = [[200, 200], [215, 200], [215, 215], [200, 215], [200, 200]];
+
+  const result = PolylineMath.simplifyRingsForZoom([mainland, island1, island2], 6, 3500);
+  assert.strictEqual(result.length, 3, 'All 3 rings must be preserved');
+  assert.strictEqual(result[1].length, 5, 'Island 1 must retain all points');
+  assert.strictEqual(result[2].length, 5, 'Island 2 must retain all points');
+  assert(result[0].length <= 3500, 'Mainland must be simplified within budget');
+});
+
 test('calculateViewportWorldBBox computes valid bounds around center coordinate', () => {
   const bbox = PolylineMath.calculateViewportWorldBBox(36.75, 3.05, 10, 1920, 1080);
   assert.strictEqual(bbox.length, 4);
