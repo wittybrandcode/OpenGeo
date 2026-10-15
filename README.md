@@ -133,14 +133,12 @@ OpenGeo comes pre-configured with the world's leading open map providers ready t
 
 ## 🛠️ For Developers & Contributors
 
-Are you a software engineer, technical director, or GIS developer interested in extending OpenGeo, creating new tile providers, or integrating custom shaders?
-
-👉 **Read our comprehensive [Developer Architecture Guide](docs/DEVELOPER_GUIDE.md)** for detailed documentation on:
-* The dual-runtime **Chromium + ExtendScript** execution model.
-* The **Bridge Protocol v2** typed command routing.
-* The **MegaTile OffscreenCanvas WebWorker** stitching pipeline.
-* How to run the **12 Master QA Test Suites** (`npm test` and `node scripts/run-all-tests.js`).
-* How to add custom providers, tools, and UI dialogs.
+OpenGeo is built with an enterprise-grade dual-runtime architecture:
+* **Chromium + ExtendScript Engine:** High-performance UI and GIS projection math in CEP Chromium paired with robust ExtendScript automation in Adobe After Effects.
+* **Bridge Protocol v2:** Typed, asynchronous, fail-safe command routing between panel and host.
+* **MegaTile Pipeline:** OffscreenCanvas WebWorker stitching pipeline with seam-free tile blending.
+* **Master QA Suites:** Run `npm test` or `npm run test:all` to execute all verification test suites.
+* **Data Reproducibility:** Run `npm run verify:release` to validate bundle checksums and security baselines.
 
 ---
 

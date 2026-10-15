@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "generatedAt": "2026-10-15T19:15:50.867Z",
+  "generatedAt": "2026-10-15T20:34:06.727Z",
   "environment": {
     "node": "v22.18.0",
     "platform": "win32",
@@ -500,7 +500,7 @@
     "host/modules/vector/vectorLayerFactory.jsx": "c039e4d0ee122d1ebd75cacc55fcf55d92186002d333931b000996e6d95fc482",
     "host/modules/vector/vectorPathBuilder.jsx": "4cab9d28dbe2e34fb5ac3dd8ec02d7f6b4e1ea404901205f392eeeda613a402e",
     "host/modules/vector/vectorStyleEngine.jsx": "24cfe375ec043d6efe02df69d6f80ce620a495f65cfcf95c807de3aa836c0bd8",
-    "package.json": "1ddde288a68119c07ea8a51bd54352456b81e6b1030ce64134a873ee40de591b",
+    "package.json": "05dcf54596d1a068e3e9607058f56383ed79ffbad976215babc8abe3a65b528d",
     "scripts/ae-sync-camera-regression.js": "132c8c2342734dce179504bc88b1b8d446edb23b7b57192c0d043ef7f02a2d1b",
     "scripts/artifact-manifest.js": "efee68713d91b94b0d56778e8365bf9c2b170ca6fb7fecbf5e0d3e028733e2a8",
     "scripts/audit-events.js": "e317b957617a96cdde5928c08cb912e0a5993d05e0bb3b4d5978869d4c1672cb",

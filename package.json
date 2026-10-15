@@ -41,9 +41,6 @@
     "extension"
   ],
   "license": "MIT",
-  "directories": {
-    "doc": "docs"
-  },
   "author": "",
   "type": "commonjs",
   "devDependencies": {
