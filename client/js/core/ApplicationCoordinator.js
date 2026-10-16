@@ -33,6 +33,14 @@ class ApplicationCoordinator {
     this.lifecycle.subscribe('settings:tileSizeChanged', size => this._onTileSizeChanged(size));
     this.lifecycle.subscribe('sync:compChanged', data => this._onCompositionChanged(data));
     this.lifecycle.subscribe('sync:aeCamera', camera => this._onAeCamera(camera));
+    this.lifecycle.subscribe('composition:resized', () => {
+      if (app.compositionController) app.compositionController.refreshFrame();
+      if (app.locationHudController) {
+        app.locationHudController.updateFramingBadge();
+        app.locationHudController.update();
+      }
+      app._triggerTileUpdate();
+    });
     this.lifecycle.subscribe('search:countryHighlight', data => {
       if (app.countryHighlightLayer) {
         if (!data || !data.countryCode) {

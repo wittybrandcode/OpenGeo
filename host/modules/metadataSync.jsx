@@ -239,6 +239,7 @@ function opengeoGetActiveState() {
       stateStr += ', "controllerId":' + controller.index;
       stateStr += ', "appliedRevision":' + opengeoGetSyncRevision(effects);
       stateStr += ', "camera":{"lat":' + lat + ', "lng":' + lng + ', "zoom":' + zoom + ', "pitch":' + pitch + '}';
+      stateStr += ', "compWidth":' + comp.width + ', "compHeight":' + comp.height;
     } catch (ex) {
       return '{}';
     }

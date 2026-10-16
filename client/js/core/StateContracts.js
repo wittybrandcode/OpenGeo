@@ -17,7 +17,8 @@ const OpenGeoStateContracts = {
     return {
       lat: this.clampLatitude(camera.lat),
       lng: this.normalizeLongitude(camera.lng),
-      compZoom: this.clampCompZoom(camera.compZoom)
+      compZoom: this.clampCompZoom(camera.compZoom),
+      pitch: Math.max(0, Math.min(45, Number.isFinite(camera.pitch) ? camera.pitch : 0))
     };
   },
 
@@ -25,7 +26,8 @@ const OpenGeoStateContracts = {
     const camera = this.normalizeCamera({
       lat: Number.isFinite(preferences.lat) ? preferences.lat : (defaults.centerLat || 0),
       lng: Number.isFinite(preferences.lng) ? preferences.lng : (defaults.centerLng || 0),
-      compZoom: Number.isFinite(preferences.zoom) ? preferences.zoom : defaults.zoom
+      compZoom: Number.isFinite(preferences.zoom) ? preferences.zoom : defaults.zoom,
+      pitch: Number.isFinite(preferences.pitch) ? preferences.pitch : 0
     });
     return {
       source: preferences.source || defaults.tileSource,
@@ -33,6 +35,7 @@ const OpenGeoStateContracts = {
       lat: camera.lat,
       lng: camera.lng,
       zoom: camera.compZoom,
+      pitch: camera.pitch,
       documentId: typeof preferences.documentId === 'string' ? preferences.documentId : null,
       isNewVersion: preferences.isNewVersion === true
     };
@@ -46,13 +49,14 @@ const OpenGeoStateContracts = {
       lat: state.camera.lat,
       lng: state.camera.lng,
       zoom: state.camera.compZoom,
+      pitch: state.camera.pitch || 0,
       documentId: state.documentId
     };
   },
 
   toAeCamera(camera) {
     const normalized = this.normalizeCamera(camera);
-    return { lat: normalized.lat, lng: normalized.lng, zoom: normalized.compZoom };
+    return { lat: normalized.lat, lng: normalized.lng, zoom: normalized.compZoom, pitch: normalized.pitch };
   }
 };
 

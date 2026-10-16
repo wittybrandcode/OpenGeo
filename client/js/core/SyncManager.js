@@ -480,7 +480,11 @@ class SyncManager {
       const aeData = {
         operationId: snapshot.operationId,
         tiles: previewTiles,
-        camera: syncResult.camera,
+        camera: Object.assign({}, syncResult.camera, {
+          pitch: Number.isFinite(syncResult.camera && syncResult.camera.pitch)
+            ? syncResult.camera.pitch
+            : ((snapshot.camera && snapshot.camera.pitch) || (this.app.mapState && this.app.mapState.pitch) || 0)
+        }),
         compSettings: snapshot.compSettings || (snapshot.composition ? {
           width: snapshot.composition.width,
           height: snapshot.composition.height

@@ -44,6 +44,14 @@ class CompositionController {
         if (typeof this.app.viewport.setZoom === 'function' && typeof this.app.viewport.clampZoom === 'function') {
           this.app.viewport.setZoom(this.app.viewport.clampZoom(this.app.mapState.getUIZoom()));
         }
+        if (typeof this.app.viewport.setPitch === 'function' && restored.camera.pitch !== undefined) {
+          this.app.viewport.setPitch(restored.camera.pitch);
+          if (this.app.locationHudController) this.app.locationHudController.updatePitch(restored.camera.pitch);
+        }
+      }
+      if (this.app.locationHudController) {
+        this.app.locationHudController.updateFramingBadge();
+        this.app.locationHudController.update();
       }
       return result;
     } finally {

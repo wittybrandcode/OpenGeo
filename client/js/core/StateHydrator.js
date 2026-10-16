@@ -36,6 +36,7 @@ class StateHydrator {
     const lat = metadata.centerLat === undefined ? before.camera.lat : Number(metadata.centerLat);
     const lng = metadata.centerLng === undefined ? before.camera.lng : Number(metadata.centerLng);
     const compZoom = metadata.zoom === undefined ? before.camera.compZoom : Number(metadata.zoom);
+    const pitch = metadata.pitch === undefined ? (before.camera.pitch || 0) : Math.max(0, Math.min(45, Number(metadata.pitch) || 0));
     if (!Number.isFinite(lat) || !Number.isFinite(lng) || !Number.isFinite(compZoom)) return this._failure('HYDRATION_CAMERA_INVALID', 'Persisted camera values are invalid.');
 
     const providerCandidate = typeof metadata.source === 'string' && metadata.source ? metadata.source : before.providerId;
@@ -59,7 +60,7 @@ class StateHydrator {
         },
         providerId,
         tileSize,
-        camera: { lat, lng, compZoom },
+        camera: { lat, lng, compZoom, pitch },
         isFinalized: typeof metadata.isFinalized === 'boolean' ? metadata.isFinalized : before.isFinalized,
         features: Array.isArray(metadata.features) ? metadata.features : []
       }

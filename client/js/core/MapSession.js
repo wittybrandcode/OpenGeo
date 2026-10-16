@@ -151,6 +151,9 @@ class MapSession {
         const camera = this.contracts ? this.contracts.normalizeCamera(documentState.camera) : documentState.camera;
         this.mapState.setCenter(camera.lat, camera.lng);
         this.mapState.compZoom = this._clampCompZoom(camera.compZoom);
+        if (Number.isFinite(camera.pitch)) {
+          this.mapState.setPitch(camera.pitch);
+        }
       }
       if (documentState.isFinalized !== undefined) {
         if (typeof documentState.isFinalized !== 'boolean') throw new Error('Finalization state is invalid.');

@@ -63,6 +63,7 @@
 }
 
 .framing-box-inner {
+  position: relative;
   border: 1.5px solid rgba(255, 255, 255, 0.5);
   box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
   /* Dimensions explicitly controlled by MapState via JS for pixel-perfect sync */

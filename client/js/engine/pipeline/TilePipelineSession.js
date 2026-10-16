@@ -61,6 +61,7 @@ class TilePipelineSession {
           lat: cam.lat,
           lon: cam.lon,
           zoom: cam.zoom,
+          pitch: cam.pitch || 0,
           viewportWidth: cam.viewportWidth,
           viewportHeight: cam.viewportHeight
         }

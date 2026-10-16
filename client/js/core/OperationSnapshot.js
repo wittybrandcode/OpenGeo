@@ -93,7 +93,8 @@ class OperationSnapshot {
       camera: {
         lat: mapState.latitude,
         lon: mapState.longitude,
-        zoom: mapState.compZoom
+        zoom: mapState.compZoom,
+        pitch: mapState.pitch || 0
       },
       composition: {
         width: (app.session.composition && app.session.composition.width) || mapState.compWidth || 1920,

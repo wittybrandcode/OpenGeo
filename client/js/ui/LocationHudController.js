@@ -161,15 +161,21 @@ class LocationHudController {
     const canvas = document.getElementById('map-canvas');
     const p = Math.max(0, Math.min(45, pitch || 0));
     if (canvas) {
+      const mapContainer = canvas.parentElement;
       if (p > 0) {
-        // Frustum compensation: calculate overscan scale centered on map canvas
-        // so that the tilted plane expands outward to eliminate side trapezoid cutoffs
-        // and eliminates top clipping completely up to the 45 degree limit.
-        const pRad = (p * Math.PI) / 180;
-        const overscanScale = 1 + 1.45 * Math.sin(pRad);
-        const translateY = -Math.round(45 * Math.sin(pRad));
+        // Frustum matching: maintain strict 1:1 geographic scale at canvas center
+        // to match After Effects 3D Camera point of interest without artificial zoom
+        const overscanScale = 1.0;
         canvas.style.transformOrigin = 'center center';
-        canvas.style.transform = `scale(${overscanScale.toFixed(4)}) rotateX(${p}deg) translateY(${translateY}px)`;
+        canvas.style.transform = `rotateX(${p}deg)`;
+        if (mapContainer && this.app.mapState && this.app.mapState.compWidth > 0 && this.app.mapState.frameWidth > 0) {
+          const compW = this.app.mapState.compWidth;
+          const compH = this.app.mapState.compHeight || 1080;
+          const scaleRatio = Math.min(this.app.mapState.frameWidth / compW, this.app.mapState.frameHeight / compH);
+          const dZoom = compW * (50 / 36);
+          const dynamicPerspective = Math.max(300, Math.round(dZoom * scaleRatio));
+          mapContainer.style.perspective = `${dynamicPerspective}px`;
+        }
         const vignette = document.getElementById('map-horizon-vignette');
         if (vignette) {
           vignette.style.opacity = '0';
@@ -178,6 +184,9 @@ class LocationHudController {
       } else {
         canvas.style.transformOrigin = 'center center';
         canvas.style.transform = '';
+        if (mapContainer) {
+          mapContainer.style.perspective = '1000px';
+        }
         const vignette = document.getElementById('map-horizon-vignette');
         if (vignette) {
           vignette.style.opacity = '0';
@@ -340,8 +349,12 @@ class LocationHudController {
   updateFramingBadge() {
     if (!this.framingBadgeEl) return;
     const session = this.app.session;
-    const width = (session && session.compSettings && session.compSettings.width) || 1920;
-    const height = (session && session.compSettings && session.compSettings.height) || 1080;
+    const width = (session && session.compSettings && session.compSettings.width) ||
+                  (session && session.composition && session.composition.width) ||
+                  (session && session.mapState && session.mapState.compWidth) || 1920;
+    const height = (session && session.compSettings && session.compSettings.height) ||
+                   (session && session.composition && session.composition.height) ||
+                   (session && session.mapState && session.mapState.compHeight) || 1080;
 
     let ratioName = 'Custom';
     const aspect = width / height;

@@ -33,7 +33,8 @@ const OpenGeoEvents = Object.freeze({
   ERROR_REPORT: 'error:report',
   PROJECT_MAPS_THUMBNAIL_UPDATED: 'project-maps:thumbnail-updated',
   FINALIZE_STATE_CHANGE: 'finalize:stateChange',
-  SYNC_STATE_CHANGE: 'sync:stateChange'
+  SYNC_STATE_CHANGE: 'sync:stateChange',
+  COMPOSITION_RESIZED: 'composition:resized'
 });
 
 const isObject = value => !!value && typeof value === 'object';
@@ -75,7 +76,8 @@ const OpenGeoEventCatalog = Object.freeze({
   'error:report': { owner: 'ErrorBoundary', mode: 'sync', publishers: ['Application'], subscribers: ['OperationLogger'], validate: value => isObject(value) && typeof value.code === 'string' },
   'project-maps:thumbnail-updated': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: ['ProjectMapsPanel'], validate: value => isObject(value) && typeof value.documentId === 'string' },
   'finalize:stateChange': { owner: 'FinalizeController', mode: 'sync', publishers: ['FinalizeController'], subscribers: [], validate: anyPayload },
-  'sync:stateChange': { owner: 'SyncManager', mode: 'sync', publishers: ['SyncManager'], subscribers: [], validate: anyPayload }
+  'sync:stateChange': { owner: 'SyncManager', mode: 'sync', publishers: ['SyncManager'], subscribers: [], validate: anyPayload },
+  'composition:resized': { owner: 'AESyncEngine', mode: 'sync', publishers: ['AESyncEngine'], subscribers: ['App'], validate: value => isObject(value) && Number.isFinite(value.width) && Number.isFinite(value.height) }
 });
 
 const OpenGeoEventContracts = {

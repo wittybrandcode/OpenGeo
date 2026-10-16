@@ -285,6 +285,18 @@ class AESyncEngine {
         this._activeControllerId = state.controllerId;
       }
 
+      if (state.compWidth && state.compHeight && this.session) {
+        const curW = (this.session.composition && this.session.composition.width) || (this.session.mapState && this.session.mapState.compWidth);
+        const curH = (this.session.composition && this.session.composition.height) || (this.session.mapState && this.session.mapState.compHeight);
+        if (curW !== state.compWidth || curH !== state.compHeight) {
+          const updated = Object.assign({}, this.session.composition || {}, { width: state.compWidth, height: state.compHeight });
+          this.session.setComposition(updated);
+          if (typeof globalEventBus !== 'undefined') {
+            globalEventBus.emit('composition:resized', { width: state.compWidth, height: state.compHeight });
+          }
+        }
+      }
+
       if (state.camera) {
         const camHash = `${state.camera.lat}_${state.camera.lng}_${state.camera.zoom}_${state.camera.pitch || 0}`;
         if (this._shouldIgnoreAeCamera(state.camera, state.appliedRevision)) return;

@@ -28,7 +28,8 @@ class DownloadSession {
     this.engine.setCamera(
       this.snapshot.camera.lat,
       this.snapshot.camera.lon,
-      this.snapshot.camera.zoom
+      this.snapshot.camera.zoom,
+      this.snapshot.camera.pitch || 0
     );
     this.engine.setViewport(
       this.snapshot.composition.width,
