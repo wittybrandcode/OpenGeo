@@ -167,7 +167,7 @@ class LocationHudController {
         // to match After Effects 3D Camera point of interest without artificial zoom
         const overscanScale = 1.0;
         canvas.style.transformOrigin = 'center center';
-        canvas.style.transform = `rotateX(${p}deg)`;
+        canvas.style.transform = `translate(-50%, -50%) rotateX(${p}deg)`;
         if (mapContainer && this.app.mapState && this.app.mapState.compWidth > 0 && this.app.mapState.frameWidth > 0) {
           const compW = this.app.mapState.compWidth;
           const compH = this.app.mapState.compHeight || 1080;
@@ -183,7 +183,7 @@ class LocationHudController {
         }
       } else {
         canvas.style.transformOrigin = 'center center';
-        canvas.style.transform = '';
+        canvas.style.transform = 'translate(-50%, -50%)';
         if (mapContainer) {
           mapContainer.style.perspective = '1000px';
         }

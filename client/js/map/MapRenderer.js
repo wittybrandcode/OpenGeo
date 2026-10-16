@@ -27,13 +27,30 @@ class MapRenderer {
   resize(width, height) {
     this.width = width;
     this.height = height;
+    
+    // Frustum horizon buffer: expand canvas dimensions so when tilted in 3D (rotateX),
+    // the plane extends fully to the horizon and sides without top clipping or trapezoid cutoffs.
+    this.bufferX = 2.2;
+    this.bufferY = 2.8;
+
+    const canvasW = Math.round(width * this.bufferX);
+    const canvasH = Math.round(height * this.bufferY);
+    this.canvasW = canvasW;
+    this.canvasH = canvasH;
+    this.offsetX = Math.round((canvasW - width) / 2);
+    this.offsetY = Math.round((canvasH - height) / 2);
+
     if (this.canvas && this.ctx) {
       const dpr = window.devicePixelRatio || 1;
-      this.canvas.width = width * dpr;
-      this.canvas.height = height * dpr;
-      this.canvas.style.width = width + 'px';
-      this.canvas.style.height = height + 'px';
-      this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      this.canvas.width = canvasW * dpr;
+      this.canvas.height = canvasH * dpr;
+      this.canvas.style.width = canvasW + 'px';
+      this.canvas.style.height = canvasH + 'px';
+      this.canvas.style.position = 'absolute';
+      this.canvas.style.left = '50%';
+      this.canvas.style.top = '50%';
+      this.canvas.style.transformOrigin = 'center center';
+      this.ctx.setTransform(dpr, 0, 0, dpr, this.offsetX * dpr, this.offsetY * dpr);
     }
   }
 
@@ -43,7 +60,10 @@ class MapRenderer {
     this._frameTime++;
 
     try {
-      this.ctx.clearRect(0, 0, this.width, this.height);
+      this.ctx.save();
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
 
       if (tiles.length === 0) {
         this._drawPlaceholder(this.ctx, this.width, this.height);
@@ -94,7 +114,10 @@ class MapRenderer {
     if (!this.ctx || !this.canvas) return;
     this._frameTime++;
     try {
-      this.ctx.clearRect(0, 0, this.width, this.height);
+      this.ctx.save();
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
       for (const overlay of overlays) overlay.render(this.ctx);
     } catch (e) {
       this._renderError(e);

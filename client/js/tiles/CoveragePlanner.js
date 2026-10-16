@@ -11,15 +11,15 @@ class CoveragePlanner {
     const pitchRad = (Math.max(0, Math.min(45, pitch)) * Math.PI) / 180;
     // Frustum and camera motion overscan: anticipate rapid pan/inertia and 3D horizon perspective
     const overscanScale = pitch > 0 ? 1 + 1.5 * Math.sin(pitchRad) : 1;
-    const overscanY = pitch > 0 ? Math.max(overscanScale * 1.3, (1 / Math.cos(pitchRad)) * 1.3) : 1;
-    const overscanX = pitch > 0 ? overscanScale * 1.25 : 1;
+    const overscanY = pitch > 0 ? Math.max(overscanScale * 1.5, (1 / Math.cos(pitchRad)) * 1.6, 2.8) : 1;
+    const overscanX = pitch > 0 ? Math.max(overscanScale * 1.3, 2.2) : 1;
     const halfWidth = (viewport.width / (2 * tileScale)) * overscanX;
     const halfHeight = (viewport.height / (2 * tileScale)) * overscanY;
     
     // Gutter buffers: delegate to FrustumMath with safe fallback
     const overscan = (typeof FrustumMath !== 'undefined' && FrustumMath.calculatePitchOverscan)
       ? FrustumMath.calculatePitchOverscan(pitch)
-      : { gutterX: pitch > 0 ? 3 : 1, gutterY: pitch > 0 ? 3 : 1, horizonGutter: pitch > 0 ? 3 : 0 };
+      : { gutterX: pitch > 0 ? 3 : 1, gutterY: pitch > 0 ? 3 : 1, horizonGutter: pitch > 0 ? 4 : 0 };
     const gutterX = overscan.gutterX;
     const gutterY = overscan.gutterY;
     const horizonGutter = overscan.horizonGutter;
