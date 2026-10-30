@@ -34,7 +34,7 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
     'var ox = 0, oy = 0, oz = 0;\n' +
     'try { var pOff = effect("Position Offset")(1); ox = pOff[0]; oy = pOff[1]; } catch(e) {}\n' +
     'try { oz = effect("Altitude (Z Offset)")(1); } catch(e) {}\n' +
-    'if (map && map.transform) { var p = map.transform.position; [p[0] + ox, p[1] + oy, p[2] - 1 - oz]; } else { value + [ox, oy, -oz]; }';
+    'if (map && map.transform) { var p = map.transform.position; var pz = (p && p.length > 2) ? p[2] : 0; [p[0] + ox, p[1] + oy, pz - 1 - oz]; } else { [value[0] + ox, value[1] + oy, (value.length > 2 ? value[2] : 0) - oz]; }';
 
   layer.property("Anchor Point").expression =
     resolveMapPreamble +
@@ -279,7 +279,8 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
       '        }\n' +
       '      }\n' +
       '    } catch(e) {}\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s + ox, mapPos[1] + (pt[1] - camY) * s + oy, -1 - oz];\n' +
+      '    var mapZ = (mapPos && mapPos.length > 2) ? mapPos[2] : 0;\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s + ox, mapPos[1] + (pt[1] - camY) * s + oy, mapZ - 1 - oz];\n' +
       '  } catch(posErr) { value; }\n' +
       '}';
   }
@@ -406,7 +407,7 @@ function opengeoVectorCreateShapeLayer(outerComp, mapLayerName, payload, definit
       var sOpacity = stroke.property("ADBE Vector Stroke Opacity") || stroke.property("Opacity") || stroke.property(4) || stroke.property(2);
       if (sOpacity) sOpacity.expression = 'effect("Show Stroke")("Checkbox") == 1 ? effect("Stroke Opacity")("Slider") : 0';
       var sWidth = stroke.property("ADBE Vector Stroke Width") || stroke.property("Stroke Width") || stroke.property(5) || stroke.property(2);
-      if (sWidth) sWidth.expression = 'effect("Stroke Width")("Slider") / (transform.scale[0] / 100)';
+      if (sWidth) sWidth.expression = 'var s = transform.scale[0] / 100; (s > 0.001 || s < -0.001) ? effect("Stroke Width")("Slider") / Math.abs(s) : 0;';
     }
 
     // Land borders are kept as open source paths. Exposing Trim Paths here
