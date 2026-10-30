@@ -144,6 +144,10 @@ class FeatureManager {
       if (item.type === 'country' && this.app.geoDataRepository) {
         const resolved = this.app.geoDataRepository.getCountryOutline(item.sourceId);
         if (resolved && resolved.features && resolved.features.length) payload = this._buildCountryPayload(item, resolved);
+      } else if (item.type === 'continent' && this.app.geoDataRepository) {
+        const code = item.sourceId ? item.sourceId.replace(/^continent-/, '') : item.id;
+        const resolved = this.app.geoDataRepository.getContinentOutline(code);
+        if (resolved && resolved.features && resolved.features.length) payload = this._buildContinentPayload(item, resolved);
       } else if (item.type === 'geojson' && item.sourcePath) {
         try { payload = await this._readManagedPayload(item.sourcePath, item.id); }
         catch (error) { console.warn('[FeatureManager] Preview payload rejected:', error.message); payload = null; }
@@ -309,6 +313,43 @@ class FeatureManager {
       layers: [{
         id: 'country-outline',
         title: 'COUNTRY OUTLINE',
+        isClosed: true,
+        features: resolved.features,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
+      }],
+      labels: point ? [{ name: item.name, point, color: [1.0, 1.0, 1.0] }] : []
+    };
+  }
+
+  _buildContinentPayload(item, resolved) {
+    const point = resolved.continent.label || null;
+    const latLng = point && typeof MercatorProjection !== 'undefined'
+      ? MercatorProjection.worldPointToLatLng(point[0], point[1], 10, 256) : null;
+    const currentZoom = (this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 3;
+    return {
+      dataset: `vectors/continents/${resolved.continent.code}.json`,
+      selectionRule: 'continent unified landmass exterior rings (no internal country borders)',
+      featureId: item.id,
+      featureSignature: item.featureSignature,
+      layerName: item.layerName,
+      displayName: item.name,
+      sourceId: item.sourceId,
+      referenceZoom: currentZoom,
+      anchor: latLng ? { lat: latLng.lat, lng: latLng.lng, point } : null,
+      strokeWidth: 3,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
+      features: resolved.features,
+      provenance: resolved.provenance,
+      layers: [{
+        id: 'continent-outline',
+        title: 'CONTINENT OUTLINE',
         isClosed: true,
         features: resolved.features,
         fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],

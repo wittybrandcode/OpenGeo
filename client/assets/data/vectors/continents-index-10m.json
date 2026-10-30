@@ -1,0 +1,181 @@
+{
+  "schemaVersion": "1.0.0",
+  "dataTier": "continent50m",
+  "continentCount": 8,
+  "totalPoints": 124592,
+  "totalBytes": 2594761,
+  "continents": {
+    "AFR": {
+      "code": "AFR",
+      "name": "Africa",
+      "nameAr": "أفريقيا",
+      "relativeFile": "continents/AFR.json",
+      "bytes": 51872,
+      "sha256": "8c2faad6c3f4e71fc7c197f37d10f879b67866786c101ded1facc425601759e7",
+      "pointCount": 2363,
+      "ringCount": 36,
+      "label": [
+        146363.73,
+        129250.98
+      ],
+      "aliases": [
+        "افريقيا",
+        "أفريقيا",
+        "القارة السمراء",
+        "Africa",
+        "قارة افريقيا",
+        "قارة أفريقيا"
+      ]
+    },
+    "ASI": {
+      "code": "ASI",
+      "name": "Asia",
+      "nameAr": "آسيا",
+      "relativeFile": "continents/ASI.json",
+      "bytes": 257908,
+      "sha256": "54c96998f9165692fe51bc02f8da7893f4dfe4d22e710eee6eb4456ae08d1121",
+      "pointCount": 11916,
+      "ringCount": 334,
+      "label": [
+        195151.64,
+        104718.27
+      ],
+      "aliases": [
+        "اسيا",
+        "آسيا",
+        "Asia",
+        "قارة اسيا",
+        "قارة آسيا"
+      ]
+    },
+    "ATA": {
+      "code": "ATA",
+      "name": "Antarctica",
+      "nameAr": "القارة القطبية الجنوبية",
+      "relativeFile": "continents/ATA.json",
+      "bytes": 100850,
+      "sha256": "5179659ff1dc11b00cd92235440f32aaad7ce365a2d76fc1ef2ecf52d76f86b3",
+      "pointCount": 4815,
+      "ringCount": 108,
+      "label": [
+        131072,
+        242064
+      ],
+      "aliases": [
+        "انتاركتيكا",
+        "أنتاركتيكا",
+        "القارة القطبية الجنوبية",
+        "Antarctica"
+      ]
+    },
+    "EUR": {
+      "code": "EUR",
+      "name": "Europe",
+      "nameAr": "أوروبا",
+      "relativeFile": "continents/EUR.json",
+      "bytes": 296098,
+      "sha256": "276f221e73bbe87850a387a195d1223e0b9e1629f265dd14698f4b2005009728",
+      "pointCount": 14212,
+      "ringCount": 294,
+      "label": [
+        145635.56,
+        85393.89
+      ],
+      "aliases": [
+        "اوروبا",
+        "أوروبا",
+        "Europe",
+        "قارة اوروبا",
+        "قارة أوروبا"
+      ]
+    },
+    "NAM": {
+      "code": "NAM",
+      "name": "North America",
+      "nameAr": "أمريكا الشمالية",
+      "relativeFile": "continents/NAM.json",
+      "bytes": 412167,
+      "sha256": "132daff964aff91ba00a5f352e476f8577ce5fcf4d604588a9eb2c1773b78446",
+      "pointCount": 20588,
+      "ringCount": 367,
+      "label": [
+        59710.58,
+        93260.82
+      ],
+      "aliases": [
+        "امريكا الشمالية",
+        "امريكا الشماليه",
+        "أمريكا الشمالية",
+        "North America",
+        "قارة امريكا الشمالية"
+      ]
+    },
+    "OCE": {
+      "code": "OCE",
+      "name": "Oceania",
+      "nameAr": "أوقيانوسيا",
+      "relativeFile": "continents/OCE.json",
+      "bytes": 103919,
+      "sha256": "ec4025f7561b63b6cb33ffb63db3ecbdf374a5a6fd82165ef9886bcde6be5c5e",
+      "pointCount": 4780,
+      "ringCount": 217,
+      "label": [
+        229376,
+        149082.96
+      ],
+      "aliases": [
+        "اوقيانوسيا",
+        "أوقيانوسيا",
+        "استراليا",
+        "أستراليا",
+        "Oceania",
+        "Australia"
+      ]
+    },
+    "SAM": {
+      "code": "SAM",
+      "name": "South America",
+      "nameAr": "أمريكا الجنوبية",
+      "relativeFile": "continents/SAM.json",
+      "bytes": 75967,
+      "sha256": "f8b53759a04f19596586fd5888618dd03187d024816ff0bb7ea948a807e4c553",
+      "pointCount": 3622,
+      "ringCount": 68,
+      "label": [
+        88837.69,
+        144400.28
+      ],
+      "aliases": [
+        "امريكا الجنوبية",
+        "امريكا الجنوبيه",
+        "أمريكا الجنوبية",
+        "South America",
+        "قارة امريكا الجنوبية"
+      ]
+    },
+    "WLD": {
+      "code": "WLD",
+      "name": "World Continents",
+      "nameAr": "كل القارات",
+      "relativeFile": "continents/WLD.json",
+      "bytes": 1295980,
+      "sha256": "78976d3d4b88d0415de3607d23f160c237484be8424d18c09404e81b9c6fac1a",
+      "pointCount": 62296,
+      "ringCount": 1424,
+      "label": [
+        141994.67,
+        112260.8
+      ],
+      "aliases": [
+        "خريطة العالم بدون حدود",
+        "كل القارات",
+        "العالم",
+        "قارات العالم",
+        "All Continents",
+        "World Landmass",
+        "World",
+        "Continents"
+      ]
+    }
+  }
+}

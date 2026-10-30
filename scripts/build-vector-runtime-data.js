@@ -35,6 +35,8 @@ function copyPackagedOutputs(temporaryDataDir) {
   removeTarget('vectors/country-outlines-10m.json');
   removeTarget('vectors/country-outlines-studio10m-index.json');
   removeTarget('vectors/country-outlines-studio10m');
+  removeTarget('vectors/continents-index-10m.json');
+  removeTarget('vectors/continents');
   forbiddenArtifacts.forEach(removeTarget);
 
   const packaged = outputRecords(temporaryDataDir).filter(record => classifyOutput(record.path).packaged);

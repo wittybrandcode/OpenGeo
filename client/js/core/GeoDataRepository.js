@@ -292,6 +292,64 @@ class GeoDataRepository {
   }
 
   /**
+   * Resolves a continent vector outline synchronously.
+   * @param {string} continentCode Continent code (e.g. 'AFR', 'EUR', 'ASI', 'NAM', 'SAM', 'OCE', 'ATA', 'WLD')
+   * @returns {{ continent: Object, features: Array, provenance: Object } | null}
+   */
+  getContinentOutline(continentCode) {
+    const code = String(continentCode || '').trim().toUpperCase();
+    if (!code) return null;
+    const index = this.loadDataset('vectors/continents-index-10m.json');
+    if (!index || !index.continents || !index.continents[code]) return null;
+    const entry = index.continents[code];
+    const payload = this.loadDataset(`vectors/${entry.relativeFile}`);
+    if (!payload || !Array.isArray(payload.features)) return null;
+    return {
+      continent: {
+        code: payload.code,
+        name: payload.name,
+        nameAr: payload.nameAr,
+        label: payload.label,
+        dataTier: 'continent50m'
+      },
+      features: payload.features,
+      provenance: payload.provenance || {
+        sourceDataset: 'Natural Earth 1:50m Admin-0 Countries (Unified Landmass)',
+        dataTier: 'continent50m'
+      }
+    };
+  }
+
+  /**
+   * Resolves a continent vector outline asynchronously.
+   * @param {string} continentCode
+   * @returns {Promise<{ continent: Object, features: Array, provenance: Object } | null>}
+   */
+  async resolveContinentOutlineAsync(continentCode) {
+    const code = String(continentCode || '').trim().toUpperCase();
+    if (!code) return null;
+    const index = await this.loadDatasetAsync('vectors/continents-index-10m.json', { maxBytes: 512 * 1024 });
+    if (!index || !index.continents || !index.continents[code]) return null;
+    const entry = index.continents[code];
+    const payload = await this.loadDatasetAsync(`vectors/${entry.relativeFile}`, { maxBytes: 2 * 1024 * 1024 });
+    if (!payload || !Array.isArray(payload.features)) return null;
+    return {
+      continent: {
+        code: payload.code,
+        name: payload.name,
+        nameAr: payload.nameAr,
+        label: payload.label,
+        dataTier: 'continent50m'
+      },
+      features: payload.features,
+      provenance: payload.provenance || {
+        sourceDataset: 'Natural Earth 1:50m Admin-0 Countries (Unified Landmass)',
+        dataTier: 'continent50m'
+      }
+    };
+  }
+
+  /**
    * Normalizes Arabic text by removing Tashkeel and Tatweel for better search matching.
    */
   normalizeArabic(text) {

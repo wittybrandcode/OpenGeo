@@ -3,7 +3,7 @@
   "scope": "client/assets/data",
   "policy": "default-deny",
   "description": "Every packaged OpenGeo data asset must match exactly one group and have an identified runtime or package-audit consumer.",
-  "expectedFileCount": 355,
+  "expectedFileCount": 364,
   "groups": [
     {
       "id": "runtime-data-contract",
@@ -74,6 +74,21 @@
       "regex": "^vectors/country-outlines-studio10m/[A-Z0-9_]{3}\\.json$",
       "expectedCount": 258,
       "purpose": "Studio 10m individual country land outlines",
+      "consumer": "client/js/core/GeoDataRepository.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "continents-index-runtime",
+      "path": "vectors/continents-index-10m.json",
+      "purpose": "Continents outline index and metadata",
+      "consumer": "client/js/core/GeoDataRepository.js",
+      "origin": "generated-runtime"
+    },
+    {
+      "id": "continents-outlines-runtime",
+      "regex": "^vectors/continents/[A-Z0-9_]{3}\\.json$",
+      "expectedCount": 8,
+      "purpose": "Unified continent landmass outlines (no internal country borders)",
       "consumer": "client/js/core/GeoDataRepository.js",
       "origin": "generated-runtime"
     }

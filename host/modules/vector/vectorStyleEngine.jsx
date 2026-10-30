@@ -20,6 +20,22 @@ $._opengeo.vector = $._opengeo.vector || {};
     var strokeVisible = definition.strokeOpacity !== undefined ? definition.strokeOpacity > 0 : true;
 
     opengeoVectorAddCheckbox(fx, "Visible", true);
+    try {
+      var pOffset = fx.addProperty("ADBE Point Control");
+      if (pOffset) {
+        pOffset.name = "Position Offset";
+        if (pOffset.property(1)) pOffset.property(1).setValue([0, 0]);
+      }
+    } catch (pOffErr) {}
+    opengeoVectorAddSlider(fx, "Altitude (Z Offset)", 0);
+    opengeoVectorAddSlider(fx, "Scale Multiplier %", 100);
+    try {
+      var rotOffset = fx.addProperty("ADBE Angle Control");
+      if (rotOffset) {
+        rotOffset.name = "Rotation Offset";
+        if (rotOffset.property(1)) rotOffset.property(1).setValue(0);
+      }
+    } catch (rotOffErr) {}
     opengeoVectorAddSlider(fx, "Anchor Latitude", Number(anchor.lat) || 0);
     opengeoVectorAddSlider(fx, "Anchor Longitude", Number(anchor.lng) || 0);
     opengeoVectorAddCheckbox(fx, "Show Fill", fillVisible);

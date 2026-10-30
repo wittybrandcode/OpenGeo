@@ -23,12 +23,19 @@ class VectorMapManager {
     this._unsubscribeUltraDraw = typeof globalEventBus !== 'undefined'
       ? globalEventBus.on('search:drawUltraOsmCountryOutline', data => this.drawUltraOsmCountryOutlineFromSearch(data))
       : null;
+    this._unsubscribeContinentDraw = typeof globalEventBus !== 'undefined'
+      ? globalEventBus.on('search:drawContinentOutline', data => this.drawContinentOutlineFromSearch(data))
+      : null;
   }
 
   destroy() {
     if (typeof this._unsubscribeDraw === 'function') {
       this._unsubscribeDraw();
       this._unsubscribeDraw = null;
+    }
+    if (typeof this._unsubscribeContinentDraw === 'function') {
+      this._unsubscribeContinentDraw();
+      this._unsubscribeContinentDraw = null;
     }
     if (typeof this._unsubscribeStudioDraw === 'function') {
       this._unsubscribeStudioDraw();
@@ -37,6 +44,87 @@ class VectorMapManager {
     if (typeof this._unsubscribeUltraDraw === 'function') {
       this._unsubscribeUltraDraw();
       this._unsubscribeUltraDraw = null;
+    }
+  }
+
+  async drawContinentOutlineFromSearch(data) {
+    if (!this.app.geoDataRepository) {
+      globalEventBus.emit('toast:show', { message: 'Local continent-outline data is unavailable.', type: 'error' });
+      return;
+    }
+
+    const continentCode = data && data.continentCode;
+    const resolved = await this.app.geoDataRepository.resolveContinentOutlineAsync(continentCode);
+    if (!resolved || !resolved.continent) {
+      globalEventBus.emit('toast:show', { message: 'Continent outline is unavailable.', type: 'error' });
+      return;
+    }
+
+    const continent = resolved.continent;
+    const continentName = continent.nameAr || continent.name || continent.code;
+    const layerName = continentName;
+    const currentZoom = (this.app.session && this.app.session.mapState && Number.isFinite(this.app.session.mapState.compZoom))
+      ? this.app.session.mapState.compZoom : 3;
+
+    const labelPoint = continent.label || null;
+    const labelLatLng = labelPoint ? this._worldPointToLatLng(labelPoint[0], labelPoint[1]) : null;
+
+    const payload = {
+      dataTier: 'continent50m',
+      dataset: `vectors/continents/${continent.code}.json`,
+      selectionRule: 'continent unified landmass exterior rings (no internal country borders)',
+      layerName: layerName,
+      displayName: layerName,
+      featureId: `continent-${continent.code}`,
+      sourceId: `continent-${continent.code}`,
+      featureSignature: `continent-${continent.code}-unified`,
+      referenceZoom: currentZoom,
+      anchor: labelLatLng ? { lat: labelLatLng.lat, lng: labelLatLng.lng, point: labelPoint } : null,
+      strokeWidth: 3,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
+      features: resolved.features,
+      provenance: resolved.provenance,
+      layers: [{
+        id: 'continent-outline',
+        title: 'CONTINENT OUTLINE',
+        isClosed: true,
+        features: resolved.features,
+        fillColor: [16 / 255, 185 / 255, 129 / 255, 1.0],
+        fillOpacity: 75,
+        strokeColor: [1.0, 1.0, 1.0, 1.0],
+        strokeOpacity: 100
+      }],
+      labels: continent.label ? [{ name: layerName, point: continent.label, color: [1.0, 1.0, 1.0] }] : []
+    };
+
+    const activeMapCompId = this.app.compositionController
+      ? await this.app.compositionController.resolveActiveMapTarget()
+      : this.app.activeCompId;
+    if (!activeMapCompId) {
+      if (this.app.featureManager) await this.app.featureManager.registerPreview(payload, 'continent');
+      globalEventBus.emit('toast:show', { message: `${layerName} added as a preview map. Create a composition to draw it in AE.`, type: 'info', duration: 5000 });
+      globalEventBus.emit('ui:status', { message: 'Continent outline preview only — no active Map composition.', isError: false });
+      return { previewOnly: true, featureId: payload.featureId };
+    }
+
+    try {
+      globalEventBus.emit('ui:status', { message: `Drawing unified continent outline for ${layerName}...`, isError: false });
+      if (!this.app.featureManager) throw new Error('FeatureManager is missing.');
+      const result = await this.app.featureManager.drawPayloadInAE(payload, 'continent');
+      if (result.registryDeferred) {
+        globalEventBus.emit('toast:show', { message: `${layerName} was drawn in the original composition. Reopen it to refresh Layers.`, type: 'info', duration: 6000 });
+        return result;
+      }
+      globalEventBus.emit('toast:show', { message: `Continent outline created: ${layerName}`, type: 'success' });
+      globalEventBus.emit('ui:status', { message: `Continent outline created for ${layerName}.`, isError: false });
+      return result;
+    } catch (err) {
+      globalEventBus.emit('toast:show', { message: `Failed to draw continent outline: ${err.message}`, type: 'error' });
+      globalEventBus.emit('ui:status', { message: `Vector import failed: ${err.message}`, isError: true });
+      throw err;
     }
   }
 

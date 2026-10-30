@@ -486,6 +486,22 @@ class SearchPanel {
       }
       if (!Array.isArray(items)) items = [];
       items = items.slice(0, 5).filter(item => item && typeof item === 'object');
+
+      const continentMatch = this.identityResolver && typeof this.identityResolver.resolveContinentQuery === 'function'
+        ? this.identityResolver.resolveContinentQuery(query) : null;
+      if (continentMatch && continentMatch.continent) {
+        const cont = continentMatch.continent;
+        const contItem = {
+          name: cont.nameAr ? `${cont.nameAr} (${cont.name})` : cont.name,
+          display_name: cont.nameAr ? `${cont.nameAr} — قارة موحدة بدون بلدان` : `${cont.name} — Unified Continent (No country borders)`,
+          lat: cont.centerLat !== undefined ? cont.centerLat : (cont.code === 'AFR' ? 2.5 : 20.0),
+          lon: cont.centerLng !== undefined ? cont.centerLng : (cont.code === 'AFR' ? 21.0 : 0.0),
+          isContinent: true,
+          continentCode: continentMatch.code,
+          continent: cont
+        };
+        items.unshift(contItem);
+      }
       
       if (this.resultsList) this.resultsList.textContent = '';
       
@@ -507,11 +523,11 @@ class SearchPanel {
         const identity = this.identityResolver
           ? this.identityResolver.resolve(item, query)
           : { drawingIso3: 'UNKNOWN', displayLabel: String(item.display_name || item.name || ''), confidence: 0, ruleId: 'identity.resolver-unavailable' };
-        let displayName = identity.displayLabel;
-        if (identity.drawingIso3 !== 'UNKNOWN' && this.identityResolver && typeof this.identityResolver.isCountryItem === 'function' && this.identityResolver.isCountryItem(item, identity.drawingIso3)) {
+        let displayName = item.isContinent ? item.display_name : (identity.displayLabel || '');
+        if (!item.isContinent && identity.drawingIso3 !== 'UNKNOWN' && this.identityResolver && typeof this.identityResolver.isCountryItem === 'function' && this.identityResolver.isCountryItem(item, identity.drawingIso3)) {
           displayName = this.identityResolver.formatCountryName(identity.drawingIso3) || displayName;
         }
-        const name = displayName.split(',')[0] || item.name || 'Location';
+        const name = item.isContinent ? item.name : (displayName.split(',')[0] || item.name || 'Location');
         
         // Left side: Name
         const nameDiv = document.createElement('div');
@@ -604,10 +620,30 @@ class SearchPanel {
           }
         }));
         
-        // 3. The pen draws the exact local 10m land perimeter: international
+        // 3. Draw continent action if this is a detected continent item
+        if (item.isContinent) {
+          const continentBtn = createBtn('globe', 'Draw continent outline (No country borders)', '#10b981', '24px', () => {
+            this.hideResults();
+            if (this._highlightedIso3) {
+              this._highlightedIso3 = null;
+              if (typeof globalEventBus !== 'undefined') {
+                globalEventBus.emit('search:countryHighlight', null);
+              }
+            }
+            if (typeof globalEventBus !== 'undefined') {
+              globalEventBus.emit('search:drawContinentOutline', {
+                continentCode: item.continentCode,
+                name: item.name
+              });
+            }
+          });
+          actionsDiv.appendChild(continentBtn);
+        }
+
+        // 4. The pen draws the exact local 10m land perimeter: international
         // borders plus the coastline that bounds the country's land. It is
         // also valid for a city result: the enclosing country is used.
-        if (identity.drawingIso3 !== 'UNKNOWN') {
+        if (!item.isContinent && identity.drawingIso3 !== 'UNKNOWN') {
           const drawBtn = createBtn('pen-tool', 'Draw standard 10m country outline (Fast & lightweight)', 'var(--accent-color)', '24px', () => {
             this.hideResults();
             if (this._highlightedIso3) {

@@ -37,6 +37,11 @@
       "sha256": "519b92f7085a9697af5c3365ebd2432abfcce6f5003d3da5def41c00918c1460"
     },
     {
+      "path": "scripts/build-continent-outlines.js",
+      "bytes": 11761,
+      "sha256": "97a735810b68a0bb02dfe335b9d9527d666e1169d7b862dbb799dc59553177cc"
+    },
+    {
       "path": "scripts/verify-vector-geometry.js",
       "bytes": 15287,
       "sha256": "9fadd3c2ad83a6341c8e8323dbeecc46798773da5310a80de9a3abfa5d6f3a70"
@@ -47,9 +52,9 @@
       "sha256": "5d2b1fc483777b75ba71a0f5a799b284875783abac6d3f50ee4158710ff8a57d"
     }
   ],
-  "outputCount": 356,
-  "outputBytes": 62978558,
-  "aggregateSha256": "675b9e9ebf8bd7af12218fd83c332809b98953ff12750b751de9e9255852a698",
+  "outputCount": 365,
+  "outputBytes": 65578030,
+  "aggregateSha256": "67a73a3e559dc424c7d2c867ea7233927ccfe43b814968fab09bea7acd663998",
   "outputs": [
     {
       "path": "vector-preview/10m/borders-000.json",
@@ -778,6 +783,78 @@
       "classification": "runtime",
       "packaged": true,
       "purpose": "country identity, policy or drawing geometry"
+    },
+    {
+      "path": "vectors/continents-index-10m.json",
+      "bytes": 4711,
+      "sha256": "a827d949e61edf1331952d59a4548aa7635f4ac4ba152db0f1ea316af3bd1823",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "continents index metadata"
+    },
+    {
+      "path": "vectors/continents/AFR.json",
+      "bytes": 51872,
+      "sha256": "8c2faad6c3f4e71fc7c197f37d10f879b67866786c101ded1facc425601759e7",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/ASI.json",
+      "bytes": 257908,
+      "sha256": "54c96998f9165692fe51bc02f8da7893f4dfe4d22e710eee6eb4456ae08d1121",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/ATA.json",
+      "bytes": 100850,
+      "sha256": "5179659ff1dc11b00cd92235440f32aaad7ce365a2d76fc1ef2ecf52d76f86b3",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/EUR.json",
+      "bytes": 296098,
+      "sha256": "276f221e73bbe87850a387a195d1223e0b9e1629f265dd14698f4b2005009728",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/NAM.json",
+      "bytes": 412167,
+      "sha256": "132daff964aff91ba00a5f352e476f8577ce5fcf4d604588a9eb2c1773b78446",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/OCE.json",
+      "bytes": 103919,
+      "sha256": "ec4025f7561b63b6cb33ffb63db3ecbdf374a5a6fd82165ef9886bcde6be5c5e",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/SAM.json",
+      "bytes": 75967,
+      "sha256": "f8b53759a04f19596586fd5888618dd03187d024816ff0bb7ea948a807e4c553",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
+    },
+    {
+      "path": "vectors/continents/WLD.json",
+      "bytes": 1295980,
+      "sha256": "78976d3d4b88d0415de3607d23f160c237484be8424d18c09404e81b9c6fac1a",
+      "classification": "runtime",
+      "packaged": true,
+      "purpose": "unified continent landmass outlines"
     },
     {
       "path": "vectors/country-index-10m.json",

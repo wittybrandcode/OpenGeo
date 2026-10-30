@@ -31,7 +31,10 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
 
   layer.property("Position").expression =
     resolveMapPreamble +
-    'if (map && map.transform) { var p = map.transform.position; [p[0], p[1], p[2] - 1]; } else { value; }';
+    'var ox = 0, oy = 0, oz = 0;\n' +
+    'try { var pOff = effect("Position Offset")(1); ox = pOff[0]; oy = pOff[1]; } catch(e) {}\n' +
+    'try { oz = effect("Altitude (Z Offset)")(1); } catch(e) {}\n' +
+    'if (map && map.transform) { var p = map.transform.position; [p[0] + ox, p[1] + oy, p[2] - 1 - oz]; } else { value + [ox, oy, -oz]; }';
 
   layer.property("Anchor Point").expression =
     resolveMapPreamble +
@@ -104,11 +107,20 @@ function opengeoVectorBindToMap(layer, mapLayerName) {
 
   layer.property("Scale").expression =
     resolveMapPreamble +
-    'if (!map || !map.effect || !map.effect("Zoom")) { value; } else {\n' +
+    'var sm = 1.0;\n' +
+    'try { sm = effect("Scale Multiplier %")(1) / 100; } catch(e) {}\n' +
+    'if (!map || !map.effect || !map.effect("Zoom")) { value * sm; } else {\n' +
     '  var zoom = Math.max(0, Math.min(22, map.effect("Zoom")(1).value));\n' +
-    '  var s = 3.125 * Math.pow(2, zoom);\n' +
+    '  var s = 3.125 * Math.pow(2, zoom) * sm;\n' +
     '  [s, s, s];\n' +
     '}';
+
+  try {
+    layer.property("Z Rotation").expression =
+      'var r = 0;\n' +
+      'try { r = effect("Rotation Offset")(1); } catch(e) {}\n' +
+      'value + r;';
+  } catch (rotPropErr) {}
 }
 
 function opengeoVectorAddCheckbox(fx, name, value) {
@@ -255,7 +267,18 @@ function opengeoVectorCreateController(outerComp, mapLayerName, payload, feature
       '    var s = (Math.pow(2, zoom) * 256) / mapSize;\n' +
       '    var pt = [' + ptX + ', ' + ptY + '];\n' +
       '    var mapPos = map.transform.position;\n' +
-      '    [mapPos[0] + (pt[0] - camX) * s, mapPos[1] + (pt[1] - camY) * s, -1];\n' +
+      '    var ox = 0, oy = 0, oz = 0;\n' +
+      '    try {\n' +
+      '      for (var k = 1; k <= thisComp.numLayers; k++) {\n' +
+      '        var l = thisComp.layer(k);\n' +
+      '        if (l && l.comment && l.comment.indexOf("' + featurePrefix + 'shape") !== -1) {\n' +
+      '          if (l.effect && l.effect("Position Offset")) { var pOff = l.effect("Position Offset")(1); ox = pOff[0]; oy = pOff[1]; }\n' +
+      '          if (l.effect && l.effect("Altitude (Z Offset)")) { oz = l.effect("Altitude (Z Offset)")(1); }\n' +
+      '          break;\n' +
+      '        }\n' +
+      '      }\n' +
+      '    } catch(e) {}\n' +
+      '    [mapPos[0] + (pt[0] - camX) * s + ox, mapPos[1] + (pt[1] - camY) * s + oy, -1 - oz];\n' +
       '  } catch(posErr) { value; }\n' +
       '}';
   }
@@ -325,6 +348,22 @@ function opengeoVectorCreateShapeLayer(outerComp, mapLayerName, payload, definit
     var fillVisible = definition.fillOpacity !== undefined ? definition.fillOpacity > 0 : true;
     var strokeVisible = definition.strokeOpacity !== undefined ? definition.strokeOpacity > 0 : true;
     opengeoVectorAddCheckbox(fx, "Visible", true);
+    try {
+      var pOffset = fx.addProperty("ADBE Point Control");
+      if (pOffset) {
+        pOffset.name = "Position Offset";
+        if (pOffset.property(1)) pOffset.property(1).setValue([0, 0]);
+      }
+    } catch (pOffErr) {}
+    opengeoVectorAddSlider(fx, "Altitude (Z Offset)", 0);
+    opengeoVectorAddSlider(fx, "Scale Multiplier %", 100);
+    try {
+      var rotCtrl = fx.addProperty("ADBE Angle Control");
+      if (rotCtrl) {
+        rotCtrl.name = "Rotation Offset";
+        if (rotCtrl.property(1)) rotCtrl.property(1).setValue(0);
+      }
+    } catch (rotErr) {}
     opengeoVectorAddSlider(fx, "Anchor Latitude", Number(anchor.lat) || 0);
     opengeoVectorAddSlider(fx, "Anchor Longitude", Number(anchor.lng) || 0);
     opengeoVectorAddCheckbox(fx, "Show Fill", fillVisible);
@@ -753,7 +792,17 @@ function opengeoVectorEnsureShapeControl(layer, name, kind, value) {
   if (!effect) {
     if (kind === 'checkbox') effect = opengeoVectorAddCheckbox(effects, name, value === 1 || value === true);
     else if (kind === 'color') effect = opengeoVectorAddColor(effects, name, value);
-    else effect = opengeoVectorAddSlider(effects, name, value);
+    else if (kind === 'point') {
+      try {
+        effect = effects.addProperty("ADBE Point Control");
+        if (effect) effect.name = name;
+      } catch (pErr) {}
+    } else if (kind === 'angle') {
+      try {
+        effect = effects.addProperty("ADBE Angle Control");
+        if (effect) effect.name = name;
+      } catch (aErr) {}
+    } else effect = opengeoVectorAddSlider(effects, name, value);
   }
   try {
     var valueProperty = effect.property(1);
@@ -767,7 +816,8 @@ function opengeoVectorEnsureShapeControl(layer, name, kind, value) {
 
 function opengeoVectorOrderShapeControls(layer) {
   var order = [
-    'Visible', 'Anchor Latitude', 'Anchor Longitude',
+    'Visible', 'Position Offset', 'Altitude (Z Offset)', 'Scale Multiplier %', 'Rotation Offset',
+    'Anchor Latitude', 'Anchor Longitude',
     'Show Fill', 'Fill Color', 'Fill Opacity',
     'Show Stroke', 'Stroke Color', 'Stroke Width', 'Stroke Opacity',
     'Trim Start', 'Trim End', 'Trim Offset',
@@ -863,6 +913,10 @@ function opengeoNormalizeVectorFeatureControls(compId) {
         var shape = group.shapes[shapeIndex];
         try { shape.threeDLayer = true; } catch (s3dErr) { /* shape 3d setting fallback */ }
         opengeoVectorEnsureShapeControl(shape, 'Visible', 'checkbox', visible);
+        opengeoVectorEnsureShapeControl(shape, 'Position Offset', 'point', [0, 0]);
+        opengeoVectorEnsureShapeControl(shape, 'Altitude (Z Offset)', 'slider', 0);
+        opengeoVectorEnsureShapeControl(shape, 'Scale Multiplier %', 'slider', 100);
+        opengeoVectorEnsureShapeControl(shape, 'Rotation Offset', 'angle', 0);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Latitude', 'slider', anchorLatitude);
         opengeoVectorEnsureShapeControl(shape, 'Anchor Longitude', 'slider', anchorLongitude);
         opengeoVectorEnsureShapeControl(shape, 'Stroke Color', 'color', strokeColor);

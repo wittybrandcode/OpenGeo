@@ -2,10 +2,13 @@ class GeographyIdentityResolver {
   constructor(repository, options = {}) {
     this.repository = repository || null;
     this.countryIndex = options.countryIndex || this._loadDataset('vectors/country-index-10m.json') || {};
+    this.continentsIndex = options.continentsIndex || this._loadDataset('vectors/continents-index-10m.json') || {};
     this.registry = options.aliasRegistry || this._loadDataset('geography/identity-aliases.json') || {};
     this.countries = this.countryIndex.countries || {};
+    this.continents = this.continentsIndex.continents || {};
     this.iso2ToIso3 = this.countryIndex.iso2ToIso3 || {};
     this._countryAliases = new Map();
+    this._continentAliases = new Map();
     this._overrideAliases = new Map();
     this._relationIdentities = new Map();
     this._buildLookups();
@@ -85,6 +88,43 @@ class GeographyIdentityResolver {
       const iso3 = String(relations[key] || '').toUpperCase();
       if (this.countries[iso3]) this._relationIdentities.set(this._normalize(key), iso3);
     });
+
+    Object.keys(this.continents).sort().forEach(code => {
+      const cont = this.continents[code] || {};
+      [code, cont.name, cont.nameAr, ...(cont.aliases || [])].forEach(alias => {
+        const normalized = this._normalize(alias);
+        if (!normalized || this._continentAliases.has(normalized)) return;
+        this._continentAliases.set(normalized, code);
+      });
+    });
+  }
+
+  resolveContinentQuery(query) {
+    if (!query || typeof query !== 'string') return null;
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return null;
+
+    const norm = this._normalize(trimmed);
+    if (!norm) return null;
+
+    const directCode = trimmed.toUpperCase();
+    if (this.continents[directCode]) {
+      return { code: directCode, continent: this.continents[directCode] };
+    }
+
+    const matchedCode = this._continentAliases.get(norm);
+    if (matchedCode && this.continents[matchedCode]) {
+      return { code: matchedCode, continent: this.continents[matchedCode] };
+    }
+
+    for (const [alias, code] of this._continentAliases.entries()) {
+      if (norm === alias || norm.indexOf(alias) !== -1 || alias.indexOf(norm) !== -1) {
+        if (this.continents[code]) {
+          return { code: code, continent: this.continents[code] };
+        }
+      }
+    }
+    return null;
   }
 
   resolveCountryQuery(query) {
