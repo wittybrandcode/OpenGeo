@@ -93,6 +93,52 @@ function runContinentsSuite() {
   assert(vectorHostCode.includes('Altitude (Z Offset)'), 'vectorHost.jsx must include Altitude (Z Offset) control');
   assert(vectorHostCode.includes('Scale Multiplier %'), 'vectorHost.jsx must include Scale Multiplier % control');
   assert(vectorHostCode.includes('Rotation Offset'), 'vectorHost.jsx must include Rotation Offset control');
+  assert(vectorHostCode.includes('var featurePrefix = prefix || opengeoVectorFeaturePrefix(featureId);'), 'vectorHost.jsx opengeoVectorCreateController must declare featurePrefix');
+
+  // Verify opengeoVectorCreateController evaluation in sandboxed context
+  const vm = require('vm');
+  const mockContext = {
+    opengeoVectorNormalizeFeatureId: (v) => String(v || '').replace(/[^A-Za-z0-9._-]/g, '-').substring(0, 160),
+    opengeoVectorFeaturePrefix: (id) => 'opengeo:feature:' + String(id || '').replace(/[^A-Za-z0-9._-]/g, '-').substring(0, 160) + ':',
+    opengeoVectorEscapeExpressionString: (s) => String(s || ''),
+    MarkerValue: function(v) { this.comment = v; }
+  };
+  vm.createContext(mockContext);
+  const ctrlFuncSnippet = vectorHostCode.slice(
+    vectorHostCode.indexOf('function opengeoVectorCreateController'),
+    vectorHostCode.indexOf('function opengeoVectorCreateShapeLayer')
+  );
+  vm.runInContext(ctrlFuncSnippet, mockContext);
+
+  let createdComment = null;
+  let createdExpr = null;
+  const mockOuterComp = {
+    layers: {
+      addNull: () => {
+        const mockLayer = {
+          name: '',
+          comment: '',
+          threeDLayer: false,
+          property: (name) => {
+            if (name === 'Anchor Point') return { setValue: () => {} };
+            if (name === 'Position') return {
+              set expression(val) { createdExpr = val; },
+              get expression() { return createdExpr; }
+            };
+            if (name === 'Marker') return { setValueAtTime: () => {} };
+            return { setValue: () => {} };
+          }
+        };
+        return mockLayer;
+      }
+    }
+  };
+
+  const payload = vm.runInContext("({ displayName: 'Africa', layerName: 'OG - Africa', anchor: { point: [100, 200], lat: 10, lng: 20 } })", mockContext);
+  const resultCtrl = mockContext.opengeoVectorCreateController(mockOuterComp, 'OpenGeo Map', payload, 'continent-AFR', 'opengeo:feature:continent-AFR:');
+  assert(resultCtrl, 'opengeoVectorCreateController should return controller layer');
+  assert(resultCtrl.comment === 'opengeo:feature:continent-AFR:controller', 'Controller comment should match prefix');
+  assert(createdExpr && createdExpr.includes('opengeo:feature:continent-AFR:shape'), 'Position expression must reference shape comment correctly');
 
   const vectorStyleCode = fs.readFileSync(path.join(root, 'host', 'modules', 'vector', 'vectorStyleEngine.jsx'), 'utf8');
   assert(vectorStyleCode.includes('Position Offset'), 'vectorStyleEngine.jsx must include Position Offset control');

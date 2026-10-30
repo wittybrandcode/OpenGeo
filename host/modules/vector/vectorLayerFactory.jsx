@@ -20,9 +20,9 @@ $._opengeo.vector = $._opengeo.vector || {};
     return opengeoVectorCreateShapeLayer(outerComp, mapLayerName, payload, definition, comment);
   }
 
-  function createLabel(outerComp, shapeLayer, controller, payload, featureId, prefix) {
+  function createLabel(outerComp, mapLayerName, payload, label, index, comment, visibilityLayerName, controller) {
     if (!outerComp) return null;
-    return opengeoVectorCreateLabelLayer(outerComp, shapeLayer, controller, payload, featureId, prefix);
+    return opengeoVectorCreateLabelLayer(outerComp, mapLayerName, payload, label, index, comment, visibilityLayerName, controller);
   }
 
   namespace.layerFactory = {

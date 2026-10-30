@@ -168,10 +168,11 @@ function opengeoVectorFeaturePrefix(featureId) {
 }
 
 function opengeoVectorCreateController(outerComp, mapLayerName, payload, featureId, prefix) {
+  var featurePrefix = prefix || opengeoVectorFeaturePrefix(featureId);
   var controller = outerComp.layers.addNull();
   if (!controller) return null;
   controller.name = 'OG - ' + String(payload.displayName || payload.layerName || featureId) + ' - CTRL';
-  controller.comment = prefix + 'controller';
+  controller.comment = featurePrefix + 'controller';
   controller.threeDLayer = true;
   try {
     controller.property('Anchor Point').setValue([0, 0]);
