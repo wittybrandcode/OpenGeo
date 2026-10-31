@@ -313,24 +313,31 @@ function opengeoPrepareCompositionRevision(jsonData) {
         tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100]);
         try {
           tileLayer.quality = LayerQuality.BEST;
-          tileLayer.samplingQuality = LayerSamplingQuality.BILINEAR;
+          tileLayer.samplingQuality = (typeof LayerSamplingQuality !== 'undefined' && LayerSamplingQuality.BICUBIC)
+            ? LayerSamplingQuality.BICUBIC
+            : LayerSamplingQuality.BILINEAR;
         } catch (qualityError) {
           /* layer quality fallback */
         }
         try {
-          tileLayer.blendingMode = (data.zoomTransitions && data.zoomTransitions.length > 0)
-            ? BlendingMode.NORMAL
-            : BlendingMode.ALPHA_ADD;
+          var hasTransitions = !!(data.zoomTransitions && data.zoomTransitions.length > 0);
+          if (!hasTransitions && tileGeometry.gutterPixels === 0) {
+            tileLayer.blendingMode = BlendingMode.ALPHA_ADD;
+          } else {
+            tileLayer.blendingMode = BlendingMode.NORMAL;
+          }
         } catch (blendError) {
           try { tileLayer.blendingMode = BlendingMode.NORMAL; } catch (_ignore) {}
         }
 
-        // Apply smooth solid-base opacity transitions (eliminates crossfade darkening dip / alpha hole)
+        // Apply smooth solid-base opacity transitions and trim inactive high-zoom lifespans
         if (data.zoomTransitions && data.zoomTransitions.length > 0) {
           try {
             var opacityProp = tileLayer.property('Opacity') || (tileLayer.property('ADBE Transform Group') && tileLayer.property('ADBE Transform Group').property('ADBE Opacity'));
             if (opacityProp && typeof opacityProp.setValueAtTime === 'function') {
               var effectiveZ = (tile.sourceZoom !== undefined ? tile.sourceZoom : tile.z);
+              var minInTime = null;
+              var maxOutTime = null;
               for (var trIdx = 0; trIdx < data.zoomTransitions.length; trIdx++) {
                 var tr = data.zoomTransitions[trIdx];
                 var isZoomIn = tr.toZoom > tr.fromZoom;
@@ -343,10 +350,12 @@ function opengeoPrepareCompositionRevision(jsonData) {
                     // Zoom-in: higher detail dissolves IN (0% -> 100%) over solid lower layer
                     opacityProp.setValueAtTime(tr.startTime, 0);
                     opacityProp.setValueAtTime(tr.endTime, 100);
+                    if (minInTime === null || tr.startTime < minInTime) minInTime = Math.max(0, tr.startTime - 0.05);
                   } else {
                     // Zoom-out: higher detail dissolves OUT (100% -> 0%) revealing solid lower layer
                     opacityProp.setValueAtTime(tr.startTime, 100);
                     opacityProp.setValueAtTime(tr.endTime, 0);
+                    if (maxOutTime === null || tr.endTime > maxOutTime) maxOutTime = Math.min(resolved.mapComp.duration, tr.endTime + 0.05);
                   }
                 } else if (effectiveZ === lowerZ) {
                   // Lower zoom layer sits UNDERNEATH: MUST REMAIN 100% SOLID throughout transition window!
@@ -354,6 +363,11 @@ function opengeoPrepareCompositionRevision(jsonData) {
                   opacityProp.setValueAtTime(tr.startTime, 100);
                   opacityProp.setValueAtTime(tr.endTime, 100);
                 }
+              }
+              if (minInTime !== null && maxOutTime === null && minInTime > 0) {
+                tileLayer.inPoint = minInTime;
+              } else if (maxOutTime !== null && minInTime === null && maxOutTime < resolved.mapComp.duration) {
+                tileLayer.outPoint = maxOutTime;
               }
             }
           } catch (opacityError) {

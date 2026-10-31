@@ -77,14 +77,19 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
     tileLayer.property('Scale').setValue([tileGeometry.exactScale, tileGeometry.exactScale, 100]);
     try {
       tileLayer.quality = LayerQuality.BEST;
-      tileLayer.samplingQuality = LayerSamplingQuality.BILINEAR;
+      tileLayer.samplingQuality = (typeof LayerSamplingQuality !== 'undefined' && LayerSamplingQuality.BICUBIC)
+        ? LayerSamplingQuality.BICUBIC
+        : LayerSamplingQuality.BILINEAR;
     } catch (qualityError) {
       /* quality fallback */
     }
     try {
-      tileLayer.blendingMode = (data.zoomTransitions && data.zoomTransitions.length > 0)
-        ? BlendingMode.NORMAL
-        : BlendingMode.ALPHA_ADD;
+      var hasActiveTransitions = !!(data.zoomTransitions && data.zoomTransitions.length > 0);
+      if (!hasActiveTransitions && tileGeometry.gutterPixels === 0) {
+        tileLayer.blendingMode = BlendingMode.ALPHA_ADD;
+      } else {
+        tileLayer.blendingMode = BlendingMode.NORMAL;
+      }
     } catch (blendError) {
       try { tileLayer.blendingMode = BlendingMode.NORMAL; } catch (_ignore) {}
     }

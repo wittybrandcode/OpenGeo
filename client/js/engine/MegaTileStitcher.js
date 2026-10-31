@@ -214,7 +214,7 @@ class MegaTileStitcher {
       for (const key of Object.keys(z3Groups)) {
         const z3Group = z3Groups[key];
 
-        if (z3Group.children.length === 64) {
+        if (z3Group.children.length >= 8) {
           // Pack into 8x8 blocks
           const canvasSize = 8 * sourceTileSize;
           const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z3Group.z}_${z3Group.x}_${z3Group.y}.png`;
@@ -241,7 +241,7 @@ class MegaTileStitcher {
           for (const z2Key of Object.keys(z2Groups)) {
             const z2Group = z2Groups[z2Key];
             
-            if (z2Group.children.length === 16) {
+            if (z2Group.children.length >= 3) {
               // Pack into 4x4 blocks
               const canvasSize = 4 * sourceTileSize;
               const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z2Group.z}_${z2Group.x}_${z2Group.y}.png`;
@@ -250,7 +250,7 @@ class MegaTileStitcher {
                 allOutputTiles.push(this._megaAsset(z2Group, canvasSize, stitchedPath));
               } else {
                 for (const child of z2Group.children) {
-                allOutputTiles.push(this._baseAsset(child, sourceTileSize));
+                  allOutputTiles.push(this._baseAsset(child, sourceTileSize));
                 }
               }
             } else {
@@ -266,7 +266,7 @@ class MegaTileStitcher {
 
               for (const z1Key of Object.keys(z1Groups)) {
                 const z1Group = z1Groups[z1Key];
-                if (z1Group.children.length === 4) {
+                if (z1Group.children.length >= 2) {
                   // Pack into 2x2 blocks
                   const canvasSize = 2 * sourceTileSize;
                   const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z1Group.z}_${z1Group.x}_${z1Group.y}.png`;
@@ -275,17 +275,18 @@ class MegaTileStitcher {
                     allOutputTiles.push(this._megaAsset(z1Group, canvasSize, stitchedPath));
                   } else {
                     for (const child of z1Group.children) {
-                  allOutputTiles.push(this._baseAsset(child, sourceTileSize));
+                      allOutputTiles.push(this._baseAsset(child, sourceTileSize));
                     }
                   }
                 } else {
                   // A single source tile still needs an edge-extruded
                   // derivative; raw 256px footage has no safe sampling border.
-                  const t = z1Group.children[0];
-                  try {
-                    allOutputTiles.push(await this._stitchBaseTile(t, sourceTileSize));
-                  } catch (_error) {
-                    allOutputTiles.push(this._baseAsset(t, sourceTileSize));
+                  for (const t of z1Group.children) {
+                    try {
+                      allOutputTiles.push(await this._stitchBaseTile(t, sourceTileSize));
+                    } catch (_error) {
+                      allOutputTiles.push(this._baseAsset(t, sourceTileSize));
+                    }
                   }
                 }
               }
@@ -428,13 +429,9 @@ class MegaTileStitcher {
         return new Promise((res) => {
           const img = new Image();
           img.onload = () => {
-            const dx = ((child.x - startX) * sourceTileSize) + spec.gutterPixels;
-            const dy = ((child.y - startY) * sourceTileSize) + spec.gutterPixels;
-            ctx.drawImage(img, dx - 1, dy - 1, sourceTileSize + 2, sourceTileSize + 2);
-            ctx.drawImage(img, dx, dy, sourceTileSize, sourceTileSize);
-            res({ ok: true, x: child.x - startX, y: child.y - startY });
+            res({ ok: true, img: img, x: (child.x - startX), y: (child.y - startY) });
           };
-          img.onerror = () => res({ ok: false, x: child.x - startX, y: child.y - startY });
+          img.onerror = () => res({ ok: false, x: (child.x - startX), y: (child.y - startY) });
           const mime = loaded.buffer[0] === 0x89 && loaded.buffer[1] === 0x50 ? 'image/png' : 'image/jpeg';
           img.src = `data:${mime};base64,${loaded.buffer.toString('base64')}`;
         });
@@ -442,7 +439,7 @@ class MegaTileStitcher {
       
       Promise.all(promises).then((decodeResults) => {
         try {
-          const decoded = decodeResults.filter(result => result.ok);
+          const decoded = decodeResults.filter(result => result && result.ok && result.img);
           const decodedCells = decoded.map(result => `${result.x},${result.y}`).sort();
           const report = {
             originalExpectedCount: spec.originalExpectedCount,
@@ -451,6 +448,20 @@ class MegaTileStitcher {
             coverageMask: decodedCells
           };
           this.artifactStore._assertReport(spec, report);
+
+          // Pass 1: Underlay seal (dx - 1, dy - 1, sourceTileSize + 2, sourceTileSize + 2)
+          for (const item of decoded) {
+            const dx = (item.x * sourceTileSize) + spec.gutterPixels;
+            const dy = (item.y * sourceTileSize) + spec.gutterPixels;
+            ctx.drawImage(item.img, dx - 1, dy - 1, sourceTileSize + 2, sourceTileSize + 2);
+          }
+          // Pass 2: Exact 1:1 integer pixel placement
+          for (const item of decoded) {
+            const dx = (item.x * sourceTileSize) + spec.gutterPixels;
+            const dy = (item.y * sourceTileSize) + spec.gutterPixels;
+            ctx.drawImage(item.img, dx, dy, sourceTileSize, sourceTileSize);
+          }
+
           this._extrudeCanvasGutter(ctx, size, spec.gutterPixels);
           const dataUrl = canvas.toDataURL('image/png');
           const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
