@@ -452,13 +452,34 @@ class VectorMapManager {
     }
     if (!this.app.featureManager) throw new Error('FeatureManager is missing.');
 
-    const payload = this._buildGeoJSONPayload(validation, fileInfo.name || 'GeoJSON');
+    const payload = this._buildGeoJSONPayload(validation, fileInfo.name || 'GeoJSON', fileInfo);
     await new Promise(resolve => setTimeout(resolve, 0));
     const result = await this.app.featureManager.drawPayloadInAE(payload, 'geojson');
     return Object.assign({ layerName: payload.layerName }, result || {});
   }
 
-  _buildGeoJSONPayload(validation, fileName) {
+  _getGeoJSONEngine() {
+    if (typeof window !== 'undefined' && window.GeoJSONEngine) return window.GeoJSONEngine;
+    if (typeof global !== 'undefined' && global.GeoJSONEngine) return global.GeoJSONEngine;
+    if (typeof GeoJSONEngine !== 'undefined') return GeoJSONEngine;
+    if (typeof module !== 'undefined' && module.require) {
+      try {
+        const engineFile = ['./', 'GeoJSONEngine.js'].join('');
+        return module.require(engineFile);
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  _buildGeoJSONPayload(validation, fileName, options = {}) {
+    const importConfig = options && options.importConfig;
+    if (!importConfig) {
+      return this._buildLegacyGeoJSONPayload(validation, fileName);
+    }
+    return this._buildCustomGeoJSONPayload(validation, fileName, importConfig);
+  }
+
+  _buildLegacyGeoJSONPayload(validation, fileName) {
     const layerName = this._getGeoJSONLayerName(fileName);
     // Content participates in identity: two different uploads with the same
     // filename remain independently manageable, while re-importing the exact
@@ -528,9 +549,198 @@ class VectorMapManager {
     return payload;
   }
 
-  buildGeoJSONPreviewPayload(validation, fileName) {
+  _buildCustomGeoJSONPayload(validation, fileName, importConfig) {
+    const engine = this._getGeoJSONEngine();
+    const isBloc = importConfig.mode === 'bloc';
+    const layerName = this._getGeoJSONLayerName(isBloc ? (importConfig.blocName || fileName) : fileName);
+    const selectedFeatures = Array.isArray(importConfig.selectedFeatures) && importConfig.selectedFeatures.length
+      ? importConfig.selectedFeatures
+      : validation.features;
+
+    const identityMaterial = `${layerName.toLowerCase()}|${importConfig.mode}|${JSON.stringify(selectedFeatures)}`;
+    const featureSignature = `geojson-${this._hashText(identityMaterial)}`;
+    const layers = [];
+    const labels = [];
+
+    if (isBloc) {
+      // Unified Bloc mode
+      let merged = null;
+      if (engine && typeof engine.mergeFeaturesAsUnifiedBloc === 'function') {
+        merged = engine.mergeFeaturesAsUnifiedBloc(selectedFeatures, {
+          snapPrecision: 1e-4,
+          removeInternalSlivers: true
+        });
+      }
+      const groups = { polygons: [], lines: [], points: [] };
+      if (merged && merged.geometry) {
+        this._collectGeoJSONGeometry(merged.geometry, groups);
+      } else {
+        for (let i = 0; i < selectedFeatures.length; i++) {
+          if (selectedFeatures[i] && selectedFeatures[i].geometry) {
+            this._collectGeoJSONGeometry(selectedFeatures[i].geometry, groups);
+          }
+        }
+      }
+
+      if (importConfig.autoSimplify && engine && typeof engine.simplifyMercatorRing === 'function') {
+        let totalPts = 0;
+        for (let r = 0; r < groups.polygons.length; r++) totalPts += groups.polygons[r].length;
+        if (totalPts > 3500) {
+          const tol = Math.max(2, (totalPts - 3500) / 400);
+          groups.polygons = groups.polygons.map(ring => engine.simplifyMercatorRing(ring, tol));
+        }
+      }
+
+      const blocColor = (engine && engine.hexToRgb01)
+        ? engine.hexToRgb01(importConfig.blocColor || '#10b981')
+        : [0.06, 0.72, 0.50];
+      const blocName = importConfig.blocName || 'Unified Bloc';
+
+      if (groups.polygons.length) {
+        layers.push({
+          id: 'geojson-bloc-poly',
+          title: blocName.toUpperCase(),
+          isClosed: true,
+          features: [{ id: 'geojson-bloc-poly', name: blocName, isClosed: true, rings: groups.polygons }],
+          fillColor: [blocColor[0], blocColor[1], blocColor[2], 1.0],
+          fillOpacity: 75,
+          strokeColor: [1.0, 1.0, 1.0, 1.0],
+          strokeOpacity: 100
+        });
+      }
+
+      if (importConfig.createLabels && engine && typeof engine.computeFeatureVisualLabelPosition === 'function') {
+        const geom = merged ? merged.geometry : (selectedFeatures[0] && selectedFeatures[0].geometry);
+        const pos = engine.computeFeatureVisualLabelPosition(geom);
+        if (pos) {
+          const pt = this._projectGeoJSONPoint([pos.lon, pos.lat]);
+          if (pt) {
+            labels.push({
+              name: blocName,
+              text: blocName,
+              point: pt,
+              lat: pos.lat,
+              lng: pos.lon,
+              color: [1.0, 1.0, 1.0]
+            });
+          }
+        }
+      }
+    } else {
+      // Separate Features mode
+      const metas = importConfig.featureMetas || [];
+      for (let i = 0; i < selectedFeatures.length; i++) {
+        const feat = selectedFeatures[i];
+        if (!feat || !feat.geometry) continue;
+        const meta = metas[i] || (engine && engine.resolveFeatureMetadata ? engine.resolveFeatureMetadata(feat, i) : {
+          name: `Feature ${i + 1}`,
+          fillColor: '#10b981',
+          fillOpacity: 65
+        });
+
+        const featGroups = { polygons: [], lines: [], points: [] };
+        this._collectGeoJSONGeometry(feat.geometry, featGroups);
+
+        if (importConfig.autoSimplify && engine && typeof engine.simplifyMercatorRing === 'function') {
+          let pts = 0;
+          for (let r = 0; r < featGroups.polygons.length; r++) pts += featGroups.polygons[r].length;
+          if (pts > 4000) {
+            const tol = Math.max(2, (pts - 4000) / 400);
+            featGroups.polygons = featGroups.polygons.map(ring => engine.simplifyMercatorRing(ring, tol));
+          }
+        }
+
+        const colorRgb = (engine && engine.hexToRgb01)
+          ? engine.hexToRgb01(meta.fillColor || '#10b981')
+          : [0.06, 0.72, 0.50];
+
+        if (featGroups.polygons.length) {
+          layers.push({
+            id: `geojson-poly-${i}`,
+            title: meta.name.toUpperCase(),
+            isClosed: true,
+            features: [{ id: `feat-${i}`, name: meta.name, isClosed: true, rings: featGroups.polygons }],
+            fillColor: [colorRgb[0], colorRgb[1], colorRgb[2], 1.0],
+            fillOpacity: meta.fillOpacity !== undefined ? meta.fillOpacity : 65,
+            strokeColor: [1.0, 1.0, 1.0, 1.0],
+            strokeOpacity: 100
+          });
+        }
+
+        if (featGroups.lines.length) {
+          layers.push({
+            id: `geojson-line-${i}`,
+            title: `${meta.name} (Lines)`.toUpperCase(),
+            isClosed: false,
+            features: [{ id: `feat-lines-${i}`, name: `${meta.name} Lines`, isClosed: false, rings: featGroups.lines }],
+            fillOpacity: 0,
+            strokeColor: [colorRgb[0], colorRgb[1], colorRgb[2], 1.0],
+            strokeOpacity: 100
+          });
+        }
+
+        if (featGroups.points.length) {
+          layers.push({
+            id: `geojson-pt-${i}`,
+            title: `${meta.name} (Points)`.toUpperCase(),
+            isClosed: true,
+            features: [{ id: `feat-pts-${i}`, name: `${meta.name} Points`, isClosed: true, rings: featGroups.points }],
+            fillColor: [colorRgb[0], colorRgb[1], colorRgb[2], 1.0],
+            fillOpacity: 100,
+            strokeColor: [1.0, 1.0, 1.0, 1.0],
+            strokeOpacity: 100
+          });
+        }
+
+        if (importConfig.createLabels && engine && typeof engine.computeFeatureVisualLabelPosition === 'function') {
+          const pos = engine.computeFeatureVisualLabelPosition(feat.geometry);
+          if (pos) {
+            const pt = this._projectGeoJSONPoint([pos.lon, pos.lat]);
+            if (pt) {
+              labels.push({
+                name: meta.name,
+                text: meta.name,
+                point: pt,
+                lat: pos.lat,
+                lng: pos.lon,
+                color: [1.0, 1.0, 1.0]
+              });
+            }
+          }
+        }
+      }
+    }
+
+    if (!layers.length) {
+      const error = new Error('GeoJSON contains no drawable geometry for the selected features.');
+      error.code = 'GEOJSON_GEOMETRY_EMPTY';
+      throw error;
+    }
+
+    const payload = {
+      dataset: 'uploaded-geojson',
+      selectionRule: 'custom GeoJSON selection projected to OpenGeo Web Mercator',
+      sourceName: String(fileName || 'GeoJSON').slice(0, 512),
+      sourceId: String(fileName || 'GeoJSON').slice(0, 160),
+      layerName,
+      displayName: isBloc ? (importConfig.blocName || layerName) : layerName,
+      featureId: featureSignature,
+      featureSignature,
+      strokeWidth: 3,
+      strokeColor: [1.0, 1.0, 1.0, 1.0],
+      fillColor: [0.06, 0.72, 0.50, 1.0],
+      fillOpacity: 75,
+      labelColor: [1.0, 1.0, 1.0],
+      layers,
+      labels
+    };
+    payload.anchor = this._getPayloadAnchor(payload);
+    return payload;
+  }
+
+  buildGeoJSONPreviewPayload(validation, fileName, options = {}) {
     if (!validation || !validation.ok || !Array.isArray(validation.features)) throw new Error('GeoJSON must pass validation before preview registration.');
-    return this._buildGeoJSONPayload(validation, fileName || 'GeoJSON');
+    return this._buildGeoJSONPayload(validation, fileName || 'GeoJSON', options);
   }
 
   _getPayloadAnchor(payload) {

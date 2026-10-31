@@ -643,7 +643,36 @@ class ToolbarController {
       globalEventBus.emit('toast:show', { message, type: 'error', duration: 6000 });
       return;
     }
-    const previewPayload = app.vectorMapManager.buildGeoJSONPreviewPayload(validation, file.name);
+    let importConfig = null;
+    if (app.geoJSONImportModal && typeof app.geoJSONImportModal.open === 'function') {
+      try {
+        importConfig = await app.geoJSONImportModal.open(validation, { name: file.name, size: file.size });
+      } catch (modalErr) {
+        if (modalErr && modalErr.message === 'GEOJSON_IMPORT_CANCELLED') {
+          app.geoJSONLayer.clearGeoJSON();
+          globalEventBus.emit('ui:status', { message: 'GeoJSON import cancelled.', isError: false });
+          return;
+        }
+      }
+    }
+    if (revision !== this._geoJsonLoadRevision) return;
+
+    if (importConfig && importConfig.fitCamera) {
+      const engine = (typeof window !== 'undefined' && window.GeoJSONEngine) ||
+        (typeof global !== 'undefined' && global.GeoJSONEngine) ||
+        (typeof GeoJSONEngine !== 'undefined' ? GeoJSONEngine : null);
+      if (engine && typeof engine.computeCameraFramingForFeatures === 'function') {
+        const framing = engine.computeCameraFramingForFeatures(
+          importConfig.selectedFeatures || validation.features
+        );
+        if (framing && app.viewport) {
+          app.viewport.setCenter(framing.lat, framing.lon);
+          app.viewport.setZoom(framing.zoom);
+        }
+      }
+    }
+
+    const previewPayload = app.vectorMapManager.buildGeoJSONPreviewPayload(validation, file.name, { importConfig });
     const registerPreviewOnly = async () => {
       await app.featureManager.registerPreview(previewPayload, 'geojson');
       app.geoJSONLayer.clearGeoJSON();
@@ -669,14 +698,15 @@ class ToolbarController {
     }
     globalEventBus.emit('ui:status', { message: `Drawing GeoJSON in After Effects… ${file.name}`, isError: false });
     try {
-      const aeResult = await app.vectorMapManager.drawGeoJSONInAE(validation, { name: file.name, size: file.size });
+      const aeResult = await app.vectorMapManager.drawGeoJSONInAE(validation, { name: file.name, size: file.size, importConfig });
       if (revision !== this._geoJsonLoadRevision) return;
       // The persisted FeatureOverlay becomes the sole preview owner after the
       // AE transaction succeeds, preventing duplicate strokes.
       app.geoJSONLayer.clearGeoJSON();
       const paths = aeResult && Number.isFinite(Number(aeResult.paths)) ? Number(aeResult.paths) : 0;
+      const count = importConfig && importConfig.selectedFeatures ? importConfig.selectedFeatures.length : result.featureCount;
       globalEventBus.emit('toast:show', {
-        message: `GeoJSON drawn in AE: ${file.name} (${result.featureCount} features, ${paths} paths)`,
+        message: `GeoJSON drawn in AE: ${file.name} (${count} features, ${paths} paths)`,
         type: 'success', duration: 5000
       });
       globalEventBus.emit('ui:status', { message: 'GeoJSON preview and AE drawing complete.', isError: false });

@@ -100,6 +100,7 @@ class App {
     this.dialog = new DialogManager();
     this.layersPanel = new LayersPanel(this);
     this.projectMapsPanel = new ProjectMapsPanel(this);
+    this.geoJSONImportModal = typeof GeoJSONImportModal !== 'undefined' ? new GeoJSONImportModal(this) : null;
     this.tooltipManager = typeof TooltipManager !== 'undefined' ? (window.globalTooltipManager || new TooltipManager()) : null;
     if (this.tooltipManager) this.tooltipManager.init();
     

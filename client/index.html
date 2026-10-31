@@ -659,6 +659,125 @@
     </div>
   </div>
 
+  <!-- GeoJSON Import Manager Modal -->
+  <div id="geojson-import-modal" class="geojson-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="geojson-modal-title">
+    <div class="geojson-modal-panel">
+      <div class="geojson-modal-accent"></div>
+      
+      <!-- Header -->
+      <div class="geojson-modal-header">
+        <div class="geojson-modal-title-group">
+          <div class="geojson-modal-icon-badge">
+            <i data-lucide="layers"></i>
+          </div>
+          <div class="geojson-modal-heading">
+            <h3 id="geojson-modal-title">GeoJSON Import Manager</h3>
+            <span id="geojson-modal-file-subtitle">north_africa_countries.geojson</span>
+          </div>
+        </div>
+        <button type="button" class="geojson-modal-close-btn" id="geojson-modal-close" title="Close" aria-label="Close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="geojson-modal-body">
+        <!-- Summary & LOD Warning -->
+        <div class="geojson-summary-bar">
+          <div class="geojson-summary-stats">
+            <span>Features: <strong id="geojson-stat-features">0</strong></span>
+            <span>Total Points: <strong id="geojson-stat-points">0</strong></span>
+            <span>Selected: <strong id="geojson-stat-selected">0</strong></span>
+          </div>
+          <div id="geojson-lod-badge-container"></div>
+        </div>
+
+        <!-- Mode Selection -->
+        <div class="geojson-mode-card">
+          <div class="geojson-mode-header">Import Mode to After Effects</div>
+          <div class="geojson-mode-options">
+            <label class="geojson-mode-option active" id="geojson-mode-opt-separate">
+              <input type="radio" name="geojson-import-mode" value="separate" checked>
+              <div class="geojson-mode-info">
+                <strong>🎨 Separate Features</strong>
+                <small>Each feature is a distinct group with custom color and individual Effect Controls</small>
+              </div>
+            </label>
+            <label class="geojson-mode-option" id="geojson-mode-opt-bloc">
+              <input type="radio" name="geojson-import-mode" value="bloc">
+              <div class="geojson-mode-info">
+                <strong>🔗 Unified Bloc</strong>
+                <small>Merge selected countries into a single solid outer bloc without internal seams</small>
+              </div>
+            </label>
+          </div>
+          <div class="geojson-bloc-settings" id="geojson-bloc-settings">
+            <input type="text" class="geojson-bloc-name-input" id="geojson-bloc-name" placeholder="Bloc Name (e.g. Arab Maghreb Bloc)" value="Unified Bloc">
+            <div class="geojson-color-field">
+              <span>Bloc Color:</span>
+              <input type="color" id="geojson-bloc-color" value="#10b981">
+            </div>
+          </div>
+        </div>
+
+        <!-- Features Table / List -->
+        <div class="geojson-features-section">
+          <div class="geojson-features-toolbar">
+            <input type="text" class="geojson-filter-input" id="geojson-filter-input" placeholder="Search features...">
+            <div class="geojson-bulk-actions">
+              <button type="button" class="geojson-tiny-btn" id="geojson-select-all" title="Select all features" aria-label="Select all features">Select All</button>
+              <button type="button" class="geojson-tiny-btn" id="geojson-deselect-all" title="Deselect all features" aria-label="Deselect all features">Deselect All</button>
+            </div>
+          </div>
+          <div class="geojson-table-container">
+            <table class="geojson-table">
+              <thead>
+                <tr>
+                  <th class="geojson-cell-check"></th>
+                  <th class="geojson-cell-color">Color</th>
+                  <th>Feature Name</th>
+                  <th>Type & Points</th>
+                  <th class="geojson-cell-actions"></th>
+                </tr>
+              </thead>
+              <tbody id="geojson-features-tbody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Advanced Options -->
+        <div class="geojson-advanced-options">
+          <label class="geojson-checkbox-label">
+            <input type="checkbox" id="geojson-opt-labels" checked>
+            <span>Create 3D Text Labels at visual centers</span>
+          </label>
+          <label class="geojson-checkbox-label">
+            <input type="checkbox" id="geojson-opt-fit-camera" checked>
+            <span>Fit Camera to selection bounds</span>
+          </label>
+          <label class="geojson-checkbox-label" id="geojson-opt-simplify-container">
+            <input type="checkbox" id="geojson-opt-simplify" checked>
+            <span>Auto-simplify complex paths for smooth AE timeline performance</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="geojson-modal-footer">
+        <span class="geojson-footer-status" id="geojson-footer-status">Ready</span>
+        <div class="geojson-footer-actions">
+          <button type="button" class="geojson-btn geojson-btn-secondary" id="geojson-btn-cancel" title="Cancel GeoJSON import" aria-label="Cancel GeoJSON import">Cancel</button>
+          <button type="button" class="geojson-btn geojson-btn-primary" id="geojson-btn-import" title="Import selected features to After Effects" aria-label="Import selected features to After Effects">
+            <i data-lucide="check"></i>
+            <span id="geojson-import-btn-label">Import to After Effects</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="lib/lucide.min.js"></script>
   <script src="lib/CSInterface.js"></script>
   <script src="js/core/NodeRuntime.js?v=1"></script>
@@ -696,6 +815,7 @@
   <script src="js/map/MapRenderer.js"></script>
   <script src="js/overlays/VectorPreviewLayer.js?v=6"></script>
   <script src="js/overlays/MarkerLayer.js"></script>
+  <script src="js/core/GeoJSONEngine.js?v=1"></script>
   <script src="js/core/GeoJSONValidator.js?v=1"></script>
   <script src="js/overlays/GeoJSONLayer.js?v=2"></script>
   <script src="js/overlays/FeatureOverlayLayer.js?v=1"></script>
@@ -717,6 +837,7 @@
   <script src="js/core/ThumbnailProcessor.js?v=5"></script>
   <script src="js/ui/ProjectMapsPanel.js?v=10"></script>
   <script src="js/ui/ToolbarController.js?v=9"></script>
+  <script src="js/ui/GeoJSONImportModal.js?v=1"></script>
   <script src="js/ui/LocationHudController.js?v=1"></script>
   <script src="js/core/AEBridge.js?v=2"></script>
   <script src="js/core/repository/ChunkedFileReader.js?v=1"></script>

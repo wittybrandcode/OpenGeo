@@ -29,7 +29,8 @@ const suites = [
   { name: 'Vector Studio 10m Quality & Isolation Suite', script: 'scripts/tests/vector/vector-studio-quality.test.js' },
   { name: 'Vector Ultra OSM Quality & Integration Suite', script: 'scripts/tests/vector/vector-ultra-osm.test.js' },
   { name: 'Live Country Highlight & Vector Preview Suite', script: 'scripts/tests/vector/live-country-highlight.test.js' },
-  { name: 'Continents Outlines & Effect Controls Suite', script: 'scripts/tests/vector/continents-and-transforms.test.js' }
+  { name: 'Continents Outlines & Effect Controls Suite', script: 'scripts/tests/vector/continents-and-transforms.test.js' },
+  { name: 'GeoJSON Elevation & Bloc Merge Suite', script: 'scripts/tests/vector/geojson-elevation.test.js' }
 ];
 
 console.log('================================================================');
