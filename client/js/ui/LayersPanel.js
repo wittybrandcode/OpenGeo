@@ -30,6 +30,7 @@ class LayersPanel {
     this.mergeColorPalette = typeof document !== 'undefined' ? document.getElementById('merge-color-palette') : null;
     this.mergeLabelsCheck = typeof document !== 'undefined' ? document.getElementById('merge-create-labels-check') : null;
     this.mergeSimplifyCheck = typeof document !== 'undefined' ? document.getElementById('merge-auto-simplify-check') : null;
+    this.mergeSingleShapeCheck = typeof document !== 'undefined' ? document.getElementById('merge-single-shape-check') : null;
 
     this._selectedIds = new Set();
     this._selectedMergeColor = '#10b981';
@@ -309,6 +310,7 @@ class LayersPanel {
     const blocName = this.mergeNameInput && this.mergeNameInput.value.trim()
       ? this.mergeNameInput.value.trim()
       : 'Unified Bloc';
+    const singleShape = this.mergeSingleShapeCheck ? this.mergeSingleShapeCheck.checked : true;
     const createLabels = this.mergeLabelsCheck ? this.mergeLabelsCheck.checked : true;
     const autoSimplify = this.mergeSimplifyCheck ? this.mergeSimplifyCheck.checked : true;
     const color = this._selectedMergeColor || '#10b981';
@@ -321,7 +323,8 @@ class LayersPanel {
         name: blocName,
         color,
         createLabels,
-        autoSimplify
+        autoSimplify,
+        singleShape
       });
       this._closeMergeModal();
       this._selectedIds.clear();

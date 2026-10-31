@@ -267,7 +267,6 @@ class FeatureManager {
       for (let f = 0; f < feats.length; f++) {
         const feat = feats[f];
         if (!feat || !Array.isArray(feat.rings) || !feat.rings.length) continue;
-        const coords = [];
         for (let r = 0; r < feat.rings.length; r++) {
           const ring = feat.rings[r];
           if (!Array.isArray(ring) || ring.length < 2) continue;
@@ -284,21 +283,18 @@ class FeatureManager {
             if (first[0] !== last[0] || first[1] !== last[1]) {
               geoRing.push([first[0], first[1]]);
             }
-            coords.push(geoRing);
+            result.push({
+              type: 'Feature',
+              properties: {
+                name: feat.name || item.name || payload.displayName || payload.layerName || 'Vector Feature',
+                id: (feat.id || item.id || payload.featureId) + '-r' + r
+              },
+              geometry: {
+                type: 'Polygon',
+                coordinates: [geoRing]
+              }
+            });
           }
-        }
-        if (coords.length > 0) {
-          result.push({
-            type: 'Feature',
-            properties: {
-              name: feat.name || item.name || payload.displayName || payload.layerName || 'Vector Feature',
-              id: feat.id || item.id || payload.featureId
-            },
-            geometry: {
-              type: 'Polygon',
-              coordinates: coords
-            }
-          });
         }
       }
     }
@@ -361,6 +357,7 @@ class FeatureManager {
       blocColor: blocColor,
       createLabels: options.createLabels !== false,
       autoSimplify: options.autoSimplify !== false,
+      singleShape: options.singleShape !== false,
       selectedFeatures: allGeoFeatures
     };
 

@@ -842,6 +842,10 @@
         </div>
 
         <div class="geojson-advanced-options" style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <label class="geojson-checkbox-label" title="Unify all selected maps into a single continuous shape (Path 1) without detached micro-islands">
+            <input type="checkbox" id="merge-single-shape-check" checked title="Create a single unified shape" aria-label="Create a single unified shape">
+            <span>Single Shape: Unified landmass outline (1 path)</span>
+          </label>
           <label class="geojson-checkbox-label" title="Automatically calculate central label position and create 3D text in AE">
             <input type="checkbox" id="merge-create-labels-check" checked title="Create 3D text label in After Effects" aria-label="Create 3D text label in After Effects">
             <span>Create 3D visual text label at center</span>
@@ -868,6 +872,7 @@
 
   <script src="lib/lucide.min.js"></script>
   <script src="lib/CSInterface.js"></script>
+  <script src="lib/turf.min.js"></script>
   <script src="js/core/NodeRuntime.js?v=1"></script>
   <script src="js/config.js"></script>
   <script src="js/events/EventBus.js?v=4"></script>

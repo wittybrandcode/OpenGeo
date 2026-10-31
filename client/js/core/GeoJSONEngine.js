@@ -197,25 +197,28 @@
     if (typeof window !== 'undefined' && window.turf && typeof window.turf.union === 'function') {
       return window.turf;
     }
+    if (typeof global !== 'undefined' && global.turf && typeof global.turf.union === 'function') {
+      return global.turf;
+    }
     const req = typeof module !== 'undefined' && module.require ? module.require.bind(module) : (typeof require === 'function' ? require : null);
     if (req) {
       try {
         const unionPkg = ['@turf', 'union'].join('/');
-        const helpersPkg = ['@turf', 'helpers'].join('/');
         const turfUnionModule = req(unionPkg);
-        const turfHelpers = req(helpersPkg);
         const unionFn = (turfUnionModule && turfUnionModule.union) ||
           (turfUnionModule && turfUnionModule.default) ||
           (typeof turfUnionModule === 'function' ? turfUnionModule : null);
         if (unionFn) {
-          return {
-            union: unionFn,
-            featureCollection: turfHelpers && turfHelpers.featureCollection
-          };
+          return { union: unionFn };
         }
-      } catch (err) {
-        // Turf not available or error requiring
-      }
+      } catch (err) {}
+      try {
+        const path = req('path');
+        const localTurf = req(path.resolve(__dirname, '../../lib/turf.min.js'));
+        if (localTurf && typeof localTurf.union === 'function') {
+          return localTurf;
+        }
+      } catch (e2) {}
     }
     return null;
   }
@@ -236,37 +239,35 @@
     }
 
     const turf = resolveTurfUnion();
-    let merged = polygonFeatures[0];
-
-    for (let i = 1; i < polygonFeatures.length; i++) {
-      const nextFeat = polygonFeatures[i];
-      let unionSuccess = false;
-      if (turf && typeof turf.union === 'function') {
-        try {
-          // Support Turf v7 (featureCollection) and Turf v6 (2 arguments)
-          let unionResult = null;
-          if (turf.featureCollection) {
-            try {
-              unionResult = turf.union(turf.featureCollection([merged, nextFeat]));
-            } catch (fcErr) {
-              unionResult = turf.union(merged, nextFeat);
-            }
-          } else {
-            unionResult = turf.union(merged, nextFeat);
-          }
-          if (unionResult && unionResult.geometry) {
-            merged = unionResult;
-            unionSuccess = true;
-          }
-        } catch (uErr) {
-          unionSuccess = false;
+    if (turf && typeof turf.union === 'function') {
+      try {
+        // Turf v7: pass all polygon features in a single FeatureCollection
+        const fc = { type: 'FeatureCollection', features: polygonFeatures };
+        const unionResult = turf.union(fc);
+        if (unionResult && unionResult.geometry) {
+          return cleanInternalSliverHoles(unionResult, removeSlivers, maxSliverRatio);
         }
-      }
-      if (!unionSuccess) {
-        merged = combineIntoMultiPolygonFallback(merged, nextFeat);
+      } catch (uErr) {
+        // If bulk multi-geometry union fails, union iteratively pair by pair
+        try {
+          let accum = polygonFeatures[0];
+          for (let i = 1; i < polygonFeatures.length; i++) {
+            const pairFC = { type: 'FeatureCollection', features: [accum, polygonFeatures[i]] };
+            const pairRes = turf.union(pairFC);
+            if (pairRes && pairRes.geometry) accum = pairRes;
+          }
+          if (accum && accum.geometry) {
+            return cleanInternalSliverHoles(accum, removeSlivers, maxSliverRatio);
+          }
+        } catch (pairErr) {}
       }
     }
 
+    // Fallback if turf is unavailable
+    let merged = polygonFeatures[0];
+    for (let i = 1; i < polygonFeatures.length; i++) {
+      merged = combineIntoMultiPolygonFallback(merged, polygonFeatures[i]);
+    }
     return cleanInternalSliverHoles(merged, removeSlivers, maxSliverRatio);
   }
 

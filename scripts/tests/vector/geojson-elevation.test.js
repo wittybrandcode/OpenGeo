@@ -349,6 +349,46 @@ runTest('mergeFeaturesIntoBloc creates a new unified layer without deleting or m
   assert.strictEqual(registry.list().length, 3);
 });
 
+// 12. Single Shape unified bloc dissolves borders into exactly one ring
+runTest('Unified Bloc with singleShape dissolves shared border into exactly one AE shape ring', () => {
+  const app = { mapState: { longitude: 0 } };
+  const manager = new VectorMapManager(app);
+  // Two touching polygons + 1 small detached island
+  const validation = {
+    ok: true,
+    features: [
+      {
+        type: 'Feature',
+        properties: { name: 'Mainland A' },
+        geometry: { type: 'Polygon', coordinates: [[[0, 0], [2, 0], [2, 2], [0, 2], [0, 0]]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Mainland B' },
+        geometry: { type: 'Polygon', coordinates: [[[2, 0], [4, 0], [4, 2], [2, 2], [2, 0]]] }
+      },
+      {
+        type: 'Feature',
+        properties: { name: 'Detached Island' },
+        geometry: { type: 'Polygon', coordinates: [[[10, 10], [10.1, 10], [10.1, 10.1], [10, 10.1], [10, 10]]] }
+      }
+    ]
+  };
+
+  const importConfig = {
+    mode: 'bloc',
+    blocName: 'Merged Country',
+    selectedFeatures: validation.features,
+    singleShape: true
+  };
+
+  const payload = manager._buildGeoJSONPayload(validation, 'merged.geojson', { importConfig });
+  assert.strictEqual(payload.layers.length, 1);
+  assert.strictEqual(payload.layers[0].features.length, 1);
+  // With singleShape: true, exactly one ring (Path 1) is created, retaining the dissolved mainland
+  assert.strictEqual(payload.layers[0].features[0].rings.length, 1, 'Must have exactly 1 shape ring in AE');
+});
+
 console.log('====================================');
 console.log(`GeoJSON Elevation Tests: Passed: ${passed} | Failed: ${failed}`);
 console.log('====================================');

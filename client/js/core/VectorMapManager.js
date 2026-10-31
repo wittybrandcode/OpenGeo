@@ -582,6 +582,13 @@ class VectorMapManager {
         }
       }
 
+      if (groups.polygons.length > 1 && engine && typeof engine.signedRingArea === 'function') {
+        groups.polygons.sort((a, b) => Math.abs(engine.signedRingArea(b)) - Math.abs(engine.signedRingArea(a)));
+      }
+      if (importConfig.singleShape !== false && groups.polygons.length > 1) {
+        groups.polygons = [groups.polygons[0]];
+      }
+
       if (importConfig.autoSimplify && engine && typeof engine.simplifyMercatorRing === 'function') {
         let totalPts = 0;
         for (let r = 0; r < groups.polygons.length; r++) totalPts += groups.polygons[r].length;
