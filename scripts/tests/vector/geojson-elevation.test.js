@@ -245,9 +245,115 @@ runTest('VectorMapManager builds custom payload for Separate Features mode', () 
   assert.strictEqual(payload.labels.length, 2, 'Two 3D text labels created');
 });
 
+// 9. FeatureManager.payloadToGeoJSONFeatures & Mercator back-projection
+runTest('FeatureManager.payloadToGeoJSONFeatures converts Mercator rings into valid WGS84 GeoJSON features', () => {
+  const FeatureRegistry = require(path.resolve(__dirname, '../../../client/js/core/FeatureRegistry.js'));
+  const FeatureManager = require(path.resolve(__dirname, '../../../client/js/core/FeatureManager.js'));
+  const app = { session: {}, jobManager: null };
+  const manager = new FeatureManager(app, new FeatureRegistry());
+
+  const p1 = GeoJSONEngine.latLngToWorldPoint(36.0, 3.0);
+  const p2 = GeoJSONEngine.latLngToWorldPoint(36.0, 4.0);
+  const p3 = GeoJSONEngine.latLngToWorldPoint(37.0, 4.0);
+  const p4 = GeoJSONEngine.latLngToWorldPoint(37.0, 3.0);
+
+  const payload = {
+    displayName: 'Test Map',
+    layers: [{
+      features: [{
+        name: 'Region',
+        rings: [[p1, p2, p3, p4, p1]]
+      }]
+    }]
+  };
+
+  const geoFeats = manager.payloadToGeoJSONFeatures(payload);
+  assert.strictEqual(geoFeats.length, 1);
+  assert.strictEqual(geoFeats[0].type, 'Feature');
+  assert.strictEqual(geoFeats[0].geometry.type, 'Polygon');
+  const ring = geoFeats[0].geometry.coordinates[0];
+  assert.strictEqual(ring.length, 5);
+  assert(Math.abs(ring[0][0] - 3.0) < 1e-4);
+  assert(Math.abs(ring[0][1] - 36.0) < 1e-4);
+});
+
+// 10. Non-destructive merge of drawn maps in FeatureManager
+runTest('mergeFeaturesIntoBloc creates a new unified layer without deleting or mutating source features', async () => {
+  const FeatureRegistry = require(path.resolve(__dirname, '../../../client/js/core/FeatureRegistry.js'));
+  const FeatureManager = require(path.resolve(__dirname, '../../../client/js/core/FeatureManager.js'));
+  const registry = new FeatureRegistry();
+
+  const pA1 = GeoJSONEngine.latLngToWorldPoint(30.0, 0.0);
+  const pA2 = GeoJSONEngine.latLngToWorldPoint(30.0, 1.0);
+  const pA3 = GeoJSONEngine.latLngToWorldPoint(31.0, 1.0);
+  const pA4 = GeoJSONEngine.latLngToWorldPoint(31.0, 0.0);
+
+  const pB1 = GeoJSONEngine.latLngToWorldPoint(30.0, 1.0);
+  const pB2 = GeoJSONEngine.latLngToWorldPoint(30.0, 2.0);
+  const pB3 = GeoJSONEngine.latLngToWorldPoint(31.0, 2.0);
+  const pB4 = GeoJSONEngine.latLngToWorldPoint(31.0, 1.0);
+
+  const mapA = {
+    id: 'map-a',
+    name: 'Map Alpha',
+    type: 'geojson',
+    previewPayload: {
+      displayName: 'Map Alpha',
+      layers: [{ features: [{ name: 'A', rings: [[pA1, pA2, pA3, pA4, pA1]] }] }]
+    }
+  };
+  const mapB = {
+    id: 'map-b',
+    name: 'Map Beta',
+    type: 'geojson',
+    previewPayload: {
+      displayName: 'Map Beta',
+      layers: [{ features: [{ name: 'B', rings: [[pB1, pB2, pB3, pB4, pB1]] }] }]
+    }
+  };
+
+  registry.upsert(mapA);
+  registry.upsert(mapB);
+
+  const mockVectorMapManager = {
+    drawGeoJSONInAE: async (validation, options) => {
+      registry.upsert({
+        id: 'merged-bloc-1',
+        name: options.name,
+        type: 'geojson',
+        previewPayload: {}
+      });
+      return { success: true };
+    }
+  };
+
+  const app = {
+    activeCompId: 'comp-1',
+    session: {},
+    jobManager: null,
+    vectorMapManager: mockVectorMapManager
+  };
+  const manager = new FeatureManager(app, registry);
+
+  const result = await manager.mergeFeaturesIntoBloc(['map-a', 'map-b'], {
+    name: 'Unified Alpha Beta',
+    color: '#3b82f6'
+  });
+
+  assert.strictEqual(result.blocName, 'Unified Alpha Beta');
+  // Source maps are preserved!
+  assert(registry.get('map-a'), 'Source map A must be preserved');
+  assert(registry.get('map-b'), 'Source map B must be preserved');
+  // New merged map is added!
+  assert(registry.get('merged-bloc-1'), 'New merged bloc must be registered');
+  assert.strictEqual(registry.list().length, 3);
+});
+
 console.log('====================================');
 console.log(`GeoJSON Elevation Tests: Passed: ${passed} | Failed: ${failed}`);
 console.log('====================================');
+
+if (failed > 0) process.exit(1);
 
 if (failed > 0) {
   process.exit(1);

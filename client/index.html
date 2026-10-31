@@ -55,8 +55,12 @@
       <button class="toolbar-btn" id="provider-settings-btn" title="OpenGeo Settings">
         <i data-lucide="settings"></i>
       </button>
-      <button class="toolbar-btn preview-mode-btn" id="preview-mode-btn" title="Switch to offline vector preview" aria-pressed="false">
+      <button class="toolbar-btn preview-mode-btn" id="preview-mode-btn" title="Switch to offline vector preview" aria-label="Switch to offline vector preview" aria-pressed="false">
         <i data-lucide="map"></i>
+      </button>
+      <button class="toolbar-btn" id="toolbar-vector-layers-btn" title="Vector Maps (Show all drawn vector layers)" aria-label="Vector Maps (Show all drawn vector layers)">
+        <i data-lucide="layers"></i>
+        <span class="toolbar-badge" id="vector-layers-count-badge" style="display:none">0</span>
       </button>
       
       <select class="toolbar-select toolbar-select-hidden" id="tile-size-select" title="Tile Size" style="display:none;">
@@ -269,8 +273,27 @@
 
     <aside id="feature-layers-panel" class="feature-layers-panel" aria-hidden="true" aria-label="Composition vector maps">
       <div class="feature-layers-header">
-        <div><strong>Vector Maps</strong><span>Preview and AE composition</span></div>
-        <button id="feature-layers-close" class="feature-layer-action" type="button" title="Close"><i data-lucide="x"></i></button>
+        <div class="feature-layers-title-group">
+          <i data-lucide="layers" class="feature-layers-header-icon"></i>
+          <div>
+            <strong>Vector Maps</strong>
+            <span id="feature-layers-count-label">Preview and AE composition</span>
+          </div>
+        </div>
+        <button id="feature-layers-close" class="feature-layer-action" type="button" title="Close" aria-label="Close"><i data-lucide="x"></i></button>
+      </div>
+      <div class="feature-layers-toolbar" id="feature-layers-toolbar">
+        <div class="feature-layers-select-wrap">
+          <label class="feature-layers-select-all-label" title="Select or deselect all vector maps">
+            <input type="checkbox" id="feature-layers-select-all" class="feature-layer-checkbox" title="Select all vector maps" aria-label="Select all vector maps">
+            <span>All</span>
+          </label>
+          <span class="feature-layers-selected-count" id="feature-layers-selected-count">0 selected</span>
+        </div>
+        <button type="button" id="feature-layers-merge-btn" class="feature-layers-merge-btn" disabled title="Merge selected maps into a new unified bloc" aria-label="Merge selected maps into a new unified bloc">
+          <i data-lucide="merge"></i>
+          <span>Merge Selected</span>
+        </button>
       </div>
       <div id="feature-layers-list" class="feature-layers-list"></div>
     </aside>
@@ -772,6 +795,71 @@
           <button type="button" class="geojson-btn geojson-btn-primary" id="geojson-btn-import" title="Import selected features to After Effects" aria-label="Import selected features to After Effects">
             <i data-lucide="check"></i>
             <span id="geojson-import-btn-label">Import to After Effects</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Merge Vector Maps into Unified Bloc -->
+  <div class="geojson-modal-overlay" id="merge-vector-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="merge-modal-title">
+    <div class="geojson-modal-panel merge-vector-panel">
+      <div class="geojson-modal-accent"></div>
+      <div class="geojson-modal-header">
+        <div class="geojson-modal-title-group">
+          <div class="geojson-modal-icon-badge">
+            <i data-lucide="merge"></i>
+          </div>
+          <div class="geojson-modal-heading">
+            <h3 id="merge-modal-title">Merge Vector Maps</h3>
+            <span>Non-destructive: creates a brand-new unified bloc in After Effects</span>
+          </div>
+        </div>
+        <button type="button" class="geojson-modal-close-btn" id="merge-modal-close-btn" title="Close merge dialog" aria-label="Close merge dialog">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <div class="geojson-modal-body" style="padding: 16px; overflow-y: auto;">
+        <div class="merge-notice-box">
+          <i data-lucide="shield-check"></i>
+          <span><strong>Source Preservation:</strong> Original vector maps remain 100% intact in OpenGeo and After Effects. A new unified vector layer is created without deleting sources.</span>
+        </div>
+
+        <div class="geojson-field-group" style="margin-bottom: 12px;">
+          <label class="geojson-field-label" for="merge-bloc-name-input" style="display: block; font-size: 11px; margin-bottom: 5px; color: var(--text-secondary);">New Unified Bloc Name</label>
+          <input type="text" id="merge-bloc-name-input" class="geojson-text-input" placeholder="e.g. Arab Maghreb Bloc" title="Name for the newly merged vector layer" aria-label="Name for the newly merged vector layer" style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: #fff; font-size: 12px; border-radius: 4px;">
+        </div>
+
+        <div class="geojson-field-group" style="margin-bottom: 12px;">
+          <label class="geojson-field-label" style="display: block; font-size: 11px; margin-bottom: 5px; color: var(--text-secondary);">Selected Source Maps (<span id="merge-selected-count-badge">0</span>)</label>
+          <div class="merge-selected-chips" id="merge-selected-chips"></div>
+        </div>
+
+        <div class="geojson-field-group" style="margin-bottom: 14px;">
+          <label class="geojson-field-label" style="display: block; font-size: 11px; margin-bottom: 5px; color: var(--text-secondary);">Bloc Fill Color</label>
+          <div class="geojson-palette-swatches" id="merge-color-palette" style="display: flex; gap: 8px;"></div>
+        </div>
+
+        <div class="geojson-advanced-options" style="display: flex; flex-direction: column; gap: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08);">
+          <label class="geojson-checkbox-label" title="Automatically calculate central label position and create 3D text in AE">
+            <input type="checkbox" id="merge-create-labels-check" checked title="Create 3D text label in After Effects" aria-label="Create 3D text label in After Effects">
+            <span>Create 3D visual text label at center</span>
+          </label>
+          <label class="geojson-checkbox-label" title="Optimize and smooth internal borders">
+            <input type="checkbox" id="merge-auto-simplify-check" checked title="Simplify borders to prevent heavy AE shape paths" aria-label="Simplify borders to prevent heavy AE shape paths">
+            <span>Smooth and eliminate internal sliver borders</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="geojson-modal-footer">
+        <span class="geojson-footer-status">Ready to merge</span>
+        <div class="geojson-footer-actions">
+          <button type="button" class="geojson-btn geojson-btn-secondary" id="merge-cancel-btn" title="Cancel merge" aria-label="Cancel merge">Cancel</button>
+          <button type="button" class="geojson-btn geojson-btn-primary" id="merge-confirm-btn" title="Merge selected maps and draw new layer in After Effects" aria-label="Merge selected maps and draw new layer in After Effects">
+            <i data-lucide="merge"></i>
+            <span id="merge-confirm-btn-text">Merge &amp; Draw in AE</span>
           </button>
         </div>
       </div>

@@ -229,6 +229,150 @@ class FeatureManager {
     this.app._scheduleMetadataSave();
   }
 
+  async getFeaturePayload(id) {
+    const item = this.registry.get(id);
+    if (!item) return null;
+    if (item.previewPayload) return item.previewPayload;
+    if (item.type === 'country' && this.app.geoDataRepository) {
+      const resolved = this.app.geoDataRepository.getCountryOutline(item.sourceId);
+      if (resolved && resolved.features && resolved.features.length) {
+        return this._buildCountryPayload(item, resolved);
+      }
+    } else if (item.type === 'continent' && this.app.geoDataRepository) {
+      const code = item.sourceId ? item.sourceId.replace(/^continent-/, '') : item.id;
+      const resolved = this.app.geoDataRepository.getContinentOutline(code);
+      if (resolved && resolved.features && resolved.features.length) {
+        return this._buildContinentPayload(item, resolved);
+      }
+    } else if (item.type === 'geojson' && item.sourcePath) {
+      try {
+        return await this._readManagedPayload(item.sourcePath, item.id);
+      } catch (error) {
+        console.warn('[FeatureManager] Error reading managed payload:', error.message);
+      }
+    }
+    return null;
+  }
+
+  payloadToGeoJSONFeatures(payload, item = {}) {
+    if (!payload || typeof payload !== 'object') return [];
+    if (Array.isArray(payload.features) && payload.features.length && payload.features[0] && payload.features[0].geometry) {
+      return payload.features;
+    }
+    const result = [];
+    const layers = Array.isArray(payload.layers) ? payload.layers : [];
+    for (let l = 0; l < layers.length; l++) {
+      const layer = layers[l];
+      const feats = Array.isArray(layer.features) ? layer.features : [];
+      for (let f = 0; f < feats.length; f++) {
+        const feat = feats[f];
+        if (!feat || !Array.isArray(feat.rings) || !feat.rings.length) continue;
+        const coords = [];
+        for (let r = 0; r < feat.rings.length; r++) {
+          const ring = feat.rings[r];
+          if (!Array.isArray(ring) || ring.length < 2) continue;
+          const geoRing = [];
+          for (let p = 0; p < ring.length; p++) {
+            const pt = ring[p];
+            if (!pt || !Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) continue;
+            const ll = this._worldPointToLatLng(pt[0], pt[1]);
+            geoRing.push([Number(ll.lng.toFixed(6)), Number(ll.lat.toFixed(6))]);
+          }
+          if (geoRing.length >= 3) {
+            const first = geoRing[0];
+            const last = geoRing[geoRing.length - 1];
+            if (first[0] !== last[0] || first[1] !== last[1]) {
+              geoRing.push([first[0], first[1]]);
+            }
+            coords.push(geoRing);
+          }
+        }
+        if (coords.length > 0) {
+          result.push({
+            type: 'Feature',
+            properties: {
+              name: feat.name || item.name || payload.displayName || payload.layerName || 'Vector Feature',
+              id: feat.id || item.id || payload.featureId
+            },
+            geometry: {
+              type: 'Polygon',
+              coordinates: coords
+            }
+          });
+        }
+      }
+    }
+    return result;
+  }
+
+  _worldPointToLatLng(wx, wy) {
+    if (typeof MercatorProjection !== 'undefined') {
+      return MercatorProjection.worldPointToLatLng(wx, wy, 10, 256);
+    }
+    const worldSize = 262144;
+    const lng = (wx / worldSize) * 360 - 180;
+    const n = Math.PI - (2 * Math.PI * wy) / worldSize;
+    return { lat: (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))), lng };
+  }
+
+  /**
+   * Merges selected vector map layers into a new unified bloc layer in AE.
+   * Non-destructive: original source maps remain intact in registry and AE.
+   */
+  async mergeFeaturesIntoBloc(featureIds, options = {}) {
+    this._assertFeatureMutationAllowed();
+    if (!Array.isArray(featureIds) || featureIds.length < 2) {
+      throw new Error('Select at least 2 vector maps to merge.');
+    }
+    const compId = this.app.compositionController
+      ? await this.app.compositionController.resolveActiveMapTarget()
+      : this.app.activeCompId;
+    if (!compId) throw new Error('Create or open an OpenGeo composition first.');
+
+    const allGeoFeatures = [];
+    const sourceNames = [];
+    for (let i = 0; i < featureIds.length; i++) {
+      const id = featureIds[i];
+      const item = this.registry.get(id);
+      if (!item) continue;
+      sourceNames.push(item.name);
+      const payload = await this.getFeaturePayload(id);
+      if (!payload) continue;
+      const feats = this.payloadToGeoJSONFeatures(payload, item);
+      allGeoFeatures.push(...feats);
+    }
+
+    if (allGeoFeatures.length < 2) {
+      throw new Error('Selected vector maps do not contain enough geometry to merge.');
+    }
+
+    const defaultTitle = `Merged: ${sourceNames.slice(0, 2).join(' + ')}${sourceNames.length > 2 ? ` (+${sourceNames.length - 2})` : ''}`;
+    const blocName = (options.name && options.name.trim()) ? options.name.trim() : defaultTitle;
+    const blocColor = options.color || '#10b981';
+
+    const validation = {
+      ok: true,
+      features: allGeoFeatures,
+      data: { type: 'FeatureCollection', features: allGeoFeatures }
+    };
+    const importConfig = {
+      mode: 'bloc',
+      blocName: blocName,
+      blocColor: blocColor,
+      createLabels: options.createLabels !== false,
+      autoSimplify: options.autoSimplify !== false,
+      selectedFeatures: allGeoFeatures
+    };
+
+    if (!this.app.vectorMapManager) throw new Error('VectorMapManager is unavailable.');
+    const result = await this.app.vectorMapManager.drawGeoJSONInAE(validation, {
+      name: blocName,
+      importConfig
+    });
+
+    return Object.assign({ blocName, sourceNames, featureCount: allGeoFeatures.length }, result || {});
+  }
+
   focusFeature(id) {
     const item = this.registry.get(id);
     if (!item) return false;
