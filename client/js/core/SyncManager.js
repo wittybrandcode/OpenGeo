@@ -172,7 +172,7 @@ class SyncManager {
   }
 
   async _packPreviewTiles(tiles, snapshot, compId, scope, isCurrent) {
-    if (!tiles || tiles.length < 2) return tiles || [];
+    if (!tiles || tiles.length < 1) return tiles || [];
     const fs = require('fs');
     const path = require('path');
     const crypto = require('crypto');
@@ -313,7 +313,7 @@ class SyncManager {
         fetchWidth: snapshot.composition.width,
         fetchHeight: snapshot.composition.height,
         gutterTiles: 1,
-        includeBaseCoverage: false
+        includeBaseCoverage: true
       });
       if (!isCurrent()) return;
       if (plan.length > this.maxTrajectoryPreviewTiles) {

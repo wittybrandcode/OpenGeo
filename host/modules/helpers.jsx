@@ -84,10 +84,17 @@ function opengeoResolveTileGeometry(tile, footageItem, worldTileSize) {
   var contentPixels = requestedContent > 0 && requestedContent <= sourcePixels ? requestedContent : sourcePixels;
   var requestedGutter = parseInt(tile && tile.gutterPixels, 10);
   var gutterPixels = requestedGutter >= 0 && contentPixels + (requestedGutter * 2) <= sourcePixels ? requestedGutter : 0;
-  var exactScale = (worldTileSize / contentPixels) * 100;
+
+  // Extruded MegaTiles (gutterPixels >= 1) keep strict 1:1 cartographic scale.
+  // Raw 0-gutter fallback tiles get a 0.5-texel micro-overlap centered by a -0.25px anchor offset.
+  var fallbackOverlapTexels = (gutterPixels === 0) ? 0.5 : 0;
+  var effectiveAnchor = (gutterPixels > 0) ? gutterPixels : -0.25;
+  var exactScale = (worldTileSize / contentPixels) * ((contentPixels + fallbackOverlapTexels) / contentPixels) * 100;
+
   return {
     contentPixels: contentPixels,
     gutterPixels: gutterPixels,
+    anchorOffset: effectiveAnchor,
     exactScale: exactScale
   };
 }
@@ -250,6 +257,39 @@ function opengeoCheckProjectState() {
   }
 }
 
+function opengeoResolveProviderBedColor(sourceKey) {
+  var s = String(sourceKey || '').toLowerCase();
+  if (s.indexOf('dark') !== -1 || s.indexOf('night') !== -1) return [0.09, 0.11, 0.14];
+  if (s.indexOf('sat') !== -1 || s.indexOf('imagery') !== -1 || s.indexOf('aerial') !== -1) return [0.07, 0.13, 0.18];
+  return [0.88, 0.87, 0.84];
+}
+
+function opengeoEnsureMapBed(mapComp, mapPivot, documentId, revision, sourceKey) {
+  if (!mapComp || !opengeoIsValidObject(mapComp) || !mapPivot) return null;
+  try {
+    var bedName = 'OpenGeo Map Bed';
+    var bedLayer = findLayerByName(mapComp, bedName);
+    var bedColor = opengeoResolveProviderBedColor(sourceKey);
+    if (!bedLayer && mapComp.layers && typeof mapComp.layers.addSolid === 'function') {
+      bedLayer = mapComp.layers.addSolid(bedColor, bedName, 2048, 2048, 1, mapComp.duration);
+    }
+    if (!bedLayer) return null;
+    bedLayer.threeDLayer = true;
+    bedLayer.enabled = true;
+    bedLayer.guideLayer = false;
+    bedLayer.comment = opengeoOwnershipComment(documentId || 'legacy', 'map-bed', revision || 'active');
+    bedLayer.property('Anchor Point').setValue([0, 0, 0]);
+    bedLayer.parent = mapPivot;
+    bedLayer.property('Position').setValue([-MAP_SIZE, -MAP_SIZE, 0]);
+    var bedScale = ((MAP_SIZE * 3) / 2048) * 100;
+    bedLayer.property('Scale').setValue([bedScale, bedScale, 100]);
+    if (typeof bedLayer.moveToEnd === 'function') bedLayer.moveToEnd();
+    return bedLayer;
+  } catch (bedErr) {
+    return null;
+  }
+}
+
 // Register helpers on $._opengeo namespace
 $._opengeo.helpers = {
   hLog: hLog,
@@ -265,5 +305,7 @@ $._opengeo.helpers = {
   getOrCreateFolder: getOrCreateFolder,
   getOpenGeoFolderStructure: getOpenGeoFolderStructure,
   getProjectPath: getProjectPath,
-  opengeoCheckProjectState: opengeoCheckProjectState
+  opengeoCheckProjectState: opengeoCheckProjectState,
+  opengeoResolveTileGeometry: opengeoResolveTileGeometry,
+  opengeoEnsureMapBed: opengeoEnsureMapBed
 };

@@ -48,6 +48,8 @@ self.onmessage = async function(e) {
           const dx = ((child.x - startX) * sourceTileSize) + edge;
           const dy = ((child.y - startY) * sourceTileSize) + edge;
           
+          // Seal internal cell borders in case of sparse cell neighbors
+          ctx.drawImage(bitmap, dx - 1, dy - 1, sourceTileSize + 2, sourceTileSize + 2);
           ctx.drawImage(bitmap, dx, dy, sourceTileSize, sourceTileSize);
           
           // Explicitly close the bitmap to free memory immediately

@@ -23,8 +23,20 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
   var revision = opengeoSanitizeIdentity(data.operationId || data.previewGeneration || 'legacy');
   var ownershipRole = isPreviewStaging ? 'preview-staging' : (data.isPreview === true ? 'preview' : 'final-active');
 
-  for (var tileIndex = 0; tileIndex < tiles.length; tileIndex++) {
-    var tile = tiles[tileIndex];
+  // Sort ascending by sourceZoom so layers.add() stacks lower-zoom base tiles
+  // underneath higher-zoom detail tiles.
+  var sortedTiles = (tiles instanceof Array) ? tiles.slice(0) : [];
+  if (sortedTiles.length > 1) {
+    sortedTiles.sort(function(a, b) {
+      var za = (a && a.sourceZoom !== undefined ? a.sourceZoom : (a ? a.z : 0)) || 0;
+      var zb = (b && b.sourceZoom !== undefined ? b.sourceZoom : (b ? b.z : 0)) || 0;
+      if (za !== zb) return za - zb;
+      return (Number(b && b.contentPixelSize) || 0) - (Number(a && a.contentPixelSize) || 0);
+    });
+  }
+
+  for (var tileIndex = 0; tileIndex < sortedTiles.length; tileIndex++) {
+    var tile = sortedTiles[tileIndex];
     var tileFile = new File(String(tile.filePath).replace(/\\/g, '/'));
     if (!tileFile.exists) continue;
 
@@ -70,9 +82,11 @@ function opengeoImportCompositionTiles(mapComp, mapPivot, folders, tiles, data, 
       /* quality fallback */
     }
     try {
-      tileLayer.blendingMode = BlendingMode.NORMAL;
+      tileLayer.blendingMode = (data.zoomTransitions && data.zoomTransitions.length > 0)
+        ? BlendingMode.NORMAL
+        : BlendingMode.ALPHA_ADD;
     } catch (blendError) {
-      /* blending mode fallback */
+      try { tileLayer.blendingMode = BlendingMode.NORMAL; } catch (_ignore) {}
     }
     importedCount++;
   }

@@ -214,7 +214,7 @@ class MegaTileStitcher {
       for (const key of Object.keys(z3Groups)) {
         const z3Group = z3Groups[key];
 
-        if (z3Group.children.length > 16) {
+        if (z3Group.children.length === 64) {
           // Pack into 8x8 blocks
           const canvasSize = 8 * sourceTileSize;
           const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z3Group.z}_${z3Group.x}_${z3Group.y}.png`;
@@ -241,7 +241,7 @@ class MegaTileStitcher {
           for (const z2Key of Object.keys(z2Groups)) {
             const z2Group = z2Groups[z2Key];
             
-            if (z2Group.children.length > 4) {
+            if (z2Group.children.length === 16) {
               // Pack into 4x4 blocks
               const canvasSize = 4 * sourceTileSize;
               const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z2Group.z}_${z2Group.x}_${z2Group.y}.png`;
@@ -266,7 +266,7 @@ class MegaTileStitcher {
 
               for (const z1Key of Object.keys(z1Groups)) {
                 const z1Group = z1Groups[z1Key];
-                if (z1Group.children.length > 1) {
+                if (z1Group.children.length === 4) {
                   // Pack into 2x2 blocks
                   const canvasSize = 2 * sourceTileSize;
                   const megaFilePath = `${this.cacheDir}/mega${canvasSize}_${this.compId}_${this.cacheSignature}_${z1Group.z}_${z1Group.x}_${z1Group.y}.png`;
@@ -430,6 +430,7 @@ class MegaTileStitcher {
           img.onload = () => {
             const dx = ((child.x - startX) * sourceTileSize) + spec.gutterPixels;
             const dy = ((child.y - startY) * sourceTileSize) + spec.gutterPixels;
+            ctx.drawImage(img, dx - 1, dy - 1, sourceTileSize + 2, sourceTileSize + 2);
             ctx.drawImage(img, dx, dy, sourceTileSize, sourceTileSize);
             res({ ok: true, x: child.x - startX, y: child.y - startY });
           };

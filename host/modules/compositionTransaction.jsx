@@ -116,6 +116,12 @@ function opengeoCommitPreviewRevision(mapComp, folders, documentId, revision, re
       }
       promoted++;
     }
+    if (typeof findLayerByName === 'function') {
+      var existingBed = findLayerByName(mapComp, 'OpenGeo Map Bed');
+      if (existingBed && typeof existingBed.moveToEnd === 'function') {
+        try { existingBed.moveToEnd(); } catch (ignoreBedMove) {}
+      }
+    }
   } catch (promotionError) {
     // Roll the new revision back to an invisible staging state. The previous
     // preview/final was not modified, so AE never exposes a blank map.
@@ -272,7 +278,8 @@ function opengeoPrepareCompositionRevision(jsonData) {
       tiles.sort(function(a, b) {
         var za = (a && a.sourceZoom !== undefined ? a.sourceZoom : (a ? a.z : 0)) || 0;
         var zb = (b && b.sourceZoom !== undefined ? b.sourceZoom : (b ? b.z : 0)) || 0;
-        return za - zb;
+        if (za !== zb) return za - zb;
+        return (Number(b && b.contentPixelSize) || 0) - (Number(a && a.contentPixelSize) || 0);
       });
     }
 
@@ -311,9 +318,11 @@ function opengeoPrepareCompositionRevision(jsonData) {
           /* layer quality fallback */
         }
         try {
-          tileLayer.blendingMode = BlendingMode.NORMAL;
+          tileLayer.blendingMode = (data.zoomTransitions && data.zoomTransitions.length > 0)
+            ? BlendingMode.NORMAL
+            : BlendingMode.ALPHA_ADD;
         } catch (blendError) {
-          /* layer blending fallback */
+          try { tileLayer.blendingMode = BlendingMode.NORMAL; } catch (_ignore) {}
         }
 
         // Apply smooth solid-base opacity transitions (eliminates crossfade darkening dip / alpha hole)
@@ -497,6 +506,9 @@ function opengeoCommitCompositionRevision(args) {
             resolved.containingComp.width, resolved.containingComp.height
           );
         } catch (rigError) { result.warnings.push('RIG_UPDATE_WARNING'); }
+        if (typeof opengeoEnsureMapBed === 'function') {
+          opengeoEnsureMapBed(resolved.mapComp, mapPivot, documentId, operationId, data.source);
+        }
       }
       try {
         var existingBalance = findLayerByName(resolved.mapComp, 'OpenGeo Color Balance');

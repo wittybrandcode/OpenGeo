@@ -91,6 +91,7 @@ function opengeoBuildComposition(jsonData) {
       }
       if (data.source) mapComp.comment = opengeoOwnershipComment(documentId, 'map-comp', data.operationId || data.previewGeneration || 'preview', 'source=' + String(data.source));
     }
+    opengeoEnsureMapBed(mapComp, mapPivot, documentId, data.operationId || data.previewGeneration || 'active', data.source);
 
     // STEP 4: Main Containing Comp
     var containingComp = opengeoFindDocumentOuterComp(documentId) || opengeoEnsureComposition(containingCompName, folders.comps, compWidth, compHeight, duration, fps);

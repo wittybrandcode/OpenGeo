@@ -130,11 +130,11 @@ class TilePlanner {
           transitionTiles = transitionTiles.concat(tTiles);
         }
 
-        // A second low-resolution layer is opt-in only. Every sampled frame
-        // already contributes complete viewport coverage, while failed final
-        // downloads are retried and rejected before AE mutation.
+        // Base Pyramid Coverage:
+        // When includeBaseCoverage is enabled, generate base tiles at minDownloadZoom
+        // for frames with higher zoom levels, placed at the bottom of the layer stack.
         let baseTiles = [];
-        if (includeBaseCoverage === true && effectiveZoom !== minDownloadZoom) {
+        if (includeBaseCoverage === true && effectiveZoom > minDownloadZoom) {
           baseTiles = CoveragePlanner.planComposition(frame, {
             width: fetchWidth,
             height: fetchHeight,
@@ -142,10 +142,11 @@ class TilePlanner {
             tileSize: 256,
             gutterTiles,
             alignMegaTiles: false
-          });
+          }).map(bt => Object.assign({}, bt, { isBaseCoverage: true }));
         }
 
-        const allVisibleTiles = tiles.concat(transitionTiles).concat(baseTiles);
+        // Order baseTiles first, then transitionTiles, then highest-detail active tiles
+        const allVisibleTiles = baseTiles.concat(transitionTiles).concat(tiles);
 
         for (const t of allVisibleTiles) {
           if (!t.url) t.url = this.app._buildTileUrl(sourceKey, t.wrappedX, t.y, t.z);

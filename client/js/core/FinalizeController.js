@@ -367,7 +367,7 @@ class FinalizeController {
       fetchWidth,
       fetchHeight,
       gutterTiles: 1,
-      includeBaseCoverage: false,
+      includeBaseCoverage: true,
       blendDuration: (typeof TilePlanner !== 'undefined' && TilePlanner.DEFAULT_BLEND_DURATION) || 0.25
     };
 
