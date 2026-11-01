@@ -440,11 +440,16 @@ class VectorMapManager {
    * only the bounded, temporary-file-backed AE transaction.
    */
   async drawGeoJSONInAE(validation, fileInfo = {}) {
-    if (!this.app.activeCompId) {
+    const activeTarget = (this.app.compositionController && typeof this.app.compositionController.resolveActiveMapTarget === 'function')
+      ? await this.app.compositionController.resolveActiveMapTarget()
+      : null;
+    const compId = this.app.activeCompId || activeTarget || (this.app.compositionController && this.app.compositionController.activeCompId);
+    if (!compId) {
       const error = new Error('Create a Map composition before drawing GeoJSON in After Effects.');
       error.code = 'GEOJSON_COMP_REQUIRED';
       throw error;
     }
+    if (!this.app.activeCompId) this.app.activeCompId = compId;
     if (!validation || !validation.ok || !Array.isArray(validation.features)) {
       const error = new Error('GeoJSON must pass validation before it can be drawn in After Effects.');
       error.code = 'GEOJSON_VALIDATION_REQUIRED';
@@ -461,14 +466,30 @@ class VectorMapManager {
   _getGeoJSONEngine() {
     if (typeof window !== 'undefined' && window.GeoJSONEngine) return window.GeoJSONEngine;
     if (typeof global !== 'undefined' && global.GeoJSONEngine) return global.GeoJSONEngine;
+    if (typeof globalThis !== 'undefined' && globalThis.GeoJSONEngine) return globalThis.GeoJSONEngine;
     if (typeof GeoJSONEngine !== 'undefined') return GeoJSONEngine;
-    if (typeof module !== 'undefined' && module.require) {
+    const req = typeof module !== 'undefined' && module.require ? module.require.bind(module) : (typeof require === 'function' ? require : null);
+    if (req) {
       try {
-        const engineFile = ['./', 'GeoJSONEngine.js'].join('');
-        return module.require(engineFile);
-      } catch (e) {}
+        const path = req('path');
+        return req(path.resolve(__dirname, 'GeoJSONEngine.js'));
+      } catch (e1) {}
+      try {
+        return req('./GeoJSONEngine.js');
+      } catch (e2) {}
     }
     return null;
+  }
+
+  _ringArea(ring) {
+    if (!Array.isArray(ring) || ring.length < 3) return 0;
+    let sum = 0;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      const p1 = ring[j];
+      const p2 = ring[i];
+      sum += (p2[0] - p1[0]) * (p2[1] + p1[1]);
+    }
+    return Math.abs(sum / 2);
   }
 
   _buildGeoJSONPayload(validation, fileName, options = {}) {
@@ -571,6 +592,19 @@ class VectorMapManager {
           removeInternalSlivers: true
         });
       }
+      if (!merged) {
+        const turfObj = (typeof window !== 'undefined' && window.turf) ||
+          (typeof global !== 'undefined' && global.turf) ||
+          (typeof globalThis !== 'undefined' && globalThis.turf) ||
+          (typeof self !== 'undefined' && self.turf) ||
+          (typeof turf !== 'undefined' ? turf : null);
+        if (turfObj && typeof turfObj.union === 'function') {
+          try {
+            const fc = { type: 'FeatureCollection', features: selectedFeatures };
+            merged = turfObj.union(fc);
+          } catch (tErr) {}
+        }
+      }
       const groups = { polygons: [], lines: [], points: [] };
       if (merged && merged.geometry) {
         this._collectGeoJSONGeometry(merged.geometry, groups);
@@ -582,11 +616,16 @@ class VectorMapManager {
         }
       }
 
-      if (groups.polygons.length > 1 && engine && typeof engine.signedRingArea === 'function') {
-        groups.polygons.sort((a, b) => Math.abs(engine.signedRingArea(b)) - Math.abs(engine.signedRingArea(a)));
+      if (groups.polygons.length > 1) {
+        const getArea = (r) => (engine && typeof engine.signedRingArea === 'function')
+          ? Math.abs(engine.signedRingArea(r))
+          : this._ringArea(r);
+        groups.polygons.sort((a, b) => getArea(b) - getArea(a));
       }
       if (importConfig.singleShape !== false && groups.polygons.length > 1) {
-        groups.polygons = [groups.polygons[0]];
+        if (merged && merged.geometry) {
+          groups.polygons = [groups.polygons[0]];
+        }
       }
 
       if (importConfig.autoSimplify && engine && typeof engine.simplifyMercatorRing === 'function') {

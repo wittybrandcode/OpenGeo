@@ -10,12 +10,22 @@
  */
 
 (function (root, factory) {
+  'use strict';
+  const instance = factory();
+  if (typeof root !== 'undefined' && root) {
+    root.GeoJSONEngine = instance;
+  }
+  if (typeof window !== 'undefined' && window) {
+    window.GeoJSONEngine = instance;
+  }
+  if (typeof global !== 'undefined' && global) {
+    global.GeoJSONEngine = instance;
+  }
+  if (typeof globalThis !== 'undefined' && globalThis) {
+    globalThis.GeoJSONEngine = instance;
+  }
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory();
-  } else if (typeof define === 'function' && define.amd) {
-    define([], factory);
-  } else {
-    root.GeoJSONEngine = factory();
+    module.exports = instance;
   }
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
@@ -116,7 +126,7 @@
     const prec = precision || 1e-4;
     const decimals = Math.max(0, Math.min(10, Math.round(-Math.log10(prec))));
     const clone = JSON.parse(JSON.stringify(feature));
-    function snapRing(coords) {
+    function snapCoords(coords) {
       if (!Array.isArray(coords)) return coords;
       if (typeof coords[0] === 'number') {
         const x = Math.round(coords[0] / prec) * prec;
@@ -126,9 +136,37 @@
           Number(y.toFixed(decimals))
         ];
       }
-      return coords.map(snapRing);
+      return coords.map(snapCoords);
     }
-    clone.geometry.coordinates = snapRing(clone.geometry.coordinates);
+    clone.geometry.coordinates = snapCoords(clone.geometry.coordinates);
+
+    // Clean consecutive duplicates in each ring to prevent degenerate segments in polygon-clipping
+    function cleanRingDuplicates(ring) {
+      if (!Array.isArray(ring) || ring.length < 2) return ring;
+      const clean = [ring[0]];
+      for (let i = 1; i < ring.length; i++) {
+        const curr = ring[i];
+        const prev = clean[clean.length - 1];
+        if (curr[0] !== prev[0] || curr[1] !== prev[1]) {
+          clean.push(curr);
+        }
+      }
+      if (clean.length > 2) {
+        const first = clean[0];
+        const last = clean[clean.length - 1];
+        if (first[0] !== last[0] || first[1] !== last[1]) {
+          clean.push([first[0], first[1]]);
+        }
+      }
+      return clean;
+    }
+
+    if (clone.geometry.type === 'Polygon') {
+      clone.geometry.coordinates = clone.geometry.coordinates.map(cleanRingDuplicates);
+    } else if (clone.geometry.type === 'MultiPolygon') {
+      clone.geometry.coordinates = clone.geometry.coordinates.map(poly => poly.map(cleanRingDuplicates));
+    }
+
     return clone;
   }
 
@@ -200,6 +238,15 @@
     if (typeof global !== 'undefined' && global.turf && typeof global.turf.union === 'function') {
       return global.turf;
     }
+    if (typeof globalThis !== 'undefined' && globalThis.turf && typeof globalThis.turf.union === 'function') {
+      return globalThis.turf;
+    }
+    if (typeof self !== 'undefined' && self.turf && typeof self.turf.union === 'function') {
+      return self.turf;
+    }
+    if (typeof turf !== 'undefined' && typeof turf.union === 'function') {
+      return turf;
+    }
     const req = typeof module !== 'undefined' && module.require ? module.require.bind(module) : (typeof require === 'function' ? require : null);
     if (req) {
       try {
@@ -231,7 +278,21 @@
 
     const polygonFeatures = (selectedFeatures || [])
       .filter(f => f && f.geometry && (f.geometry.type === 'Polygon' || f.geometry.type === 'MultiPolygon'))
-      .map(f => snapFeatureCoordinates(f, snapPrecision));
+      .map(f => snapFeatureCoordinates(f, snapPrecision))
+      .filter(f => {
+        if (!f || !f.geometry) return false;
+        if (f.geometry.type === 'Polygon') {
+          return Array.isArray(f.geometry.coordinates) &&
+            f.geometry.coordinates.length > 0 &&
+            f.geometry.coordinates[0].length >= 4 &&
+            Math.abs(signedRingArea(f.geometry.coordinates[0])) > 1e-9;
+        }
+        if (f.geometry.type === 'MultiPolygon') {
+          return Array.isArray(f.geometry.coordinates) &&
+            f.geometry.coordinates.length > 0;
+        }
+        return false;
+      });
 
     if (polygonFeatures.length === 0) return null;
     if (polygonFeatures.length === 1) {
